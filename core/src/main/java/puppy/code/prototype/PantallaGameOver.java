@@ -1,4 +1,4 @@
-package puppy.code;
+package puppy.code.prototype;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;

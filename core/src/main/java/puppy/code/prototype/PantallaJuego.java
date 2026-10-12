@@ -1,4 +1,4 @@
-package puppy.code;
+package puppy.code.prototype;
 
 import java.util.ArrayList;
 import java.util.Random;
