@@ -10,8 +10,8 @@ Vamos a separar el código dentro de core/src/main/java/puppy/code/ de esta form
 ```text
 app/          SpaceNavigation y ciclo de la aplicación
 assets/       acceso compartido a imágenes y audio
-behaviors/    MovementStrategy y sus implementaciones
-entities/     GameEntity, Ship, Alien y proyectiles
+behaviors/    MovementStrategy y las formaciones de disparo de los aliens
+entities/     GameEntity, Ship, Alien, meteoritos y proyectiles
 factories/    AlienBuilder y LevelDirector
 input/        PlayerInput y adaptador de teclado
 leaderboard/  ScoreEntry, ScoreRepository y HighScoreService
@@ -20,7 +20,7 @@ systems/      CollisionSystem, ScoreService y LevelManager
 world/        GameWorld, estado de partida y WorldSnapshot
 ```
 
-Si acordamos usar SQLite, ubicaremos el adaptador de la base local en lwjgl3. Desde core usaremos la interfaz ScoreRepository, sin depender de SQL ni de la ubicación del archivo de datos.
+Usaremos SQLite para guardar los puntajes. Pondremos el adaptador `SQLiteScoreRepository` en `lwjgl3` y dejaremos la interfaz `ScoreRepository` en `core`, para que las reglas del juego no dependan de SQL ni de la ubicación de la base de datos.
 
 ## 2. Flujo general
 
@@ -53,6 +53,8 @@ MenuScreen ---- inicia ----> GameScreen
 
 Desde las pantallas presentaremos el estado y solicitaremos las transiciones. GameWorld coordinará la partida y usaremos sistemas para resolver reglas específicas.
 
+Mantendremos el menú fuera de `GamePhase`. En la partida usaremos cuatro fases: simulación activa, nivel superado, Game Over y Victoria. Mostraremos “Nivel Superado” dentro de la partida y esperaremos cualquier botón para continuar; reservaremos las pantallas de Game Over y Victoria para el final correspondiente.
+
 ## 3. Responsabilidad de cada parte
 
 ### `SpaceNavigation`
@@ -61,7 +63,9 @@ Desde esta clase iniciaremos la aplicación, crearemos los servicios compartidos
 
 ### Pantallas
 
-Usaremos `MenuScreen`, `GameScreen`, `VictoryScreen` y `GameOverScreen` para mostrar información, recibir eventos de interfaz y solicitar transiciones. Mantendremos las reglas de vidas, puntaje y cuotas fuera de las pantallas para no duplicarlas.
+Usaremos `MenuScreen`, `GameScreen`, `VictoryScreen` y `GameOverScreen` para mostrar información, recibir eventos de interfaz y solicitar transiciones. Mantendremos las reglas de vidas, puntaje y cuotas fuera de las pantallas para no duplicarlas. El menú de Game Over y el de Victoria permitirán reiniciar con Enter o volver al menú con Esc. Ya contamos con `ScreenNavigator` para las transiciones principales; le agregaremos `showGameOver()` y `showVictory()` para que las pantallas no dependan directamente de `SpaceNavigation`.
+
+Nos gustaría mostrar el top 3 desde el menú y al terminar la partida. Lo consultaremos con el equipo antes de dejar ambas vistas como requisito confirmado.
 
 ### `GameWorld`
 
@@ -69,18 +73,34 @@ Haremos que `GameWorld` mantenga las entidades activas y coordine la actualizaci
 
 ### Entidades
 
-Cada entidad (`Ship`, `Alien`, `PlayerProjectile` y `AlienProjectile`) mantendrá su propio estado. Evitaremos que conozcan las pantallas o lean directamente el teclado.
+Cada entidad (`Ship`, `Alien`, `PlayerProjectile`, `AlienProjectile` y `Meteorite`) mantendrá su propio estado. Los meteoritos serán obstáculos sin IA ni disparos, no contarán para las cuotas y podrán otorgar puntaje al destruirlos. Todavía tenemos que acordar si todos los meteoritos se destruyen de un impacto y qué efecto tendrá el contacto con la nave. Evitaremos que las entidades conozcan las pantallas o lean directamente el teclado.
 
 ### Sistemas
 
 - Usaremos `CollisionSystem` para detectar impactos y comunicar sus resultados al mundo.
-- Usaremos `ScoreService` para calcular el puntaje por enemigo destruido.
+- Usaremos `ScoreService` para calcular el puntaje por alien y meteorito destruido.
 - Usaremos `LevelManager` para mantener el nivel actual y comprobar las cuotas.
 - Usaremos `HighScoreService` para decidir si un resultado puede entrar al top 3.
 
+Dejaremos en `GameWorld` la coordinación de las entidades, las vidas y la fase de la partida. `ScoreService` será responsable del puntaje y `LevelManager` del nivel y su cuota. `CollisionSystem` detectará las colisiones y comunicará el resultado; desde `GameWorld` coordinaremos qué debe cambiar en las vidas, el puntaje o el nivel. Así evitaremos que la detección de una colisión también se encargue de todas las reglas que vienen después.
+
+Con esta división, `GameWorld` actuará como Controller de GRASP para coordinar los eventos de la partida, `ScoreService` tendrá alta cohesión con las reglas de puntaje y `LevelManager` conocerá las cuotas y el avance. `CollisionSystem` no modificará por su cuenta las vidas ni el puntaje: reportará lo que detecte y el mundo aplicará las consecuencias. Así mantenemos cada responsabilidad en un lugar claro y reducimos el acoplamiento entre detección y reglas.
+
+La cuota contará aliens destruidos, no meteoritos: pediremos 15 en el nivel uno, 30 en el nivel dos y 45 en el nivel tres. Un proyectil del jugador destruirá al alien que golpee y desaparecerá con él. Si un proyectil alienígena nos golpea o chocamos físicamente con un alien, perderemos una vida; al chocar con la nave, el alien también se destruirá.
+
+Usaremos 260 px/s para la nave, 90 px/s para el descenso lineal, 110 px/s para el zigzag, 450 px/s para los proyectiles del jugador y 220 px/s para los proyectiles alienígenas. Los aliens apuntarán hacia la nave y alternarán las formaciones lineal hacia abajo y en V de 45°. Lanzarán dos proyectiles a la vez cada 1,8 segundos. Desactivaremos los proyectiles que superen el límite del área de juego, cuyo valor exacto todavía tenemos que acordar.
+
+Al perder una vida, reapareceremos en un punto fijo, limpiaremos los proyectiles activos y mantendremos a los aliens y meteoritos en su lugar. Conservaremos el puntaje y el progreso del nivel. Durante 1,5 segundos ignoraremos el daño y dejaremos que aliens y proyectiles atraviesen la nave sin desaparecer. El dash durará 0,15 segundos, se recargará en 3 segundos y nos dará invulnerabilidad; durante el dash mantendremos los objetos en pantalla. Aún tenemos que definir la fuerza del impulso.
+
+Al alcanzar la cuota de los niveles uno y dos, detendremos la aparición de aliens y pondremos `GameWorld` en la fase `LEVEL_COMPLETE`. `GameScreen` mostrará “Nivel Superado” y esperará cualquier botón antes de preparar el siguiente escenario. Todavía tenemos que elegir si los aliens restantes huyen o explotan. Al alcanzar la cuota del nivel tres pasaremos a `VICTORY`; si nos quedamos sin vidas, pasaremos a `GAME_OVER`.
+
+Sumaremos 100 puntos por alien destruido, 50 por meteorito destruido, 25 si es chico y 75 si es grande. Mantendremos el puntaje al perder una vida y al cambiar de nivel. Cuando se agoten las vidas, registraremos el resultado con un nombre de tres caracteres; al iniciar otra partida volveremos a cero. Todavía tenemos que acordar cómo ingresaremos ese nombre, cómo ordenaremos los empates y si consultaremos el top 3 desde el menú y las pantallas finales.
+
+La nave tendrá 1,5 segundos de invulnerabilidad al reaparecer. En ese intervalo ignoraremos el daño y dejaremos que aliens y proyectiles la atraviesen sin desaparecer. El dash durará 0,15 segundos, tendrá una recarga de 3 segundos y dará invulnerabilidad mientras se ejecuta. Seguirá la dirección indicada con WASD o avanzará hacia adelante si no indicamos movimiento. Aún tenemos que acordar la fuerza o velocidad del impulso.
+
 ### Entrada
 
-Definiremos `PlayerInput` para describir movimiento, disparo y dash. Nuestro adaptador de teclado traducirá `Gdx.input` a ese contrato, así las entidades no tendrán que consultar el teclado.
+Definiremos `PlayerInput` para describir movimiento, disparo, dash y las acciones de continuar, reiniciar y volver al menú. Nuestro adaptador de teclado traducirá `Gdx.input` a ese contrato, así las entidades y las pantallas no tendrán que consultar el teclado directamente.
 
 ### Recursos
 
@@ -126,9 +146,17 @@ Centralizaremos en `GameAssets` la carga y liberación de imágenes y audio comp
 
 ### El movimiento del alien se puede intercambiar
 
-**Decisión:** haremos que `Alien` reciba una `MovementStrategy` y seleccionaremos dos estrategias deterministas según el nivel. Mantendremos un único patrón diagonal de ataque.  
+**Decisión:** haremos que `Alien` reciba una `MovementStrategy` y seleccionaremos de forma determinista el descenso lineal o el zigzag. Separaremos de ese movimiento las dos formaciones de disparo que alternaremos durante la partida.\
 **Motivo:** podremos variar el desplazamiento sin añadir otra especie ni cambiar la lógica común del alien.  
 **Principio:** aplicaremos polimorfismo, OCP y Protected Variations.
+
+Usaremos inicialmente 90 px/s para el descenso lineal y 110 px/s para el zigzag. Nos falta acordar qué niveles usarán cada estrategia. Los aliens apuntarán hacia la nave y alternarán entre el disparo lineal hacia abajo y la formación en V de 45°. Cada descarga tendrá dos proyectiles simultáneos y saldrá cada 1,8 segundos.
+
+### Las formaciones de disparo quedan separadas del movimiento
+
+**Decisión:** alternaremos los disparos lineales y en V desde un contrato de comportamiento separado del movimiento del alien. Cada descarga incluirá dos proyectiles simultáneos y saldrá cada 1,8 segundos.\
+**Motivo:** el alien tendrá dos formaciones de disparo y dos movimientos posibles; mantener esas decisiones separadas evitará mezclar reglas distintas dentro de una sola clase.\
+**Principio:** aplicaremos alta cohesión y Strategy para variar la formación de disparo sin acoplarla al movimiento. Confirmaremos los patrones exigidos por la cátedra cuando tengamos a la vista la pauta correspondiente.
 
 ### Los niveles usan Builder y Director
 
@@ -138,8 +166,8 @@ Centralizaremos en `GameAssets` la carga y liberación de imágenes y audio comp
 
 ### El almacenamiento queda detrás de una interfaz
 
-**Decisión:** ubicaremos `ScoreRepository` en `core` y el adaptador local en `lwjgl3`. Todavía tenemos que confirmar la tecnología concreta.  
-**Motivo:** así podremos trabajar con puntajes desde las reglas y las pantallas sin depender de detalles SQL o de archivos.  
+**Decisión:** guardaremos los puntajes con SQLite. Ubicaremos `ScoreRepository` en `core` y su implementación `SQLiteScoreRepository` en `lwjgl3`.\
+**Motivo:** ya hemos trabajado con SQLite y así podremos guardar los puntajes sin hacer que las reglas del juego dependan directamente de esa tecnología.\
 **Principio:** aplicaremos DIP e Indirection para mantener bajo el acoplamiento.
 
 ## 5. Reglas de implementación
