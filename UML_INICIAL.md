@@ -113,4 +113,4 @@ classDiagram
 
 ## Siguiente etapa
 
-Todavía tenemos que definir e implementar proyectiles, colisiones, puntaje, vidas, cuotas de nivel, dash, victoria y Game Over. Incorporaremos `MovementStrategy`, Builder y persistencia cuando tengamos reglas concretas que justifiquen esas abstracciones. El código anterior se conserva en el paquete `puppy.code.prototype` y no lo usa el lanzador nuevo.
+Todavía tenemos que definir e implementar proyectiles, colisiones, puntaje, vidas, cuotas de nivel, dash, victoria y Game Over. En el código actual, `ScreenNavigator` permite abrir el menú e iniciar una partida; para GM-3 nos falta agregar `showGameOver()` y `showVictory()` y conectarlos con las pantallas finales. Incorporaremos `MovementStrategy`, Builder y persistencia cuando tengamos reglas concretas que justifiquen esas abstracciones. El código anterior se conserva en el paquete `puppy.code.prototype` y no lo usa el lanzador nuevo.

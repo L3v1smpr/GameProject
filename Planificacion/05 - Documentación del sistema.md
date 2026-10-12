@@ -33,7 +33,7 @@ Pendiente: indicaremos qué recursos usamos, quién administra su ciclo de vida 
 
 ## 8. Puntajes locales
 
-Pendiente: describiremos el formato y la ubicación del almacenamiento que elijamos, cómo ordenaremos el top 3 y cómo lo recuperaremos al volver a iniciar el juego.
+Ya decidimos guardar los puntajes localmente con SQLite. Cuando implementemos esta parte, describiremos el formato de los registros, la ubicación de la base, cómo recuperaremos los resultados al iniciar el juego y cómo mantendremos el top 3. Documentaremos que registraremos el resultado cuando se agoten las vidas, con un nombre de tres caracteres, y que mantendremos el puntaje al perder una vida y al cambiar de nivel. Nos falta acordar cómo ingresaremos ese nombre y resolveremos los empates. Sumaremos 100 puntos por alien, 50 por meteorito destruido, 25 si es chico y 75 si es grande. Nos gustaría consultar el top 3 desde el menú y al terminar la partida, pero primero lo confirmaremos con el equipo.
 
 ## 9. Decisiones de diseño
 
