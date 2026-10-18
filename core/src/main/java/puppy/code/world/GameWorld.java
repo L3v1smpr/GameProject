@@ -2,6 +2,7 @@ package puppy.code.world;
 
 import java.util.ArrayList;
 import java.util.List;
+import puppy.code.behaviors.LinearMovement;
 import puppy.code.entities.Alien;
 import puppy.code.entities.Ship;
 import puppy.code.input.PlayerInput;
@@ -16,9 +17,9 @@ public final class GameWorld {
     private final List<Alien> aliens;
 
     public GameWorld() {
-        ship = new Ship(WIDTH / 2f - 20f, 55f, 40f, 36f, 280f);
+        ship = new Ship(WIDTH / 2f - 20f, 55f, 40f, 36f, 260f);
         List<Alien> initialAliens = new ArrayList<>();
-        initialAliens.add(new Alien(WIDTH / 2f - 20f, HEIGHT - 100f, 40f, 32f, 75f));
+        initialAliens.add(new Alien(WIDTH / 2f - 20f, HEIGHT - 100f, 40f, 32f, new LinearMovement(90f)));
         aliens = initialAliens;
     }
 
