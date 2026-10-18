@@ -3,12 +3,13 @@ package puppy.code.entities;
 import com.badlogic.gdx.math.Rectangle;
 
 /** Mantiene el estado privado común de los objetos que ocupan espacio en el mundo. */
-public abstract class GameEntity {
+public abstract class GameEntity implements Collidable {
 
     private float x;
     private float y;
     private final float width;
     private final float height;
+    private boolean active = true;
 
     protected GameEntity(float x, float y, float width, float height) {
         if (!Float.isFinite(x) || !Float.isFinite(y)) {
@@ -40,7 +41,18 @@ public abstract class GameEntity {
         return height;
     }
 
+    /** Indica si la entidad sigue participando en la partida. */
+    public final boolean isActive() {
+        return active;
+    }
+
+    /** Marca la entidad como retirada; el mundo la elimina en su siguiente actualización. */
+    public final void deactivate() {
+        active = false;
+    }
+
     /** Devuelve una copia para que nadie modifique los límites internos de la entidad. */
+    @Override
     public final Rectangle bounds() {
         return new Rectangle(x, y, width, height);
     }
