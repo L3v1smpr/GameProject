@@ -1,11 +1,10 @@
 package puppy.code.screens;
 
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 import puppy.code.app.ScreenNavigator;
 import puppy.code.assets.GameAssets;
+import puppy.code.input.NavigationInput;
 import puppy.code.input.PlayerInput;
 import puppy.code.world.GameWorld;
 import puppy.code.world.WorldSnapshot;
@@ -15,27 +14,34 @@ public final class GameScreen extends AbstractGameScreen {
 
     private final ScreenNavigator navigator;
     private final GameWorld world;
-    private final PlayerInput input;
+    private final PlayerInput playerInput;
+    private final NavigationInput navigationInput;
     private WorldSnapshot snapshot;
 
-    public GameScreen(GameAssets assets, ScreenNavigator navigator, GameWorld world, PlayerInput input) {
+    public GameScreen(
+            GameAssets assets,
+            ScreenNavigator navigator,
+            GameWorld world,
+            PlayerInput playerInput,
+            NavigationInput navigationInput) {
         super(assets);
-        if (navigator == null || world == null || input == null) {
+        if (navigator == null || world == null || playerInput == null || navigationInput == null) {
             throw new IllegalArgumentException("Los servicios de GameScreen no pueden ser null.");
         }
         this.navigator = navigator;
         this.world = world;
-        this.input = input;
+        this.playerInput = playerInput;
+        this.navigationInput = navigationInput;
         snapshot = world.snapshot();
     }
 
     @Override
     protected void updateScreen(float delta) {
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+        if (navigationInput.backJustPressed()) {
             navigator.showMainMenu();
             return;
         }
-        world.update(delta, input);
+        world.update(delta, playerInput);
         snapshot = world.snapshot();
     }
 
