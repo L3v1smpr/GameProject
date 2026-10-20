@@ -8,14 +8,14 @@ import com.badlogic.gdx.math.Vector2;
  * <p>La velocidad indicada es la total: se reparte en partes iguales entre el avance horizontal y
  * el descenso para que el zigzag no sea más rápido de lo que indica la cifra.
  */
-public final class ZigZagMovement implements MovementStrategy {
+public final class ZigZagMovementStrategy implements MovementStrategy {
 
     private static final float DIAGONAL_FACTOR = (float) Math.sqrt(0.5);
 
     private final float speed;
     private final float halfPeriodSeconds;
 
-    public ZigZagMovement(float speed, float halfPeriodSeconds) {
+    public ZigZagMovementStrategy(float speed, float halfPeriodSeconds) {
         if (!Float.isFinite(speed) || speed <= 0f) {
             throw new IllegalArgumentException("La velocidad debe ser positiva y finita.");
         }
@@ -24,6 +24,11 @@ public final class ZigZagMovement implements MovementStrategy {
         }
         this.speed = speed;
         this.halfPeriodSeconds = halfPeriodSeconds;
+    }
+
+    @Override
+    public float speed() {
+        return speed;
     }
 
     @Override

@@ -11,6 +11,9 @@ import com.badlogic.gdx.math.Vector2;
  */
 public interface MovementStrategy {
 
+    /** Velocidad de la estrategia, expresada en unidades por segundo. */
+    float speed();
+
     /**
      * Calcula la siguiente posición.
      *

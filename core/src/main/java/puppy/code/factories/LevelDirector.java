@@ -3,48 +3,81 @@ package puppy.code.factories;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import puppy.code.behaviors.LinearMovement;
+import puppy.code.behaviors.AlienAttackStrategy;
+import puppy.code.behaviors.LinearAttackStrategy;
+import puppy.code.behaviors.LinearMovementStrategy;
 import puppy.code.behaviors.MovementStrategy;
-import puppy.code.behaviors.ZigZagMovement;
+import puppy.code.behaviors.VAttackStrategy;
+import puppy.code.behaviors.ZigZagMovementStrategy;
 import puppy.code.config.GameConfig;
 import puppy.code.entities.Alien;
 
 /**
  * Dirige la construcción de las oleadas de cada nivel (Director del patrón Builder).
  *
- * <p>Decide cuántos aliens aparecen, dónde y con qué movimiento; delega la creación y la validación
- * de cada alien en {@link AlienBuilder}. Es el único lugar que elige la estrategia según el nivel.
+ * <p>Decide la vida, el movimiento y el ataque de los aliens de cada nivel; delega la creación y la
+ * validación de cada alien en {@link AlienBuilder}. La transición entre niveles pertenece al mundo.
  */
 public final class LevelDirector {
 
     private final MovementStrategy linearMovement;
     private final MovementStrategy zigZagMovement;
+    private final AlienAttackStrategy linearAttack;
+    private final AlienAttackStrategy vAttack;
 
     public LevelDirector() {
-        linearMovement = new LinearMovement(GameConfig.LINEAR_ALIEN_SPEED);
-        zigZagMovement = new ZigZagMovement(GameConfig.ZIGZAG_ALIEN_SPEED, GameConfig.ZIGZAG_HALF_PERIOD_SECONDS);
+        linearMovement = new LinearMovementStrategy(GameConfig.LINEAR_ALIEN_SPEED);
+        zigZagMovement = new ZigZagMovementStrategy(
+                GameConfig.ZIGZAG_ALIEN_SPEED, GameConfig.ZIGZAG_HALF_PERIOD_SECONDS);
+        linearAttack = new LinearAttackStrategy();
+        vAttack = new VAttackStrategy();
     }
 
     /** Crea una oleada nueva, de solo lectura, con los aliens repartidos a lo ancho del mundo. */
     public List<Alien> createWave(int level) {
-        if (level < 1) {
-            throw new IllegalArgumentException("El nivel debe ser mayor o igual que 1.");
-        }
-
         MovementStrategy movement = movementFor(level);
+        AlienAttackStrategy attack = attackFor(level);
+        int hitPoints = hitPointsFor(level);
         float spacing = GameConfig.WORLD_WIDTH / (GameConfig.WAVE_SIZE + 1);
         float spawnY = GameConfig.WORLD_HEIGHT - GameConfig.ALIEN_HEIGHT - GameConfig.ALIEN_SPAWN_MARGIN;
 
         List<Alien> wave = new ArrayList<>(GameConfig.WAVE_SIZE);
         for (int index = 1; index <= GameConfig.WAVE_SIZE; index++) {
             float spawnX = spacing * index - GameConfig.ALIEN_WIDTH / 2f;
-            wave.add(new AlienBuilder().position(spawnX, spawnY).movement(movement).build());
+            wave.add(new AlienBuilder()
+                    .position(spawnX, spawnY)
+                    .hitPoints(hitPoints)
+                    .movement(movement)
+                    .attack(attack)
+                    .build());
         }
         return Collections.unmodifiableList(wave);
     }
 
-    /** Provisional: los niveles impares usan movimiento lineal y los pares zigzag, hasta que se acuerde. */
     private MovementStrategy movementFor(int level) {
-        return level % 2 == 1 ? linearMovement : zigZagMovement;
+        if (level == 1) {
+            return linearMovement;
+        }
+        if (level == 2 || level == 3) {
+            return zigZagMovement;
+        }
+        throw new IllegalArgumentException("Solo se admiten los niveles 1, 2 y 3.");
+    }
+
+    private AlienAttackStrategy attackFor(int level) {
+        return level == 1 ? linearAttack : vAttack;
+    }
+
+    private int hitPointsFor(int level) {
+        switch (level) {
+            case 1:
+                return GameConfig.LEVEL_ONE_ALIEN_HIT_POINTS;
+            case 2:
+                return GameConfig.LEVEL_TWO_ALIEN_HIT_POINTS;
+            case 3:
+                return GameConfig.LEVEL_THREE_ALIEN_HIT_POINTS;
+            default:
+                throw new IllegalArgumentException("Solo se admiten los niveles 1, 2 y 3.");
+        }
     }
 }
