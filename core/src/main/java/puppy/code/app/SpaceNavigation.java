@@ -7,8 +7,10 @@ import puppy.code.input.KeyboardNavigationInput;
 import puppy.code.input.KeyboardPlayerInput;
 import puppy.code.input.NavigationInput;
 import puppy.code.input.PlayerInput;
+import puppy.code.screens.GameOverScreen;
 import puppy.code.screens.GameScreen;
 import puppy.code.screens.MenuScreen;
+import puppy.code.screens.VictoryScreen;
 import puppy.code.systems.CollisionSystem;
 import puppy.code.world.GameWorld;
 
@@ -51,8 +53,7 @@ public final class SpaceNavigation extends Game implements ScreenNavigator {
 
     @Override
     public void showGameOver(int finalScore, int levelReached) {
-        // Redirección provisional al menú hasta crear GameOverScreen
-        showMainMenu();
+        setScreen(new GameOverScreen(assets, this, navigationInput, finalScore, levelReached));
     }
 
     @Override
@@ -62,8 +63,7 @@ public final class SpaceNavigation extends Game implements ScreenNavigator {
 
     @Override
     public void showVictory(int finalScore) {
-        // Redirección provisional al menú hasta crear VictoryScreen
-        showMainMenu();
+        setScreen(new VictoryScreen(assets, this, navigationInput, finalScore));
     }
 
     @Override
