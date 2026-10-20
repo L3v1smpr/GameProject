@@ -17,6 +17,12 @@ public final class GameConfig {
     /** Velocidad de la nave, en px/s. */
     public static final float SHIP_SPEED = 260f;
 
+    /** Velocidad de los proyectiles del jugador, en px/s. */
+    public static final float PLAYER_PROJECTILE_SPEED = 450f;
+
+    /** Tiempo entre disparos mientras se mantiene presionada la tecla de fuego. */
+    public static final float PLAYER_FIRE_COOLDOWN_SECONDS = 0.25f;
+
     /** Punto fijo donde aparece la nave al iniciar y al perder una vida. */
     public static final float SHIP_START_X = WORLD_WIDTH / 2f - SHIP_WIDTH / 2f;
 
@@ -37,6 +43,18 @@ public final class GameConfig {
 
     /** Velocidad total del alien con zigzag, en px/s. */
     public static final float ZIGZAG_ALIEN_SPEED = 110f;
+
+    /** Velocidad de los proyectiles de los aliens, en px/s. */
+    public static final float ALIEN_PROJECTILE_SPEED = 220f;
+
+    /** Cadencia de disparo de los aliens, en segundos. */
+    public static final float ALIEN_FIRE_COOLDOWN_SECONDS = 1.8f;
+
+    public static final int LEVEL_ONE_ALIEN_HIT_POINTS = 1;
+    public static final int LEVEL_TWO_ALIEN_HIT_POINTS = 2;
+    public static final int LEVEL_THREE_ALIEN_HIT_POINTS = 3;
+
+    public static final int METEORITE_HIT_POINTS = 1;
 
     /** Provisional: segundos que dura cada tramo del zigzag antes de cambiar de lado. */
     public static final float ZIGZAG_HALF_PERIOD_SECONDS = 1.2f;
