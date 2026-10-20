@@ -1,7 +1,11 @@
 package puppy.code.screens;
 
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import puppy.code.app.ScreenNavigator;
 import puppy.code.assets.GameAssets;
 import puppy.code.input.NavigationInput;
@@ -12,8 +16,8 @@ import puppy.code.world.WorldSnapshot;
 
 /**
  * Pantalla principal de juego.
- * Actualiza la simulación y dibuja el snapshot de solo lectura utilizando
- * sprites reales, ciclo de vida de audio y elementos gráficos del HUD.
+ * Actualiza la simulación, gestiona el efecto visual de estela (AfterImage) del Dash,
+ * reproduce la banda sonora y renderiza el HUD y las entidades con sprites reales.
  */
 public final class GameScreen extends AbstractGameScreen {
 
@@ -23,8 +27,12 @@ public final class GameScreen extends AbstractGameScreen {
     private final GameWorld world;
     private final PlayerInput playerInput;
     private final NavigationInput navigationInput;
+    private final List<AfterImage> afterImages = new ArrayList<>();
+
     private WorldSnapshot snapshot;
     private float elapsedSeconds;
+    private float dashEffectTimer;
+    private float dashSpawnCooldown;
     private boolean returnToMenuRequested;
 
     public GameScreen(
@@ -46,14 +54,13 @@ public final class GameScreen extends AbstractGameScreen {
 
     @Override
     public void show() {
-        // Inicia la música de combate centralizada en bucle
         assets.playMusic(GameAssets.BACKGROUND_MUSIC, true, 0.45f);
     }
 
     @Override
     public void hide() {
-        // Corta el audio de inmediato al salir de la pantalla
         assets.stopMusic();
+        afterImages.clear();
     }
 
     @Override
@@ -67,7 +74,50 @@ public final class GameScreen extends AbstractGameScreen {
             navigator.showMainMenu();
             return;
         }
+
+        // 1. Transición real a GameOverScreen al perder todas las vidas
+        if (snapshot.getPhase() == GamePhase.GAME_OVER) {
+            navigator.showGameOver();
+            return;
+        }
+
         elapsedSeconds += delta;
+
+        // 2. Detección de Dash e instanciación de siluetas fantasma (AfterImage)
+        if (playerInput.dashJustPressed()) {
+            dashEffectTimer = 0.20f;
+            dashSpawnCooldown = 0f;
+        }
+
+        if (dashEffectTimer > 0f) {
+            dashEffectTimer -= delta;
+            dashSpawnCooldown -= delta;
+            if (dashSpawnCooldown <= 0f) {
+                TextureRegion[][] playerFrames = assets.getPlayerFrames();
+                TextureRegion shipRegion = (playerFrames != null) ? playerFrames[0][1] : null;
+                if (shipRegion != null) {
+                    WorldSnapshot.EntityView ship = snapshot.getShip();
+                    afterImages.add(new AfterImage(
+                            ship.getX(),
+                            ship.getY(),
+                            ship.getWidth(),
+                            ship.getHeight(),
+                            shipRegion,
+                            0.22f
+                    ));
+                }
+                dashSpawnCooldown = 0.04f;
+            }
+        }
+
+        // 3. Actualización y remoción de estelas que hayan expirado
+        Iterator<AfterImage> it = afterImages.iterator();
+        while (it.hasNext()) {
+            if (it.next().update(delta)) {
+                it.remove();
+            }
+        }
+
         world.update(delta, playerInput);
         snapshot = world.snapshot();
     }
@@ -77,7 +127,14 @@ public final class GameScreen extends AbstractGameScreen {
         assets.batch().setProjectionMatrix(camera.combined);
         assets.batch().begin();
 
-        // 1. Dibujo de la Nave del Jugador (Sprite real con parpadeo en invulnerabilidad)
+        // 1. Renderizado de estelas de Dash (Cian traslúcido)
+        for (AfterImage ai : afterImages) {
+            assets.batch().setColor(0.3f, 0.85f, 1f, ai.getAlpha());
+            assets.batch().draw(ai.getRegion(), ai.getX(), ai.getY(), ai.getWidth(), ai.getHeight());
+        }
+        assets.batch().setColor(Color.WHITE);
+
+        // 2. Nave del Jugador (Sprite real con parpadeo en invulnerabilidad)
         WorldSnapshot.EntityView ship = snapshot.getShip();
         TextureRegion[][] playerFrames = assets.getPlayerFrames();
         TextureRegion shipRegion = (playerFrames != null) ? playerFrames[0][1] : null;
@@ -89,7 +146,7 @@ public final class GameScreen extends AbstractGameScreen {
             assets.batch().draw(shipRegion, ship.getX(), ship.getY(), ship.getWidth(), ship.getHeight());
         }
 
-        // 2. Dibujo de Aliens (Sprite real invertido verticalmente mirando al jugador)
+        // 3. Aliens (Sprite real invertido verticalmente hacia el Sur)
         TextureRegion[][] alienFrames = assets.getAlienFrames();
         TextureRegion alienRegion = (alienFrames != null) ? alienFrames[0][1] : null;
 
@@ -99,7 +156,7 @@ public final class GameScreen extends AbstractGameScreen {
             }
         }
 
-        // 3. HUD: Vidas renderizadas con iconos gráficos
+        // 4. HUD: Vidas renderizadas con player_life.png
         Texture lifeTex = assets.getTexture(GameAssets.PLAYER_LIFE_TEXTURE);
         if (lifeTex != null) {
             for (int i = 0; i < snapshot.getLives(); i++) {
@@ -109,11 +166,8 @@ public final class GameScreen extends AbstractGameScreen {
             assets.font().draw(assets.batch(), "Vidas: " + snapshot.getLives(), 24f, 770f);
         }
 
-        assets.font().draw(assets.batch(), "W A S D: mover   |   ESC: volver al menu", 24f, 738f);
-
-        if (snapshot.getPhase() == GamePhase.GAME_OVER) {
-            assets.font().draw(assets.batch(), "GAME OVER", 540f, 420f);
-        }
+        // 5. Guía de controles acorde al mapeo del proyecto
+        assets.font().draw(assets.batch(), "W A S D: mover   |   I: fuego   |   O: dash   |   ESC: menu", 24f, 738f);
 
         assets.batch().end();
     }
