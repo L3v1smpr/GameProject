@@ -6,4 +6,8 @@ import com.badlogic.gdx.math.Vector2;
 public interface PlayerInput {
 
     Vector2 movementDirection();
+
+    boolean firePressed();
+
+    boolean dashJustPressed();
 }
