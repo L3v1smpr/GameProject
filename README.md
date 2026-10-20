@@ -1,53 +1,76 @@
 # Space Navigation
 
-Videojuego 2D de escritorio en Java 11 y LibGDX. El repositorio contiene una base arquitectónica
-inicial para desarrollar el juego por etapas; todavía no implementa la partida completa.
+Videojuego 2D de escritorio hecho en Java y LibGDX. Construimos una base común para seguir
+implementando por etapas. La versión actual permite abrir el menú, iniciar la partida y mover la nave;
+las funciones pendientes están separadas para no confundir estructura con juego terminado.
 
 ## Requisitos y ejecución
 
-- JDK 17 o superior para ejecutar Gradle (el plugin `construo` necesita ese runtime).
-- El código de `core` y `lwjgl3` se compila con `--release 11`.
+- JDK 11.
 - Windows: `gradlew.bat lwjgl3:run`.
 - Linux/macOS: `./gradlew lwjgl3:run`.
+- Verificación de compilación y pruebas existentes: `./gradlew test compileJava`.
 
-La aplicación abre el menú. Presiona **Enter** para iniciar y **W/A/S/D** para mover la nave. **Esc**
-vuelve al menú. La partida de prueba muestra figuras temporales, vidas y el estado Game Over. La pauta
-académica menciona JDK 11 u 8; confirmar con la cátedra si ejecutar Gradle con JDK 17 y generar clases
-compatibles con Java 11 satisface ese requisito. JDK 11 puede compilar `core` directamente, pero no
-ejecuta Gradle con la configuración actual de `construo`.
+El módulo `lwjgl3` conserva las tareas normales de ejecución, JAR y `dist`. Retiramos la configuración
+opcional de empaquetado nativo `construo` porque requería ejecutar Gradle con Java 17, contrario al
+entorno Java 11 solicitado.
 
-## Estructura
+## Importar el proyecto
 
-- `core`: reglas y modelo compartidos, entrada abstracta, patrones y pantallas.
-- `lwjgl3`: lanzador de escritorio.
-- `Planificacion/`: alcance, responsabilidades, diseño objetivo y plan de trabajo.
-- [UML_INICIAL.md](UML_INICIAL.md): diagrama del corte implementado, separado de las funciones pendientes.
+- **Eclipse:** importa la carpeta del proyecto como **Existing Gradle Project** y usa el wrapper incluido.
+- **NetBeans:** abre la carpeta raíz como proyecto Gradle y deja que NetBeans sincronice los módulos.
 
-## Patrones de diseño de la base
+La raíz contiene `settings.gradle`, `build.gradle`, `gradlew`, `gradlew.bat` y el directorio `gradle/`.
 
-| Requisito | Patrón | Código principal |
-| --- | --- | --- |
-| GM-6 | Singleton | `GameAssets` |
-| GM-7 | Strategy | `MovementStrategy`, `LinearMovement`, `ZigZagMovement`, `Alien` |
-| GM-8 | Template Method | `AbstractGameScreen`, `MenuScreen`, `GameScreen` |
-| GM-9 | Builder | `AlienBuilder`, `LevelDirector` |
+## Controles disponibles y preparados
 
-La clase abstracta `AbstractGameScreen` y las implementaciones de `MovementStrategy` aportan además
-la base de GM-4. El mundo conserva sus entidades y entrega a la pantalla un `WorldSnapshot` de solo
-lectura. En el UML se documenta cómo se aplican encapsulamiento, GRASP y SOLID.
+| Tecla | Estado en este corte |
+| --- | --- |
+| `W/A/S/D` | Mueve la nave, con dirección diagonal normalizada. |
+| `ENTER` | Inicia una partida desde el menú. |
+| `ESC` | Vuelve al menú durante la partida. |
+| `I` mantenida | La entrada ya se detecta y `PlayerWeapon` aplica una cadencia de 0,25 s; falta conectar el arma al mundo y resolver impactos. |
+| `O` | La entrada ya se detecta; el dash queda pendiente junto con su invulnerabilidad y resolución de daño. |
 
-## Alcance actual
+## Base implementada
 
-Implementado: estructura de pantallas, adaptadores de entrada, movimiento de la nave y aliens,
-construcción de oleadas, colisión física nave-alien, vidas, respawn e invulnerabilidad temporal.
+- `GameAssets` es el Singleton de recursos compartidos. Las rutas existentes están centralizadas como
+  constantes y las texturas, sonidos y música se cargan bajo demanda mediante `AssetManager`.
+- `AbstractGameScreen` fija `clearScreen → handleInput → update → draw` con un `render(delta)` final.
+- `AlienBuilder` valida posición, vida, movimiento, velocidad y ataque. `LevelDirector` prepara los
+  arquetipos de los niveles 1 a 3.
+- `Alien` delega movimiento y ataque en estrategias independientes. Los niveles tienen 1, 2 y 3 HP;
+  el primero se desplaza en línea y dispara una bala dirigida; los otros dos usan zigzag y una descarga
+  en V de dos balas a 45° por lado.
+- `PlayerProjectile`, `AlienProjectile`, `Meteorite` y `PlayerWeapon` son modelos listos para integrarse;
+  todavía no participan en el ciclo de `GameWorld`.
+- `GameEntity` conserva el estado común y entrega límites defensivos mediante `Collidable`.
 
-Pendiente: proyectiles, disparos, puntaje, cuotas y avance de niveles, dash, meteoritos, victoria,
-pantallas finales, récords persistentes y documentación final del reporte. Los tamaños de oleada y la
-selección de movimiento por nivel siguen siendo provisionales. Consulta `Planificacion/` antes de
-implementar decisiones que todavía no están acordadas.
+## Trabajo reservado para la siguiente IA
+
+Dejamos pendientes las secciones de colisiones/vidas/respawn e invulnerabilidad, fases/progresión y
+puntaje/leaderboard, junto con lo que depende de ellas: integrar proyectiles y meteoritos en el mundo,
+resolver impactos y HP, limpiar solo proyectiles al perder vida, completar dash, cambiar de nivel y
+pantalla, guardar el Top 3 e ingresar el nombre de tres caracteres. Las cuotas 15/30/45 ya están en la
+especificación, pero aún no las conectamos a la partida.
 
 ## Recursos
 
-Las figuras de la nave y los aliens son temporales, dibujadas con formas de LibGDX. Antes de usar los
-recursos del directorio `assets/` en la versión final, se debe confirmar y registrar su procedencia y
-licencia.
+Usamos únicamente las rutas ya presentes en `assets/`:
+
+| Tipo | Constante en `GameAssets` | Archivo |
+| --- | --- | --- |
+| Imagen | `PLAYER_SHIP_TEXTURE` | `MainShip3.png` |
+| Imagen | `PLAYER_PROJECTILE_TEXTURE` | `Rocket2.png` |
+| Imagen | `SMALL_METEORITE_TEXTURE` | `aGreySmall.png` |
+| Imagen | `MEDIUM_METEORITE_TEXTURE` | `aGreyMedium4.png` |
+| Imagen | `LARGE_METEORITE_TEXTURE` | `aGreyLarge.png` |
+| Audio | `EXPLOSION_SOUND` | `explosion.ogg` |
+| Audio | `HURT_SOUND` | `hurt.ogg` |
+| Audio | `POP_SOUND` | `pop-sound.mp3` |
+| Música | `BACKGROUND_MUSIC` | `piano-loops.wav` |
+
+No modificamos la carpeta `assets/` ni el paquete histórico `puppy.code.prototype`.
+
+Consulta [UML_INICIAL.md](UML_INICIAL.md) para el diagrama del corte y
+[`Planificacion/`](Planificacion/) para las decisiones de arquitectura.

@@ -1,6 +1,6 @@
 # Documentación del sistema
 
-**Estado:** estructura inicial que completaremos a medida que integremos las funciones.  
+**Estado:** estructura inicial que completaremos a medida que integremos las funciones.
 Vamos a documentar la versión que podamos ejecutar y revisar. Mientras no implementemos una función planeada, la mantendremos identificada como pendiente.
 
 ## Estado de la base de patrones
@@ -12,16 +12,19 @@ se conserva fuera del flujo de escritorio actual.
 
 | Requisito | Aplicación actual | Evidencia |
 | --- | --- | --- |
-| GM-4 | Clase abstracta usada por dos pantallas; estrategia de movimiento implementada por dos clases. | `AbstractGameScreen`, `MenuScreen`, `GameScreen`; `MovementStrategy`, `LinearMovement`, `ZigZagMovement`. |
+| GM-4 | Clase abstracta usada por dos pantallas; `MovementStrategy` tiene dos implementaciones. `GameEntity` es padre de las entidades del modelo. | `AbstractGameScreen`, `MenuScreen`, `GameScreen`; `MovementStrategy`, `LinearMovementStrategy`, `ZigZagMovementStrategy`, `GameEntity`. |
 | GM-5 | Estado privado, snapshots sin entidades mutables, entrada por interfaces y responsabilidades separadas. `GameWorld` coordina el flujo como Controller de GRASP. | `GameEntity`, `WorldSnapshot`, `PlayerInput`, `GameWorld`, `CollisionSystem`. |
-| GM-6 | Singleton de recursos de dibujo compartidos; la aplicación lo obtiene y administra su liberación. | `GameAssets`, `SpaceNavigation`. |
-| GM-7 | El alien delega su posición a una estrategia intercambiable. | `Alien`, `MovementStrategy`, `LinearMovement`, `ZigZagMovement`. |
-| GM-8 | Un método final fija limpiar, actualizar y dibujar; las subclases implementan sus dos pasos variables. | `AbstractGameScreen.render()`, `MenuScreen`, `GameScreen`. |
-| GM-9 | El Builder valida y construye aliens; el Director define la composición de la oleada. | `AlienBuilder`, `LevelDirector`. |
+| GM-6 | Singleton de recursos compartidos; `AssetManager` carga una vez y libera recursos al cerrar. | `GameAssets`, `SpaceNavigation`. |
+| GM-7 | El alien delega movimiento y descarga en estrategias separadas. | `Alien`, `MovementStrategy`, `LinearMovementStrategy`, `ZigZagMovementStrategy`, `AlienAttackStrategy`, `LinearAttackStrategy`, `VAttackStrategy`. |
+| GM-8 | Un método final fija limpiar, entrada, actualización y dibujo; cada pantalla implementa sus pasos variables. | `AbstractGameScreen.render()`, `MenuScreen`, `GameScreen`. |
+| GM-9 | El Builder valida configuración de alien y el Director elige arquetipos por nivel. | `AlienBuilder`, `LevelDirector`. |
 
 Las razones de diseño y el diagrama del corte implementado están en [UML_INICIAL.md](../UML_INICIAL.md).
-Esta base no equivale a la partida completa: el resto de GM-1 a GM-3 y las mecánicas de puntaje,
-disparos, cuotas, dash, victoria y persistencia aún requieren implementación y evidencia.
+Esta base no equivale a la partida completa. Nosotros dejamos los modelos de proyectil, meteorito,
+arma del jugador y estrategias de ataque sin integrar todavía con `GameWorld`. La resolución completa
+de colisiones/vidas/respawn, fases/progresión y puntaje/leaderboard queda reservada para la siguiente IA,
+junto con las integraciones que dependen de esas reglas. `UML_INICIAL.md` distingue esos modelos del
+comportamiento activo para no presentarlos como una partida ya terminada.
 
 ## 1. Descripción general
 
