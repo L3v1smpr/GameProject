@@ -12,7 +12,9 @@ import puppy.code.screens.MenuScreen;
 import puppy.code.systems.CollisionSystem;
 import puppy.code.world.GameWorld;
 
-/** Punto de inicio: conecta las dependencias compartidas y coordina las pantallas. */
+/**
+ * Punto de inicio: conecta las dependencias compartidas y coordina las pantallas.
+ */
 public final class SpaceNavigation extends Game implements ScreenNavigator {
 
     private GameAssets assets;
@@ -40,6 +42,28 @@ public final class SpaceNavigation extends Game implements ScreenNavigator {
     public void startNewGame() {
         GameWorld world = new GameWorld(levelDirector, collisionSystem);
         setScreen(new GameScreen(assets, this, world, playerInput, navigationInput));
+    }
+
+    @Override
+    public void showGameOver() {
+        showGameOver(0, 1);
+    }
+
+    @Override
+    public void showGameOver(int finalScore, int levelReached) {
+        // Redirección provisional al menú hasta crear GameOverScreen
+        showMainMenu();
+    }
+
+    @Override
+    public void showVictory() {
+        showVictory(0);
+    }
+
+    @Override
+    public void showVictory(int finalScore) {
+        // Redirección provisional al menú hasta crear VictoryScreen
+        showMainMenu();
     }
 
     @Override
