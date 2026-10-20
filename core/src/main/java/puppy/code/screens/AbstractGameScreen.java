@@ -6,9 +6,9 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import puppy.code.assets.GameAssets;
-import puppy.code.world.GameWorld;
+import puppy.code.config.GameConfig;
 
-/** Mantiene el orden común de limpiar, actualizar y dibujar las pantallas. */
+/** Mantiene el orden común de limpiar, actualizar y dibujar las pantallas (Template Method). */
 public abstract class AbstractGameScreen extends ScreenAdapter {
 
     protected final GameAssets assets;
@@ -21,7 +21,7 @@ public abstract class AbstractGameScreen extends ScreenAdapter {
         }
         this.assets = assets;
         camera = new OrthographicCamera();
-        viewport = new FitViewport(GameWorld.WIDTH, GameWorld.HEIGHT, camera);
+        viewport = new FitViewport(GameConfig.WORLD_WIDTH, GameConfig.WORLD_HEIGHT, camera);
     }
 
     @Override

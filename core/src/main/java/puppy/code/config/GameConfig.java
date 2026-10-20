@@ -3,13 +3,31 @@ package puppy.code.config;
 /**
  * Reúne los valores de balance y de tamaño del juego para ajustarlos sin tocar la lógica.
  *
- * <p>Las velocidades salen de lo acordado por el equipo. Los valores marcados como provisionales
- * siguen pendientes de decisión y se deben probar jugando.
+ * <p>Las velocidades, las vidas y la invulnerabilidad salen de lo acordado por el equipo. Los
+ * valores marcados como provisionales siguen pendientes de decisión y se deben probar jugando.
  */
 public final class GameConfig {
 
     public static final float WORLD_WIDTH = 1200f;
     public static final float WORLD_HEIGHT = 800f;
+
+    public static final float SHIP_WIDTH = 40f;
+    public static final float SHIP_HEIGHT = 36f;
+
+    /** Velocidad de la nave, en px/s. */
+    public static final float SHIP_SPEED = 260f;
+
+    /** Punto fijo donde aparece la nave al iniciar y al perder una vida. */
+    public static final float SHIP_START_X = WORLD_WIDTH / 2f - SHIP_WIDTH / 2f;
+
+    public static final float SHIP_START_Y = 55f;
+
+    public static final int INITIAL_LIVES = 3;
+
+    /** Segundos de invulnerabilidad al reaparecer después de perder una vida. */
+    public static final float RESPAWN_INVULNERABILITY_SECONDS = 1.5f;
+
+    public static final int FIRST_LEVEL = 1;
 
     public static final float ALIEN_WIDTH = 40f;
     public static final float ALIEN_HEIGHT = 32f;

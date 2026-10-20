@@ -2,12 +2,14 @@ package puppy.code.app;
 
 import com.badlogic.gdx.Game;
 import puppy.code.assets.GameAssets;
+import puppy.code.factories.LevelDirector;
 import puppy.code.input.KeyboardNavigationInput;
 import puppy.code.input.KeyboardPlayerInput;
 import puppy.code.input.NavigationInput;
 import puppy.code.input.PlayerInput;
 import puppy.code.screens.GameScreen;
 import puppy.code.screens.MenuScreen;
+import puppy.code.systems.CollisionSystem;
 import puppy.code.world.GameWorld;
 
 /** Punto de inicio: conecta las dependencias compartidas y coordina las pantallas. */
@@ -16,12 +18,16 @@ public final class SpaceNavigation extends Game implements ScreenNavigator {
     private GameAssets assets;
     private NavigationInput navigationInput;
     private PlayerInput playerInput;
+    private LevelDirector levelDirector;
+    private CollisionSystem collisionSystem;
 
     @Override
     public void create() {
         assets = GameAssets.getInstance();
         navigationInput = new KeyboardNavigationInput();
         playerInput = new KeyboardPlayerInput();
+        levelDirector = new LevelDirector();
+        collisionSystem = new CollisionSystem();
         showMainMenu();
     }
 
@@ -32,7 +38,7 @@ public final class SpaceNavigation extends Game implements ScreenNavigator {
 
     @Override
     public void startNewGame() {
-        GameWorld world = new GameWorld();
+        GameWorld world = new GameWorld(levelDirector, collisionSystem);
         setScreen(new GameScreen(assets, this, world, playerInput, navigationInput));
     }
 
