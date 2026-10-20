@@ -9,6 +9,7 @@ public final class MenuScreen extends AbstractGameScreen {
 
     private final ScreenNavigator navigator;
     private final NavigationInput navigationInput;
+    private boolean startRequested;
 
     public MenuScreen(GameAssets assets, ScreenNavigator navigator, NavigationInput navigationInput) {
         super(assets);
@@ -20,14 +21,19 @@ public final class MenuScreen extends AbstractGameScreen {
     }
 
     @Override
-    protected void updateScreen(float delta) {
-        if (navigationInput.confirmJustPressed()) {
+    protected void handleInput(float delta) {
+        startRequested = navigationInput.confirmJustPressed();
+    }
+
+    @Override
+    protected void update(float delta) {
+        if (startRequested) {
             navigator.startNewGame();
         }
     }
 
     @Override
-    protected void drawScreen() {
+    protected void draw(float delta) {
         assets.batch().setProjectionMatrix(camera.combined);
         assets.batch().begin();
         assets.font().draw(assets.batch(), "SPACE NAVIGATION", 470f, 455f);

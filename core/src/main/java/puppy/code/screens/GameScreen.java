@@ -21,6 +21,7 @@ public final class GameScreen extends AbstractGameScreen {
     private final NavigationInput navigationInput;
     private WorldSnapshot snapshot;
     private float elapsedSeconds;
+    private boolean returnToMenuRequested;
 
     public GameScreen(
             GameAssets assets,
@@ -40,8 +41,13 @@ public final class GameScreen extends AbstractGameScreen {
     }
 
     @Override
-    protected void updateScreen(float delta) {
-        if (navigationInput.backJustPressed()) {
+    protected void handleInput(float delta) {
+        returnToMenuRequested = navigationInput.backJustPressed();
+    }
+
+    @Override
+    protected void update(float delta) {
+        if (returnToMenuRequested) {
             navigator.showMainMenu();
             return;
         }
@@ -51,7 +57,7 @@ public final class GameScreen extends AbstractGameScreen {
     }
 
     @Override
-    protected void drawScreen() {
+    protected void draw(float delta) {
         assets.shapes().setProjectionMatrix(camera.combined);
         assets.shapes().begin(ShapeType.Filled);
 
