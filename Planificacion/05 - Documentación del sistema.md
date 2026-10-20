@@ -1,7 +1,30 @@
 # Documentación del sistema
 
-**Estado:** estructura inicial que completaremos a medida que integremos las funciones.  
+**Estado:** estructura inicial que completaremos a medida que integremos las funciones.
 Vamos a documentar la versión que podamos ejecutar y revisar. Mientras no implementemos una función planeada, la mantendremos identificada como pendiente.
+
+## Estado de la base de patrones
+
+El corte inicial se encuentra en la rama `feature/base-patrones`. La base aplica los cuatro patrones
+exigidos por GM-6 a GM-9 y mantiene separados el modelo, la entrada y la presentación. El estado
+descrito aquí corresponde a las clases del paquete nuevo; el código legado del paquete `prototype`
+se conserva fuera del flujo de escritorio actual.
+
+| Requisito | Aplicación actual | Evidencia |
+| --- | --- | --- |
+| GM-4 | Clase abstracta usada por dos pantallas; `MovementStrategy` tiene dos implementaciones. `GameEntity` es padre de las entidades del modelo. | `AbstractGameScreen`, `MenuScreen`, `GameScreen`; `MovementStrategy`, `LinearMovementStrategy`, `ZigZagMovementStrategy`, `GameEntity`. |
+| GM-5 | Estado privado, snapshots sin entidades mutables, entrada por interfaces y responsabilidades separadas. `GameWorld` coordina el flujo como Controller de GRASP. | `GameEntity`, `WorldSnapshot`, `PlayerInput`, `GameWorld`, `CollisionSystem`. |
+| GM-6 | Singleton de recursos compartidos; `AssetManager` carga una vez y libera recursos al cerrar. | `GameAssets`, `SpaceNavigation`. |
+| GM-7 | El alien delega movimiento y descarga en estrategias separadas. | `Alien`, `MovementStrategy`, `LinearMovementStrategy`, `ZigZagMovementStrategy`, `AlienAttackStrategy`, `LinearAttackStrategy`, `VAttackStrategy`. |
+| GM-8 | Un método final fija limpiar, entrada, actualización y dibujo; cada pantalla implementa sus pasos variables. | `AbstractGameScreen.render()`, `MenuScreen`, `GameScreen`. |
+| GM-9 | El Builder valida configuración de alien y el Director elige arquetipos por nivel. | `AlienBuilder`, `LevelDirector`. |
+
+Las razones de diseño y el diagrama del corte implementado están en [UML_INICIAL.md](../UML_INICIAL.md).
+Esta base no equivale a la partida completa. Nosotros dejamos los modelos de proyectil, meteorito,
+arma del jugador y estrategias de ataque sin integrar todavía con `GameWorld`. La resolución completa
+de colisiones/vidas/respawn, fases/progresión y puntaje/leaderboard queda reservada para la siguiente IA,
+junto con las integraciones que dependen de esas reglas. `UML_INICIAL.md` distingue esos modelos del
+comportamiento activo para no presentarlos como una partida ya terminada.
 
 ## 1. Descripción general
 

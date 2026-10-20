@@ -31,4 +31,14 @@ public final class KeyboardPlayerInput implements PlayerInput {
         }
         return direction;
     }
+
+    @Override
+    public boolean firePressed() {
+        return Gdx.input.isKeyPressed(Input.Keys.I);
+    }
+
+    @Override
+    public boolean dashJustPressed() {
+        return Gdx.input.isKeyJustPressed(Input.Keys.O);
+    }
 }

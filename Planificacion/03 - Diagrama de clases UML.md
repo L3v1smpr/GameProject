@@ -239,6 +239,11 @@ classDiagram
 
 ## Notas del diagrama
 
+Este diagrama sigue siendo la arquitectura objetivo completa. Para evitar confundir propuesta con
+código, el corte actualmente implementado y sus patrones GM-4 a GM-9 están registrados por separado
+en [UML_INICIAL.md](../UML_INICIAL.md). La pauta del curso confirma que los patrones requeridos son
+Singleton, Strategy, Template Method y Builder.
+
 - Usaremos `GameEntity` como clase abstracta para la nave, los aliens, los proyectiles y los meteoritos. Los meteoritos serán obstáculos y no contarán para las cuotas de enemigos.
 - Definimos `Collidable` como contrato de límites para colisión. Haremos que `bounds()` devuelva una copia para no exponer el rectángulo mutable interno.
 - Mantendremos las entidades dentro de `GameWorld` y evitaremos entregar la lista interna a una pantalla. `GameWorld` coordinará las vidas y la fase; `ScoreService` mantendrá el puntaje y `LevelManager` el nivel y su cuota. `CollisionSystem` detectará e informará impactos, y desde `GameWorld` aplicaremos sus efectos.
@@ -252,7 +257,8 @@ classDiagram
 - Guardaremos el puntaje con SQLite mediante `ScoreRepository` en `core` y `SQLiteScoreRepository` en `lwjgl3`. Sumaremos 100 puntos por alien, 50 por meteorito destruido, 25 si es chico y 75 si es grande. Mantendremos el puntaje al perder una vida y al cambiar de nivel. Al agotar las vidas, registraremos el resultado con un nombre de tres caracteres; al empezar una partida nueva, volveremos a cero. Nos falta definir cómo ingresaremos ese nombre y cómo resolveremos empates.
 - Dejaremos como propuesta pendiente de confirmación con el equipo la consulta del top 3 desde el menú y las pantallas finales.
 - Todavía tenemos que acordar si los aliens que quedan al completar una cuota huyen o explotan, qué efecto tienen los meteoritos al chocar con la nave y si se destruyen con un impacto. También nos falta acordar cómo distinguiremos los tamaños de meteorito, qué niveles usarán cada estrategia de movimiento y el límite exacto para retirar proyectiles.
-- Usaremos `GameAssets` como Singleton para GM-6. Desde la aplicación obtendremos la instancia y la inyectaremos en los objetos que la necesiten.
-- Aplicaremos Template Method en `AbstractGameScreen` para GM-8 cuando las pantallas concretas compartan ese ciclo.
-- Nos falta cotejar los patrones de diseño con la pauta de la cátedra. La interfaz actual `ScreenNavigator` solo tiene `showMainMenu()` y `startNewGame()`; añadiremos `showGameOver()` y `showVictory()` al código y lo revisaremos junto con el UML.
+- `GameAssets` ya aplica Singleton para GM-6. Desde `SpaceNavigation` obtenemos la instancia y la inyectamos en las pantallas; no usamos `AssetManager` todavía.
+- `AbstractGameScreen` ya aplica Template Method para GM-8: `render()` final conserva la secuencia de limpiar, actualizar y dibujar.
+- La pauta GM-6 a GM-9 exige Singleton, Strategy, Template Method y Builder; los cuatro patrones tienen una primera implementación. La explicación del problema, contexto, solución y UML se mantiene en `UML_INICIAL.md` y deberá incorporarse al reporte final.
+- La interfaz actual `ScreenNavigator` solo tiene `showMainMenu()` y `startNewGame()`; para las pantallas finales previstas añadiremos `showGameOver()` y `showVictory()`.
 - Actualizaremos las relaciones entre clases si cambia la implementación acordada. En el UML final mostraremos el código real y quitaremos las clases planeadas que no hayamos usado.

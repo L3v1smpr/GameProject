@@ -11,24 +11,42 @@ import puppy.code.entities.Ship;
 public final class WorldSnapshot {
 
     private final EntityView ship;
+    private final boolean shipInvulnerable;
     private final List<EntityView> aliens;
+    private final int lives;
+    private final GamePhase phase;
 
-    WorldSnapshot(Ship ship, List<Alien> aliens) {
+    WorldSnapshot(Ship ship, List<Alien> aliens, int lives, GamePhase phase) {
         this.ship = EntityView.from(ship);
+        this.shipInvulnerable = ship.isInvulnerable();
 
         List<EntityView> alienViews = new ArrayList<>(aliens.size());
         for (Alien alien : aliens) {
             alienViews.add(EntityView.from(alien));
         }
         this.aliens = Collections.unmodifiableList(alienViews);
+        this.lives = lives;
+        this.phase = phase;
     }
 
     public EntityView getShip() {
         return ship;
     }
 
+    public boolean isShipInvulnerable() {
+        return shipInvulnerable;
+    }
+
     public List<EntityView> getAliens() {
         return aliens;
+    }
+
+    public int getLives() {
+        return lives;
+    }
+
+    public GamePhase getPhase() {
+        return phase;
     }
 
     /** Valor inmutable; el mundo no expone sus entidades ni colecciones mutables. */

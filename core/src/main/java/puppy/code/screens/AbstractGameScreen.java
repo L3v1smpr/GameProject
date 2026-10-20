@@ -6,9 +6,9 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import puppy.code.assets.GameAssets;
-import puppy.code.world.GameWorld;
+import puppy.code.config.GameConfig;
 
-/** Mantiene el orden común de limpiar, actualizar y dibujar las pantallas. */
+/** Fija el ciclo de pantalla común (Template Method). */
 public abstract class AbstractGameScreen extends ScreenAdapter {
 
     protected final GameAssets assets;
@@ -21,20 +21,28 @@ public abstract class AbstractGameScreen extends ScreenAdapter {
         }
         this.assets = assets;
         camera = new OrthographicCamera();
-        viewport = new FitViewport(GameWorld.WIDTH, GameWorld.HEIGHT, camera);
+        viewport = new FitViewport(GameConfig.WORLD_WIDTH, GameConfig.WORLD_HEIGHT, camera);
     }
 
     @Override
     public final void render(float delta) {
-        ScreenUtils.clear(0.035f, 0.045f, 0.09f, 1f);
-        viewport.apply();
-        updateScreen(Math.max(0f, delta));
-        drawScreen();
+        float frameDelta = Math.max(0f, delta);
+        clearScreen();
+        handleInput(frameDelta);
+        update(frameDelta);
+        draw(frameDelta);
     }
 
-    protected abstract void updateScreen(float delta);
+    protected void clearScreen() {
+        ScreenUtils.clear(0.035f, 0.045f, 0.09f, 1f);
+        viewport.apply();
+    }
 
-    protected abstract void drawScreen();
+    protected abstract void handleInput(float delta);
+
+    protected abstract void update(float delta);
+
+    protected abstract void draw(float delta);
 
     @Override
     public final void resize(int width, int height) {

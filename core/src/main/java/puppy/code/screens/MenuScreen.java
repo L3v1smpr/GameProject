@@ -1,34 +1,39 @@
 package puppy.code.screens;
 
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
 import puppy.code.app.ScreenNavigator;
 import puppy.code.assets.GameAssets;
+import puppy.code.input.NavigationInput;
 
 /** Presenta el menú y delega las transiciones a la aplicación. */
 public final class MenuScreen extends AbstractGameScreen {
 
     private final ScreenNavigator navigator;
+    private final NavigationInput navigationInput;
+    private boolean startRequested;
 
-    public MenuScreen(GameAssets assets, ScreenNavigator navigator) {
+    public MenuScreen(GameAssets assets, ScreenNavigator navigator, NavigationInput navigationInput) {
         super(assets);
-        if (navigator == null) {
-            throw new IllegalArgumentException("ScreenNavigator no puede ser null.");
+        if (navigator == null || navigationInput == null) {
+            throw new IllegalArgumentException("Los servicios de MenuScreen no pueden ser null.");
         }
         this.navigator = navigator;
+        this.navigationInput = navigationInput;
     }
 
     @Override
-    protected void updateScreen(float delta) {
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)
-                || Gdx.input.isKeyJustPressed(Input.Keys.SPACE)
-                || Gdx.input.justTouched()) {
+    protected void handleInput(float delta) {
+        startRequested = navigationInput.confirmJustPressed();
+    }
+
+    @Override
+    protected void update(float delta) {
+        if (startRequested) {
             navigator.startNewGame();
         }
     }
 
     @Override
-    protected void drawScreen() {
+    protected void draw(float delta) {
         assets.batch().setProjectionMatrix(camera.combined);
         assets.batch().begin();
         assets.font().draw(assets.batch(), "SPACE NAVIGATION", 470f, 455f);
