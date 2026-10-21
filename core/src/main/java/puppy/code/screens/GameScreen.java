@@ -17,7 +17,7 @@ import puppy.code.world.WorldSnapshot;
 /**
  * Pantalla principal de juego.
  * Actualiza la simulación, gestiona el efecto visual de estela (AfterImage) del Dash,
- * reproduce la banda sonora y renderiza el HUD y las entidades con sprites reales.
+ * reproduce la banda sonora, renderiza el HUD y anima los estados de inclinación/disparo de la nave.
  */
 public final class GameScreen extends AbstractGameScreen {
 
@@ -75,7 +75,7 @@ public final class GameScreen extends AbstractGameScreen {
             return;
         }
 
-        // 1. Transición real a GameOverScreen al perder todas las vidas
+        // Transición a GameOverScreen al agotarse las vidas
         if (snapshot.getPhase() == GamePhase.GAME_OVER) {
             navigator.showGameOver();
             return;
@@ -83,7 +83,7 @@ public final class GameScreen extends AbstractGameScreen {
 
         elapsedSeconds += delta;
 
-        // 2. Detección de Dash e instanciación de siluetas fantasma (AfterImage)
+        // Detección de Dash e instanciación de siluetas AfterImage
         if (playerInput.dashJustPressed()) {
             dashEffectTimer = 0.20f;
             dashSpawnCooldown = 0f;
@@ -93,16 +93,15 @@ public final class GameScreen extends AbstractGameScreen {
             dashEffectTimer -= delta;
             dashSpawnCooldown -= delta;
             if (dashSpawnCooldown <= 0f) {
-                TextureRegion[][] playerFrames = assets.getPlayerFrames();
-                TextureRegion shipRegion = (playerFrames != null) ? playerFrames[0][1] : null;
-                if (shipRegion != null) {
+                TextureRegion currentShipRegion = resolveShipRegion(assets.getPlayerFrames());
+                if (currentShipRegion != null) {
                     WorldSnapshot.EntityView ship = snapshot.getShip();
                     afterImages.add(new AfterImage(
                             ship.getX(),
                             ship.getY(),
                             ship.getWidth(),
                             ship.getHeight(),
-                            shipRegion,
+                            currentShipRegion,
                             0.22f
                     ));
                 }
@@ -110,7 +109,7 @@ public final class GameScreen extends AbstractGameScreen {
             }
         }
 
-        // 3. Actualización y remoción de estelas que hayan expirado
+        // Limpieza de estelas expiradas
         Iterator<AfterImage> it = afterImages.iterator();
         while (it.hasNext()) {
             if (it.next().update(delta)) {
@@ -127,17 +126,16 @@ public final class GameScreen extends AbstractGameScreen {
         assets.batch().setProjectionMatrix(camera.combined);
         assets.batch().begin();
 
-        // 1. Renderizado de estelas de Dash (Cian traslúcido)
+        // 1. Renderizado de estelas de Dash (Cian traslúcido con la inclinación correspondiente)
         for (AfterImage ai : afterImages) {
             assets.batch().setColor(0.3f, 0.85f, 1f, ai.getAlpha());
             assets.batch().draw(ai.getRegion(), ai.getX(), ai.getY(), ai.getWidth(), ai.getHeight());
         }
         assets.batch().setColor(Color.WHITE);
 
-        // 2. Nave del Jugador (Sprite real con parpadeo en invulnerabilidad)
+        // 2. Nave del Jugador (Sprite reactivo a inclinación y disparo, con parpadeo de invulnerabilidad)
         WorldSnapshot.EntityView ship = snapshot.getShip();
-        TextureRegion[][] playerFrames = assets.getPlayerFrames();
-        TextureRegion shipRegion = (playerFrames != null) ? playerFrames[0][1] : null;
+        TextureRegion shipRegion = resolveShipRegion(assets.getPlayerFrames());
 
         boolean blinkVisible = !snapshot.isShipInvulnerable()
                 || (((int) (elapsedSeconds * BLINK_STEPS_PER_SECOND)) % 2 == 0);
@@ -146,9 +144,11 @@ public final class GameScreen extends AbstractGameScreen {
             assets.batch().draw(shipRegion, ship.getX(), ship.getY(), ship.getWidth(), ship.getHeight());
         }
 
-        // 3. Aliens (Sprite real invertido verticalmente hacia el Sur)
+        // 3. Aliens (Sprite real invertido hacia el Sur)
         TextureRegion[][] alienFrames = assets.getAlienFrames();
-        TextureRegion alienRegion = (alienFrames != null) ? alienFrames[0][1] : null;
+        TextureRegion alienRegion = (alienFrames != null && alienFrames.length > 0 && alienFrames[0].length > 1)
+                ? alienFrames[0][1]
+                : null;
 
         if (alienRegion != null) {
             for (WorldSnapshot.EntityView alien : snapshot.getAliens()) {
@@ -166,9 +166,42 @@ public final class GameScreen extends AbstractGameScreen {
             assets.font().draw(assets.batch(), "Vidas: " + snapshot.getLives(), 24f, 770f);
         }
 
-        // 5. Guía de controles acorde al mapeo del proyecto
+        // 5. Guía de navegación y controles
         assets.font().draw(assets.batch(), "W A S D: mover   |   I: fuego   |   O: dash   |   ESC: menu", 24f, 738f);
 
         assets.batch().end();
+    }
+
+    /**
+     * Resuelve el cuadro adecuado del sprite sheet de la nave considerando:
+     * - Inclinación lateral (Columna 0 = izquierda, 1 = centro, 2 = derecha).
+     * - Acción de disparo (Fila 1 si está disponible en la textura).
+     */
+    private TextureRegion resolveShipRegion(TextureRegion[][] frames) {
+        if (frames == null || frames.length == 0 || frames[0].length == 0) {
+            return null;
+        }
+
+        // Determinar fila: fila 1 para disparo si la textura cuenta con más de una fila
+        int targetRow = 0;
+        if (playerInput.firePressed() && frames.length > 1) {
+            targetRow = 1;
+        }
+
+        // Determinar columna según la dirección en el eje X
+        float dirX = playerInput.movementDirection().x;
+        int targetCol = 1; // Centro / reposo
+
+        if (dirX < -0.1f) {
+            targetCol = 0; // Giro a la izquierda
+        } else if (dirX > 0.1f) {
+            targetCol = 2; // Giro a la derecha
+        }
+
+        // Validación defensiva para evitar índices fuera de rango
+        int safeRow = Math.min(targetRow, frames.length - 1);
+        int safeCol = Math.max(0, Math.min(targetCol, frames[safeRow].length - 1));
+
+        return frames[safeRow][safeCol];
     }
 }
