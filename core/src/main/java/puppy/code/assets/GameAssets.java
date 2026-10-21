@@ -120,6 +120,12 @@ public final class GameAssets {
             this.alienFrames = TextureRegion.split(aSheet, 48, 48);
             for (TextureRegion[] fila : this.alienFrames) {
                 for (TextureRegion cuadro : fila) {
+                    // Inset de 1 pixel para corregir el sangrado de textura (Texture Bleeding) con la fila adyacente
+                    cuadro.setRegion(
+                            cuadro.getRegionX() + 1,
+                            cuadro.getRegionY() + 1,
+                            cuadro.getRegionWidth() - 2,
+                            cuadro.getRegionHeight() - 2);
                     cuadro.flip(false, true); // Inversión vertical: apunta al Sur
                 }
             }
