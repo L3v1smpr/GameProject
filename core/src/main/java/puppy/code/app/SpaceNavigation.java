@@ -1,0 +1,77 @@
+package puppy.code.app;
+
+import com.badlogic.gdx.Game;
+import puppy.code.assets.GameAssets;
+import puppy.code.factories.LevelDirector;
+import puppy.code.input.KeyboardNavigationInput;
+import puppy.code.input.KeyboardPlayerInput;
+import puppy.code.input.NavigationInput;
+import puppy.code.input.PlayerInput;
+import puppy.code.screens.GameOverScreen;
+import puppy.code.screens.GameScreen;
+import puppy.code.screens.MenuScreen;
+import puppy.code.screens.VictoryScreen;
+import puppy.code.systems.CollisionSystem;
+import puppy.code.world.GameWorld;
+
+/**
+ * Punto de inicio: conecta las dependencias compartidas y coordina las pantallas.
+ */
+public final class SpaceNavigation extends Game implements ScreenNavigator {
+
+    private GameAssets assets;
+    private NavigationInput navigationInput;
+    private PlayerInput playerInput;
+    private LevelDirector levelDirector;
+    private CollisionSystem collisionSystem;
+
+    @Override
+    public void create() {
+        assets = GameAssets.getInstance();
+        navigationInput = new KeyboardNavigationInput();
+        playerInput = new KeyboardPlayerInput();
+        levelDirector = new LevelDirector();
+        collisionSystem = new CollisionSystem();
+        showMainMenu();
+    }
+
+    @Override
+    public void showMainMenu() {
+        setScreen(new MenuScreen(assets, this, navigationInput));
+    }
+
+    @Override
+    public void startNewGame() {
+        GameWorld world = new GameWorld(levelDirector, collisionSystem);
+        setScreen(new GameScreen(assets, this, world, playerInput, navigationInput));
+    }
+
+    @Override
+    public void showGameOver() {
+        showGameOver(0, 1);
+    }
+
+    @Override
+    public void showGameOver(int finalScore, int levelReached) {
+        setScreen(new GameOverScreen(assets, this, navigationInput, finalScore, levelReached));
+    }
+
+    @Override
+    public void showVictory() {
+        showVictory(0);
+    }
+
+    @Override
+    public void showVictory(int finalScore) {
+        setScreen(new VictoryScreen(assets, this, navigationInput, finalScore));
+    }
+
+    @Override
+    public void dispose() {
+        super.dispose();
+        if (assets != null) {
+            assets.dispose();
+            assets = null;
+        }
+    }
+}
