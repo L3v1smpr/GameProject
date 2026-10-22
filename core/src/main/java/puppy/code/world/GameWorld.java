@@ -2,27 +2,31 @@ package puppy.code.world;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import puppy.code.config.GameConfig;
 import puppy.code.entities.Alien;
+import puppy.code.entities.PlayerProjectile;
 import puppy.code.entities.Ship;
 import puppy.code.factories.LevelDirector;
 import puppy.code.input.PlayerInput;
 import puppy.code.systems.CollisionSystem;
+import puppy.code.systems.PlayerWeapon;
 
 /**
  * Es dueño de las entidades y coordina la partida (Controller de GRASP).
- *
- * <p>Recibe sus colaboradores por constructor: el {@link CollisionSystem} solo detecta contactos y
- * el {@link LevelDirector} solo construye oleadas; este mundo decide qué consecuencias aplicar.
  */
 public final class GameWorld {
 
     private final CollisionSystem collisions;
     private final LevelDirector levelDirector;
+    private final PlayerWeapon playerWeapon;
     private final Ship ship;
     private final List<Alien> aliens = new ArrayList<>();
+    private final List<PlayerProjectile> playerProjectiles = new ArrayList<>();
     private int level;
     private int lives;
+    private int score;
+    private int aliensDestroyedInLevel;
     private GamePhase phase;
 
     public GameWorld(LevelDirector levelDirector, CollisionSystem collisions) {
@@ -31,7 +35,8 @@ public final class GameWorld {
         }
         this.levelDirector = levelDirector;
         this.collisions = collisions;
-        ship = new Ship(
+        this.playerWeapon = new PlayerWeapon();
+        this.ship = new Ship(
                 GameConfig.SHIP_START_X,
                 GameConfig.SHIP_START_Y,
                 GameConfig.SHIP_WIDTH,
@@ -40,13 +45,15 @@ public final class GameWorld {
         restart();
     }
 
-    /** Deja la partida en su estado inicial: tres vidas, primer nivel y una oleada nueva. */
     public void restart() {
         level = GameConfig.FIRST_LEVEL;
         lives = GameConfig.INITIAL_LIVES;
-        phase = GamePhase.PLAYING;
+        score = 0;
+        aliensDestroyedInLevel = 0;
+        phase = GamePhase.ACTIVE;
         ship.respawn(GameConfig.SHIP_START_X, GameConfig.SHIP_START_Y, 0f);
         aliens.clear();
+        playerProjectiles.clear();
         spawnWave();
     }
 
@@ -54,43 +61,41 @@ public final class GameWorld {
         if (input == null) {
             throw new IllegalArgumentException("PlayerInput no puede ser null.");
         }
-        if (phase != GamePhase.PLAYING) {
+        if (phase != GamePhase.ACTIVE) {
             return;
         }
 
         ship.update(delta, input.movementDirection(), GameConfig.WORLD_WIDTH, GameConfig.WORLD_HEIGHT);
+        
+        Optional<PlayerProjectile> newProjectile = playerWeapon.update(delta, input.firePressed(), ship);
+        newProjectile.ifPresent(playerProjectiles::add);
+
+        for (PlayerProjectile projectile : playerProjectiles) {
+            projectile.update(delta);
+        }
+        playerProjectiles.removeIf(p -> !p.isActive() || p.getY() > GameConfig.WORLD_HEIGHT);
+
         for (Alien alien : aliens) {
             alien.update(delta, GameConfig.WORLD_WIDTH);
         }
 
         aliens.removeIf(Alien::hasLeftWorld);
-        resolveShipContacts();
+        resolveCollisions();
         aliens.removeIf(alien -> !alien.isActive());
 
-        if (phase == GamePhase.PLAYING && aliens.isEmpty()) {
+        if (phase == GamePhase.ACTIVE && aliens.isEmpty()) {
             spawnWave();
         }
     }
 
-    public WorldSnapshot snapshot() {
-        return new WorldSnapshot(ship, aliens, lives, phase);
-    }
-
-    /** Durante la invulnerabilidad los aliens atraviesan la nave sin hacerle daño ni desaparecer. */
-    private void resolveShipContacts() {
-        if (ship.isInvulnerable()) {
-            return;
+    private void resolveCollisions() {
+        if (!ship.isInvulnerable()) {
+            List<Alien> contacts = collisions.collidingWith(ship, aliens);
+            for (Alien alien : contacts) {
+                alien.deactivate();
+                loseLife();
+            }
         }
-
-        List<Alien> contacts = collisions.collidingWith(ship, aliens);
-        if (contacts.isEmpty()) {
-            return;
-        }
-
-        for (Alien alien : contacts) {
-            alien.deactivate();
-        }
-        loseLife();
     }
 
     private void loseLife() {
@@ -108,5 +113,9 @@ public final class GameWorld {
 
     private void spawnWave() {
         aliens.addAll(levelDirector.createWave(level));
+    }
+
+    public WorldSnapshot snapshot() {
+        return new WorldSnapshot(ship, aliens, playerProjectiles, lives, score, level, phase);
     }
 }
