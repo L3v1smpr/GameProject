@@ -1,14 +1,19 @@
 package puppy.code.screens;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
+import com.badlogic.gdx.math.Interpolation;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import puppy.code.app.ScreenNavigator;
 import puppy.code.assets.GameAssets;
+import puppy.code.config.GameConfig;
 import puppy.code.input.NavigationInput;
 import puppy.code.input.PlayerInput;
 import puppy.code.world.GamePhase;
@@ -22,6 +27,14 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
     private static final float BLINK_STEPS_PER_SECOND = 10f;
     private static final float DASH_EFFECT_SECONDS = 0.20f;
     private static final float DASH_IMAGE_INTERVAL_SECONDS = 0.04f;
+    private static final float TRANSITION_DURATION_SECONDS = 1.8f;
+    private static final float BASE_MUSIC_VOLUME = 0.45f;
+
+    private enum TransitionType {
+        NONE,
+        GAME_OVER_FADE,
+        VICTORY_FADE
+    }
 
     private final ScreenNavigator navigator;
     private final GameWorld world;
@@ -34,6 +47,10 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
     private float dashEffectTimer;
     private float dashSpawnCooldown;
     private boolean returnToMenuRequested;
+
+    private TransitionType activeTransition = TransitionType.NONE;
+    private float transitionTimer;
+    private boolean transitionCompleted;
 
     public GameScreen(
             GameAssets assets,
@@ -55,7 +72,10 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
 
     @Override
     public void show() {
-        assets.playMusic(GameAssets.BACKGROUND_MUSIC, true, 0.45f);
+        activeTransition = TransitionType.NONE;
+        transitionTimer = 0f;
+        transitionCompleted = false;
+        assets.playMusic(GameAssets.BACKGROUND_MUSIC, true, BASE_MUSIC_VOLUME);
     }
 
     @Override
@@ -76,19 +96,43 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
             return;
         }
 
+        // Transición cinemática con easing y fade out sonoro
+        if (activeTransition != TransitionType.NONE) {
+            transitionTimer = Math.max(0f, transitionTimer - delta);
+            float linearProgress = Math.min(1f, 1f - (transitionTimer / TRANSITION_DURATION_SECONDS));
+            float soundProgress = Interpolation.pow2In.apply(linearProgress);
+
+            Music bgm = assets.getMusic(GameAssets.BACKGROUND_MUSIC);
+            if (bgm != null && bgm.isPlaying()) {
+                bgm.setVolume(Math.max(0f, BASE_MUSIC_VOLUME * (1f - soundProgress)));
+            }
+
+            if (transitionTimer <= 0f && !transitionCompleted) {
+                transitionCompleted = true;
+                if (activeTransition == TransitionType.GAME_OVER_FADE) {
+                    navigator.showGameOver(snapshot.getScore(), snapshot.getLevel());
+                } else if (activeTransition == TransitionType.VICTORY_FADE) {
+                    navigator.showVictory(snapshot.getScore());
+                }
+            }
+            return;
+        }
+
         if (snapshot.getPhase() == GamePhase.GAME_OVER) {
-            navigator.showGameOver(snapshot.getScore(), snapshot.getLevel());
+            activeTransition = TransitionType.GAME_OVER_FADE;
+            transitionTimer = TRANSITION_DURATION_SECONDS;
             return;
         }
         if (snapshot.getPhase() == GamePhase.VICTORY) {
-            navigator.showVictory(snapshot.getScore());
+            activeTransition = TransitionType.VICTORY_FADE;
+            transitionTimer = TRANSITION_DURATION_SECONDS;
             return;
         }
         if (snapshot.getPhase() == GamePhase.LEVEL_COMPLETED) {
             if (navigationInput.anyActionJustPressed()) {
                 world.advanceToNextLevel();
                 snapshot = world.snapshot();
-                assets.playMusic(GameAssets.BACKGROUND_MUSIC, true, 0.45f);
+                assets.playMusic(GameAssets.BACKGROUND_MUSIC, true, BASE_MUSIC_VOLUME);
             }
             return;
         }
@@ -129,6 +173,12 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
 
     @Override
     protected void draw(float delta) {
+        // Bloquea el renderizado de entidades en el fotograma de cambio para eliminar el parpadeo
+        if (transitionCompleted) {
+            drawFinalCover();
+            return;
+        }
+
         assets.batch().setProjectionMatrix(camera.combined);
         assets.batch().begin();
 
@@ -147,6 +197,58 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
 
         assets.batch().end();
         drawFallbackEntities();
+        drawTransitionOverlay();
+    }
+
+    /** Dibuja el filtro en progreso con blending alfa sobre la batalla. */
+    private void drawTransitionOverlay() {
+        if (activeTransition == TransitionType.NONE) {
+            return;
+        }
+
+        float linearProgress = Math.min(1f, 1f - (transitionTimer / TRANSITION_DURATION_SECONDS));
+        float progress = Interpolation.fade.apply(linearProgress);
+
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+
+        assets.shapes().setProjectionMatrix(camera.combined);
+        assets.shapes().begin(ShapeType.Filled);
+
+        if (activeTransition == TransitionType.GAME_OVER_FADE) {
+            assets.shapes().setColor(
+                    GameOverScreen.BG_RED_R,
+                    GameOverScreen.BG_RED_G,
+                    GameOverScreen.BG_RED_B,
+                    progress);
+        } else if (activeTransition == TransitionType.VICTORY_FADE) {
+            assets.shapes().setColor(1f, 1f, 1f, progress);
+        }
+
+        assets.shapes().rect(0f, 0f, GameConfig.WORLD_WIDTH, GameConfig.WORLD_HEIGHT);
+        assets.shapes().end();
+
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+    }
+
+    /** Cubre el 100% de la pantalla en sólido justo en el frame en que se cambia de pantalla. */
+    private void drawFinalCover() {
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+        assets.shapes().setProjectionMatrix(camera.combined);
+        assets.shapes().begin(ShapeType.Filled);
+
+        if (activeTransition == TransitionType.GAME_OVER_FADE) {
+            assets.shapes().setColor(
+                    GameOverScreen.BG_RED_R,
+                    GameOverScreen.BG_RED_G,
+                    GameOverScreen.BG_RED_B,
+                    1f);
+        } else if (activeTransition == TransitionType.VICTORY_FADE) {
+            assets.shapes().setColor(Color.WHITE);
+        }
+
+        assets.shapes().rect(0f, 0f, GameConfig.WORLD_WIDTH, GameConfig.WORLD_HEIGHT);
+        assets.shapes().end();
     }
 
     private void drawShip() {

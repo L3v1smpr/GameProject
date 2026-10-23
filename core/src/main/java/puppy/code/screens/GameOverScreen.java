@@ -1,6 +1,7 @@
 package puppy.code.screens;
 
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.utils.ScreenUtils;
 import java.util.List;
 import puppy.code.app.ScreenNavigator;
 import puppy.code.assets.GameAssets;
@@ -10,6 +11,11 @@ import puppy.code.systems.ScoreRepository;
 
 /** Presenta la derrota y permite guardar iniciales si el resultado entra al Top 3. */
 public final class GameOverScreen extends AbstractGameScreen {
+
+    // Color de fondo calibrado para coincidir con el banner arcade de Game Over
+    public static final float BG_RED_R = 1.0f;
+    public static final float BG_RED_G = 23f / 255f;
+    public static final float BG_RED_B = 0.0f;
 
     private final ScreenNavigator navigator;
     private final NavigationInput input;
@@ -51,6 +57,18 @@ public final class GameOverScreen extends AbstractGameScreen {
     @Override
     public void hide() {
         assets.stopMusic();
+    }
+
+    @Override
+    protected void clearScreen() {
+        // Limpia el búfer con el tono de rojo exacto compartido con GameScreen
+        ScreenUtils.clear(BG_RED_R, BG_RED_G, BG_RED_B, 1f);
+        viewport.apply();
+    }
+
+    @Override
+    protected void renderBackground(float delta) {
+        // Anula el Starfield y la textura espacial para conservar el fondo rojo uniforme
     }
 
     @Override
