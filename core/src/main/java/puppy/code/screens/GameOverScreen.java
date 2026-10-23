@@ -1,5 +1,6 @@
 package puppy.code.screens;
 
+import com.badlogic.gdx.graphics.Texture;
 import java.util.List;
 import puppy.code.app.ScreenNavigator;
 import puppy.code.assets.GameAssets;
@@ -44,7 +45,7 @@ public final class GameOverScreen extends AbstractGameScreen {
     @Override
     public void show() {
         assets.stopMusic();
-        assets.playSound(GameAssets.POP_SOUND, 0.6f);
+        assets.playMusic(GameAssets.GAMEOVER_MUSIC, false, 0.6f);
     }
 
     @Override
@@ -92,7 +93,16 @@ public final class GameOverScreen extends AbstractGameScreen {
         assets.batch().setProjectionMatrix(camera.combined);
         assets.batch().begin();
 
-        assets.font().draw(assets.batch(), "GAME OVER", 540f, 480f);
+        Texture banner = assets.getTexture(GameAssets.BANNER_GAMEOVER_TEXTURE);
+        if (banner != null) {
+            float bannerWidth = 400f;
+            float bannerHeight = 200f;
+            float x = (camera.viewportWidth - bannerWidth) / 2f;
+            float y = (camera.viewportHeight - bannerHeight) / 2f + 60f;
+            assets.batch().draw(banner, x, y, bannerWidth, bannerHeight);
+        } else {
+            assets.font().draw(assets.batch(), "GAME OVER", 540f, 480f);
+        }
 
         assets.font().draw(assets.batch(), "Puntaje final: " + finalScore, 520f, 330f);
         assets.font().draw(assets.batch(), "Nivel alcanzado: " + levelReached, 520f, 300f);

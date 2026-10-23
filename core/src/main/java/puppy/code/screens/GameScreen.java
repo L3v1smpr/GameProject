@@ -168,10 +168,18 @@ public final class GameScreen extends AbstractGameScreen {
 
     private void drawProjectiles() {
         Texture playerAmmo = assets.getTexture(GameAssets.PLAYER_AMMO_TEXTURE);
+        Texture alienAmmo = assets.getTexture(GameAssets.ALIEN_AMMO_TEXTURE);
         for (WorldSnapshot.EntityView projectile : snapshot.getPlayerProjectiles()) {
             if (playerAmmo != null) {
                 assets.batch().draw(
                         playerAmmo, projectile.getX(), projectile.getY(),
+                        projectile.getWidth(), projectile.getHeight());
+            }
+        }
+        for (WorldSnapshot.EntityView projectile : snapshot.getAlienProjectiles()) {
+            if (alienAmmo != null) {
+                assets.batch().draw(
+                        alienAmmo, projectile.getX(), projectile.getY(),
                         projectile.getWidth(), projectile.getHeight());
             }
         }
@@ -189,7 +197,14 @@ public final class GameScreen extends AbstractGameScreen {
     }
 
     private void drawHud() {
-        assets.font().draw(assets.batch(), "Vidas: " + snapshot.getLives(), 24f, 770f);
+        Texture lifeTexture = assets.getTexture(GameAssets.PLAYER_LIFE_TEXTURE);
+        if (lifeTexture != null) {
+            for (int index = 0; index < snapshot.getLives(); index++) {
+                assets.batch().draw(lifeTexture, 24f + index * 28f, 750f, 24f, 24f);
+            }
+        } else {
+            assets.font().draw(assets.batch(), "Vidas: " + snapshot.getLives(), 24f, 770f);
+        }
 
         assets.font().draw(
                 assets.batch(),
@@ -248,7 +263,8 @@ public final class GameScreen extends AbstractGameScreen {
         boolean aliensNeedFallback = resolveAlienRegion() == null;
         boolean playerProjectilesNeedFallback = assets.getTexture(GameAssets.PLAYER_AMMO_TEXTURE) == null
                 && !snapshot.getPlayerProjectiles().isEmpty();
-        boolean alienProjectilesNeedFallback = !snapshot.getAlienProjectiles().isEmpty();
+        boolean alienProjectilesNeedFallback = assets.getTexture(GameAssets.ALIEN_AMMO_TEXTURE) == null
+                && !snapshot.getAlienProjectiles().isEmpty();
         if (!shipNeedsFallback && !aliensNeedFallback
                 && !playerProjectilesNeedFallback && !alienProjectilesNeedFallback) {
             return;
