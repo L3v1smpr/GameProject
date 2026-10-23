@@ -30,7 +30,9 @@ Al completar los niveles 1 o 2, esperamos una tecla o un clic para continuar. Co
 | W/A/S/D | Mover la nave en cuatro direcciones y en diagonal |
 | I mantenida | Disparar cada 0,25 segundos |
 | O | Hacer dash e ignorar daño durante 0,15 segundos; recarga de 3 segundos |
-| Enter | Iniciar, continuar desde una pantalla final o reiniciar |
+| A-Z | Ingresar iniciales si el puntaje clasifica al Top 3 |
+| Retroceso | Borrar una inicial |
+| Enter | Iniciar, continuar, guardar iniciales o reiniciar |
 | Escape | Volver al menú durante la partida o desde una pantalla final |
 
 El movimiento usa delta y normaliza las diagonales. El dash usa provisionalmente un multiplicador de velocidad de 3; todavía debemos validar ese balance al jugar.
@@ -39,8 +41,8 @@ Los aliens disparan cada 1,8 segundos. Perder una vida devuelve la nave a su pos
 
 ## Estructura y estado de esta entrega
 
-GameWorld coordina la partida y expone un WorldSnapshot de solo lectura. Las pantallas dibujan ese estado. PlayerWeapon regula el disparo; CollisionSystem detecta impactos; Alien delega movimiento y ataque en estrategias; AlienBuilder y LevelDirector crean aliens para cada nivel. GameAssets administra los recursos compartidos y AbstractGameScreen fija el ciclo de renderizado.
+GameWorld coordina la partida y expone un WorldSnapshot de solo lectura. PlayerWeapon regula el disparo; CollisionSystem detecta impactos; Alien delega movimiento y ataque en estrategias; AlienBuilder y LevelDirector crean aliens para cada nivel. GameAssets administra recursos compartidos con Singleton y AbstractGameScreen fija el ciclo de renderizado mediante Template Method.
 
-La clase ScoreRepository ya permite guardar resultados localmente, pero todavía no la conectamos con Game Over, Victoria ni una interfaz para ingresar el nombre de tres caracteres. La captura y consulta del Top 3 queda pendiente para la siguiente etapa. También debemos validar jugando el balance provisional del dash y los recursos audiovisuales.
+ScoreRepository conserva el Top 3 con LibGDX Preferences. Cuando un resultado supera el tercer puntaje, ingresamos tres letras A-Z en Game Over o Victoria y pulsamos Enter para guardarlo. El menú y las pantallas finales muestran los resultados persistidos en el equipo local.
 
-Usamos las rutas de assets/ existentes y dejamos intactos tanto ese directorio como el código histórico de puppy.code.prototype. El UML de la arquitectura está en UML_INICIAL.md; las decisiones y pendientes del equipo están en Planificacion/.
+Volvimos a activar los recursos gráficos y de audio que ya estaban en assets/: player_sheet.png, alien_sheet.png, alien_static.png, player_ammo.png, alien_ammo.png, player_life.png, los tres tamaños de meteorito y los banners de Game Over y Victoria. La partida usa background_music.MP3 y Game Over usa gameover.mp3; mantenemos explosion.ogg, hurt.ogg y pop-sound.mp3 como efectos disponibles. No modificamos los archivos de assets/ ni el código histórico de puppy.code.prototype. No conocemos la fuente original ni la licencia de esos recursos, y el repositorio no contiene un registro verificable de esa atribución. El UML está en UML_INICIAL.md; la explicación de los requisitos GM y los patrones está en REPORTE_PROYECTO.md.

@@ -4,7 +4,7 @@
 **Rama revisada:** feature/rama-Alex
 **Fecha de revisión:** 23 de octubre de 2026
 
-Nosotros integramos un ciclo de partida de escritorio con movimiento, disparos, daño, vidas, respawn, meteoritos, puntaje y progresión por niveles. La documentación describe el corte que se compila. Dejamos el ingreso del nombre y la conexión del Top 3 para otra etapa.
+Nosotros integramos un ciclo de partida de escritorio con movimiento, disparos, daño, vidas, respawn, meteoritos, puntaje, progresión por niveles y registro local del Top 3 con iniciales. La documentación describe el corte compilado de la rama feature/rama-Alex.
 
 ## 1. Descripción general
 
@@ -17,8 +17,10 @@ Nosotros proponemos un juego arcade 2D en el que pilotamos una nave, esquivamos 
 | W/A/S/D | Mover la nave; normalizamos las diagonales. |
 | I mantenida | Disparar cada 0,25 segundos. |
 | O | Ejecutar dash durante 0,15 segundos; recarga de 3 segundos. |
+| A-Z | Ingresar iniciales si el puntaje clasifica al Top 3. |
+| Retroceso | Borrar una inicial durante el registro. |
 | Cualquier tecla o clic | Continuar desde Nivel Superado. |
-| Enter | Iniciar o reiniciar la partida. |
+| Enter | Iniciar, guardar iniciales o reiniciar la partida. |
 | Escape | Volver al menú. |
 
 Nosotros usamos el tiempo delta en el movimiento y en los temporizadores. El multiplicador 3x del dash es provisional, porque las bases no fijan su fuerza.
@@ -31,7 +33,7 @@ Nosotros compilamos con JDK 11 y Gradle Wrapper:
 - Linux/macOS: ./gradlew :lwjgl3:run
 - Verificación: gradlew.bat test compileJava o ./gradlew test compileJava
 
-La verificación compila core y lwjgl3. El repositorio no contiene fuentes de prueba, por lo que Gradle informa las tareas test como NO-SOURCE.
+En una verificación anterior Gradle compiló core y lwjgl3 y reportó test como NO-SOURCE. En esta revisión aislada el wrapper no pudo conectar con su daemon; compilamos core y lwjgl3 con javac 11 y el classpath local.
 
 ## 4. Estructura del proyecto
 
@@ -49,11 +51,13 @@ Nosotros separamos la aplicación en core y lwjgl3. El paquete app conecta la ap
 | LevelDirector y AlienBuilder | Construyen las oleadas con la configuración de cada nivel. |
 | GameScreen | Lee controles de juego, actualiza GameWorld y dibuja el snapshot. |
 | ScreenNavigator | Expone las transiciones a menú, juego, Game Over y Victoria. |
-| GameAssets | Administra los recursos compartidos mediante AssetManager. |
+| GameAssets | Administra los recursos compartidos mediante AssetManager y Singleton. |
+| ScoreRepository | Persiste el Top 3 local con Preferences. |
+| InitialsInput | Aísla las teclas usadas para ingresar y borrar iniciales. |
 
 ## 6. Flujo de una partida
 
-Nosotros iniciamos desde MenuScreen y creamos GameWorld al comenzar. El jugador mueve la nave con WASD y dispara manteniendo I. El dash O sigue la dirección elegida o avanza hacia arriba si no hay movimiento.
+Nosotros iniciamos desde MenuScreen y creamos GameWorld al comenzar. El jugador mueve la nave con WASD y dispara manteniendo I. El dash O sigue la dirección elegida o avanza hacia arriba si no hay movimiento. Si el resultado final supera el tercer puntaje, Game Over o Victoria permiten registrar tres iniciales y mostrar el Top 3.
 
 Los aliens del nivel 1 se desplazan en línea, tienen 1 HP y disparan una bala dirigida. Los niveles 2 y 3 usan zigzag, tienen 2 y 3 HP, y disparan en V. Destruir un alien suma 100 puntos y solo cuenta para la cuota cuando llega a 0 HP. Los meteoritos descienden, se destruyen con un impacto y suman 25, 50 o 75 puntos.
 
@@ -61,17 +65,17 @@ Al recibir daño perdemos una vida. Si quedan vidas, reaparecemos en el punto in
 
 ## 7. Manejo de recursos
 
-Nosotros centralizamos las rutas existentes en GameAssets y dejamos su ciclo de vida en AssetManager. No modificamos assets ni el paquete histórico puppy.code.prototype. Nos falta verificar y registrar la atribución y las licencias de los recursos.
+Nosotros volvimos a activar en GameAssets los recursos gráficos ya incluidos en assets/: sprites de jugador y alienígenas, proyectiles, meteoritos, vidas y banners de Game Over y Victoria. La partida reproduce background_music.MP3 y Game Over reproduce gameover.mp3; mantenemos los efectos explosion.ogg, hurt.ogg y pop-sound.mp3. AssetManager conserva su ciclo de vida y GameAssets sigue siendo Singleton. No modificamos los archivos de assets/ ni el paquete histórico puppy.code.prototype. No conocemos la fuente original ni la licencia de los recursos, y el repositorio no contiene un registro verificable de esa atribución.
 
 ## 8. Puntajes locales
 
-Nosotros sumamos puntaje por aliens y meteoritos y lo conservamos al perder una vida y al cambiar de nivel. ScoreRepository guarda y consulta un Top 3 local con Preferences, pero no lo conectamos a las pantallas finales ni añadimos el ingreso del nombre de tres caracteres. La decisión de usar SQLite que figura en la propuesta de arquitectura todavía no coincide con este adaptador.
+Nosotros sumamos puntaje por aliens y meteoritos y lo conservamos al perder una vida y al cambiar de nivel. ScoreRepository guarda y consulta un Top 3 local con Preferences. Cuando el resultado supera el tercer puntaje, Game Over o Victoria permite ingresar tres letras A-Z, Retroceso corrige la entrada y Enter guarda el resultado. El menú y las pantallas finales muestran el Top 3. Usamos Preferences en esta demo de escritorio; la propuesta inicial de SQLite no describe el adaptador implementado.
 
 ## 9. Decisiones de diseño
 
-Nosotros dejamos a GameWorld como Controller de GRASP porque conoce y coordina las entidades y las consecuencias del juego. Aplicamos Information Expert en las entidades; Creator en LevelDirector y AlienBuilder; bajo acoplamiento mediante PlayerInput, NavigationInput y estrategias; y alta cohesión al separar presentación, disparo, detección y coordinación.
+Nosotros dejamos a GameWorld como Controller de GRASP porque conoce y coordina las entidades y las consecuencias del juego. Aplicamos Information Expert en las entidades; Creator en LevelDirector y AlienBuilder; bajo acoplamiento mediante PlayerInput, NavigationInput, InitialsInput y estrategias; y alta cohesión al separar presentación, disparo, detección y coordinación.
 
-En SOLID, nosotros aplicamos SRP, LSP e ISP en las responsabilidades y contratos descritos. MovementStrategy y AlienAttackStrategy permiten extender comportamientos. Mantenemos una limitación de DIP porque GameWorld recibe clases concretas y GameAssets se obtiene desde un Singleton.
+En SOLID, nosotros aplicamos SRP, LSP e ISP en las responsabilidades y contratos descritos. MovementStrategy y AlienAttackStrategy permiten extender comportamientos. Mantenemos limitaciones de DIP porque GameWorld recibe clases concretas, las pantallas reciben ScoreRepository concreto y GameAssets se obtiene desde un Singleton.
 
 ## 10. Trazabilidad de requisitos
 
@@ -79,8 +83,8 @@ Nosotros relacionamos GM-4 con GameEntity, Collidable, AbstractGameScreen y Move
 
 ## 11. Limitaciones conocidas
 
-Nosotros dejamos pendientes el ingreso del nombre, la captura y visualización del Top 3 al finalizar, confirmar la fuerza del dash y revisar licencias de recursos. No agregamos pruebas automatizadas. Las tareas test completan correctamente como NO-SOURCE.
+Nosotros dejamos pendiente validar jugando el balance provisional del dash y obtener los datos de autoría y licencia de los recursos. No agregamos pruebas automatizadas; Gradle informa NO-SOURCE para las tareas test.
 
 ## 12. Estado de la entrega
 
-Nosotros verificamos test compileJava: la compilación de core y lwjgl3 terminó correctamente. La ejecución de escritorio llegó a la tarea lwjgl3:run sin mostrar un error de carga; todavía debemos completar una prueba manual de controles y registrar el feedback del equipo.
+En una verificación anterior se registró la compilación de core y lwjgl3 con gradlew.bat test compileJava; en esta revisión aislada el wrapper no pudo conectar con el daemon. Compilamos el código actual de core y lwjgl3 con javac 11 y el classpath local. No encontramos pruebas automatizadas; la validación manual completa de controles y balance sigue pendiente.

@@ -170,23 +170,29 @@ public final class GameScreen extends AbstractGameScreen {
         Texture playerAmmo = assets.getTexture(GameAssets.PLAYER_AMMO_TEXTURE);
         Texture alienAmmo = assets.getTexture(GameAssets.ALIEN_AMMO_TEXTURE);
         for (WorldSnapshot.EntityView projectile : snapshot.getPlayerProjectiles()) {
-            assets.batch().draw(
-                    playerAmmo, projectile.getX(), projectile.getY(),
-                    projectile.getWidth(), projectile.getHeight());
+            if (playerAmmo != null) {
+                assets.batch().draw(
+                        playerAmmo, projectile.getX(), projectile.getY(),
+                        projectile.getWidth(), projectile.getHeight());
+            }
         }
         for (WorldSnapshot.EntityView projectile : snapshot.getAlienProjectiles()) {
-            assets.batch().draw(
-                    alienAmmo, projectile.getX(), projectile.getY(),
-                    projectile.getWidth(), projectile.getHeight());
+            if (alienAmmo != null) {
+                assets.batch().draw(
+                        alienAmmo, projectile.getX(), projectile.getY(),
+                        projectile.getWidth(), projectile.getHeight());
+            }
         }
     }
 
     private void drawMeteorites() {
         for (WorldSnapshot.EntityView meteorite : snapshot.getMeteorites()) {
             Texture texture = assets.getTexture(meteorite.getAssetPath());
-            assets.batch().draw(
-                    texture, meteorite.getX(), meteorite.getY(),
-                    meteorite.getWidth(), meteorite.getHeight());
+            if (texture != null) {
+                assets.batch().draw(
+                        texture, meteorite.getX(), meteorite.getY(),
+                        meteorite.getWidth(), meteorite.getHeight());
+            }
         }
     }
 
@@ -255,7 +261,12 @@ public final class GameScreen extends AbstractGameScreen {
                 && (!snapshot.isShipInvulnerable()
                         || (((int) (elapsedSeconds * BLINK_STEPS_PER_SECOND)) % 2 == 0));
         boolean aliensNeedFallback = resolveAlienRegion() == null;
-        if (!shipNeedsFallback && !aliensNeedFallback) {
+        boolean playerProjectilesNeedFallback = assets.getTexture(GameAssets.PLAYER_AMMO_TEXTURE) == null
+                && !snapshot.getPlayerProjectiles().isEmpty();
+        boolean alienProjectilesNeedFallback = assets.getTexture(GameAssets.ALIEN_AMMO_TEXTURE) == null
+                && !snapshot.getAlienProjectiles().isEmpty();
+        if (!shipNeedsFallback && !aliensNeedFallback
+                && !playerProjectilesNeedFallback && !alienProjectilesNeedFallback) {
             return;
         }
 
@@ -267,6 +278,16 @@ public final class GameScreen extends AbstractGameScreen {
         if (aliensNeedFallback) {
             for (WorldSnapshot.EntityView alien : snapshot.getAliens()) {
                 drawFallbackRect(alien, Color.ORANGE);
+            }
+        }
+        if (playerProjectilesNeedFallback) {
+            for (WorldSnapshot.EntityView projectile : snapshot.getPlayerProjectiles()) {
+                drawFallbackRect(projectile, Color.YELLOW);
+            }
+        }
+        if (alienProjectilesNeedFallback) {
+            for (WorldSnapshot.EntityView projectile : snapshot.getAlienProjectiles()) {
+                drawFallbackRect(projectile, Color.RED);
             }
         }
         assets.shapes().end();

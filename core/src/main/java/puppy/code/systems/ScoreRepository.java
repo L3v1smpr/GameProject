@@ -6,9 +6,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * Encapsula la persistencia local de los mejores puntajes (Top 3) usando LibGDX Preferences.
- */
+/** Encapsula la persistencia local del Top 3 usando LibGDX Preferences. */
 public final class ScoreRepository {
 
     private static final String PREFS_NAME = "space_navigation_scores";
@@ -33,7 +31,7 @@ public final class ScoreRepository {
 
         @Override
         public int compareTo(HighScore other) {
-            return Integer.compare(other.score, this.score); // Orden descendente (mayor puntaje primero)
+            return Integer.compare(other.score, this.score);
         }
     }
 
@@ -53,35 +51,50 @@ public final class ScoreRepository {
         return scores;
     }
 
-    /** Verifica si un puntaje clasifica dentro del Top 3. */
+    /** Verifica si el puntaje supera al tercer resultado guardado. */
     public boolean isEligibleForTop3(int score) {
-        List<HighScore> current = getTopScores();
-        if (current.size() < 3) {
-            return true;
+        if (score < 0) {
+            return false;
         }
+        List<HighScore> current = getTopScores();
         return score > current.get(current.size() - 1).getScore();
     }
 
-    /** Agrega un nuevo puntaje asegurando que el nombre tenga exactamente 3 caracteres. */
-    public void addScore(String name, int score) {
-        List<HighScore> current = getTopScores();
-        
-        if (name == null || name.trim().isEmpty()) {
-            name = "AAA";
-        } else if (name.length() > 3) {
-            name = name.substring(0, 3);
-        } else if (name.length() < 3) {
-            name = String.format("%-3s", name).replace(' ', 'A');
+    /**
+     * Guarda el resultado solo si entra al Top 3 y normaliza el nombre a tres letras A-Z.
+     *
+     * @return true si el puntaje quedó guardado
+     */
+    public boolean addScore(String name, int score) {
+        if (!isEligibleForTop3(score)) {
+            return false;
         }
 
-        current.add(new HighScore(name.toUpperCase(), score));
+        List<HighScore> current = getTopScores();
+        current.add(new HighScore(normalizeName(name), score));
         Collections.sort(current);
 
-        // Guarda solo los 3 mejores
-        for (int i = 0; i < Math.min(3, current.size()); i++) {
+        for (int i = 0; i < 3; i++) {
             prefs.putString("name_" + i, current.get(i).getName());
             prefs.putInteger("score_" + i, current.get(i).getScore());
         }
         prefs.flush();
+        return true;
+    }
+
+    private String normalizeName(String name) {
+        StringBuilder normalized = new StringBuilder(3);
+        if (name != null) {
+            for (int i = 0; i < name.length() && normalized.length() < 3; i++) {
+                char letter = Character.toUpperCase(name.charAt(i));
+                if (letter >= 'A' && letter <= 'Z') {
+                    normalized.append(letter);
+                }
+            }
+        }
+        while (normalized.length() < 3) {
+            normalized.append('A');
+        }
+        return normalized.toString();
     }
 }
