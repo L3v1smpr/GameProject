@@ -2,13 +2,23 @@
 
 ## Alcance de esta entrega
 
-Nosotros integramos una demo de escritorio jugable para recibir feedback. El código permite mover y disparar, recibir daño, reaparecer, destruir meteoritos, completar las cuotas 15/30/45 y llegar a Game Over o Victoria. Dejamos pendiente conectar ScoreRepository a las pantallas finales e ingresar el nombre de tres caracteres. No presentamos esta etapa como el producto completo.
+Nosotros integramos una demo de escritorio jugable para recibir feedback. El código permite mover y disparar, recibir daño, reaparecer, destruir meteoritos, completar las cuotas 15/30/45, registrar iniciales y llegar a Game Over o Victoria. Este corte cubre la base jugable y académica de la entrega; no lo presentamos como el producto completo.
 
 ## GM-1 — Experiencia del jugador
 
 Nosotros presentamos un arcade 2D en el que pilotamos una nave, esquivamos ataques y despejamos tres niveles. Empezamos con tres vidas; usamos WASD para mover, I mantenida para disparar y O para hacer dash. El nivel uno pide destruir 15 aliens con 1 HP; los niveles dos y tres piden 30 y 45 con 2 y 3 HP. Sumamos 100 puntos por alien destruido y 25, 50 o 75 por meteorito.
 
-Nosotros mostramos Nivel Superado al terminar los niveles uno y dos y esperamos una tecla o clic para continuar. La última cuota lleva a Victoria. Enter reinicia desde las pantallas finales y Escape vuelve al menú. Al perder una vida reaparecemos en el punto inicial con 1,5 segundos de invulnerabilidad; conservamos puntaje y progreso.
+Nosotros registramos la experiencia propuesta mediante cuatro bocetos de menú, partida y pantallas finales:
+
+![Boceto de menú e interfaz](Planificacion/Bocetos/B1.jpeg)
+
+![Boceto de partida](Planificacion/Bocetos/B2.jpeg)
+
+![Boceto de Game Over](Planificacion/Bocetos/B3.jpeg)
+
+![Boceto de Victoria](Planificacion/Bocetos/B4.jpeg)
+
+Nosotros mostramos Nivel Superado al terminar los niveles uno y dos y esperamos una tecla o clic para continuar. La última cuota lleva a Victoria. En las pantallas finales, Enter guarda las iniciales si el resultado clasifica o inicia otra partida cuando ya se guardó o no clasifica; Escape vuelve al menú. Al perder una vida reaparecemos en el punto inicial con 1,5 segundos de invulnerabilidad; conservamos puntaje y progreso.
 
 Nosotros dejamos provisional el multiplicador de dash en 3. Las bases fijan duración y recarga, pero no el impulso; debemos validar este valor al probar.
 
@@ -20,13 +30,13 @@ Nosotros expresamos el movimiento con delta en Ship.java, línea 22, y PlayerPro
 
 ## GM-3 — UML y estructura
 
-Nosotros actualizamos UML_INICIAL.md para reflejar las clases y relaciones que compilamos. Organizamos el código por responsabilidades en app, assets, behaviors, config, entities, factories, input, screens, systems y world. Mantenemos el lanzador de escritorio en lwjgl3.
+Nosotros actualizamos UML_INICIAL.md para reflejar las clases y relaciones que compilamos, incluido el flujo de ingreso de iniciales y consulta del Top 3. Organizamos el código por responsabilidades en app, assets, behaviors, config, entities, factories, input, screens, systems y world. Mantenemos el lanzador de escritorio en lwjgl3.
 
 ## GM-4 — Clases abstractas e interfaces
 
 Nosotros hacemos que GameEntity implemente Collidable y que Ship, Alien, Meteorite, PlayerProjectile y AlienProjectile hereden ese contrato. GameEntity.bounds() devuelve un Rectangle nuevo (GameEntity.java, línea 56; Collidable.java, línea 9).
 
-Nosotros hacemos que AbstractGameScreen extienda ScreenAdapter. Su render(float delta) final mantiene la secuencia limpiar, leer entrada, actualizar y dibujar (AbstractGameScreen.java, línea 28). MovementStrategy tiene implementaciones LinearMovementStrategy y ZigZagMovementStrategy.
+Nosotros hacemos que AbstractGameScreen extienda ScreenAdapter. Su render(float delta) final mantiene la secuencia limpiar, leer entrada, actualizar y dibujar (AbstractGameScreen.java, línea 28). MovementStrategy tiene implementaciones LinearMovementStrategy y ZigZagMovementStrategy; InitialsInput tiene KeyboardInitialsInput como adaptador de teclado. GameEntity cuenta con cinco clases concretas derivadas y Collidable define el contrato geométrico.
 
 ## GM-5 — Encapsulamiento, GRASP y SOLID
 
@@ -44,7 +54,7 @@ Nosotros guardamos la posición y activación de cada entidad en campos privados
 
 ### SOLID
 
-Nosotros separamos presentación y simulación (SRP), permitimos variar movimientos y ataques con estrategias (OCP), y dejamos que CollisionSystem opere sobre Collidable (LSP). PlayerInput, NavigationInput y las estrategias son contratos pequeños (ISP). Mantenemos una limitación en DIP: GameWorld recibe LevelDirector y CollisionSystem concretos, y SpaceNavigation obtiene GameAssets mediante Singleton.
+Nosotros separamos presentación y simulación (SRP), permitimos variar movimientos y ataques con estrategias (OCP), y dejamos que CollisionSystem opere sobre Collidable (LSP). PlayerInput, NavigationInput, InitialsInput y las estrategias son contratos pequeños (ISP). Mantenemos limitaciones en DIP: GameWorld recibe LevelDirector y CollisionSystem concretos, las pantallas reciben ScoreRepository concreto y SpaceNavigation obtiene GameAssets mediante Singleton.
 
 ## GM-6 — Singleton: GameAssets
 
@@ -58,7 +68,7 @@ SpaceNavigation obtiene la instancia al iniciar. Las pantallas reciben GameAsset
 
 ### 3. Solución implementada
 
-Nosotros usamos el campo estático instance, el constructor privado, getInstance() y dispose() en GameAssets.java (líneas 43, 61, 73 y 253). AssetManager carga y libera los recursos.
+Nosotros usamos el campo estático instance, el constructor privado, getInstance() y dispose() en GameAssets.java (líneas 27, 37, 45 y 177). AssetManager carga y libera los recursos.
 
 ### 4. Diagrama del patrón
 
@@ -89,7 +99,7 @@ Nosotros configuramos movimiento lineal para el nivel uno y zigzag para los nive
 
 ### 3. Solución implementada
 
-Alien recibe MovementStrategy y AlienAttackStrategy, y las consulta al actualizarse y disparar (Alien.java, líneas 64 y 82). Implementamos movimiento lineal y zigzag en LinearMovementStrategy.java, línea 6, y ZigZagMovementStrategy.java, línea 11. Separamos los ataques en LinearAttackStrategy.java, línea 12, y VAttackStrategy.java, línea 13. LevelDirector selecciona las estrategias en LevelDirector.java, líneas 37–68.
+Alien recibe MovementStrategy y AlienAttackStrategy, y las consulta al actualizarse y disparar (Alien.java, líneas 73 y 93). Implementamos movimiento lineal y zigzag en LinearMovementStrategy.java, línea 6, y ZigZagMovementStrategy.java, línea 11. Separamos los ataques en LinearAttackStrategy.java, línea 12, y VAttackStrategy.java, línea 13. LevelDirector selecciona las estrategias en LevelDirector.java, líneas 37–52.
 
 ### 4. Diagrama del patrón
 
@@ -186,8 +196,8 @@ Nosotros trabajamos sobre feature/rama-Alex y registramos avances pequeños. Los
 6. ba9ad75 — Limpio el estado al volver al menú.
 7. b25a232 — Actualizo el UML con el flujo jugable real.
 
-Nosotros ejecutamos gradlew.bat test compileJava. Gradle compiló core y lwjgl3 correctamente; no encontramos fuentes de pruebas automatizadas y las tareas test finalizaron como NO-SOURCE. Iniciamos lwjgl3:run, pero todavía debemos jugar manualmente para comprobar controles, dificultad y feedback visual.
+En una verificación anterior ejecutamos gradlew.bat test compileJava; se registró la compilación de core y lwjgl3, sin fuentes automatizadas de prueba (test finalizó como NO-SOURCE). En esta revisión aislada el wrapper no pudo conectar con su daemon. Para validar el cambio actual compilamos core y lwjgl3 con javac 11 y el classpath local. La prueba manual completa de controles y balance sigue pendiente.
 
 ## Trabajo pendiente
 
-Nosotros dejamos ScoreRepository fuera del flujo de Game Over y Victoria. Aunque ScoreRepository guarda datos locales mediante Preferences, aún faltan el ingreso del nombre de tres caracteres y la consulta del Top 3 desde las pantallas. También debemos confirmar el multiplicador provisional del dash y registrar los créditos y licencias de los recursos.
+Nosotros conectamos ScoreRepository al menú, Game Over y Victoria. Si el resultado supera el tercer puntaje, el jugador ingresa tres letras A-Z; Retroceso corrige la entrada y Enter persiste el resultado. Mostramos el Top 3 en el menú y ambas pantallas finales. Dejamos como límites conocidos el multiplicador provisional del dash y el origen/licencia no documentados de los recursos gráficos y de audio.

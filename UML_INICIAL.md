@@ -1,6 +1,6 @@
 # Space Navigation — UML de la demo jugable
 
-Nosotros actualizamos este diagrama para reflejar el código integrado en la primera demo. El menú queda fuera de GamePhase. La clase ScoreRepository existe, pero la captura del nombre y su conexión con Game Over y Victoria siguen pendientes.
+Nosotros actualizamos este diagrama para reflejar el código integrado en la demo jugable. El menú queda fuera de GamePhase. El Top 3 local se consulta desde el menú y las pantallas finales; cuando el resultado califica, pedimos tres iniciales antes de guardarlo.
 
 ```mermaid
 classDiagram
@@ -46,6 +46,8 @@ classDiagram
         -playerInput: PlayerInput
         -levelDirector: LevelDirector
         -collisionSystem: CollisionSystem
+        -scoreRepository: ScoreRepository
+        -initialsInput: InitialsInput
         +create()
         +showMenu()
         +showGame()
@@ -91,10 +93,20 @@ classDiagram
         #update(delta) abstract
         #draw(delta) abstract
     }
-    class MenuScreen
+    class MenuScreen {
+        -scoreRepository: ScoreRepository
+    }
     class GameScreen
-    class GameOverScreen
-    class VictoryScreen
+    class GameOverScreen {
+        -initialsInput: InitialsInput
+        -scoreRepository: ScoreRepository
+        -eligibleForTop3: boolean
+    }
+    class VictoryScreen {
+        -initialsInput: InitialsInput
+        -scoreRepository: ScoreRepository
+        -eligibleForTop3: boolean
+    }
     class AfterImage
     class Lwjgl3Launcher
     class StartupHelper
@@ -105,6 +117,12 @@ classDiagram
         +anyActionJustPressed() boolean
     }
     class KeyboardNavigationInput
+    class InitialsInput {
+        <<interface>>
+        +letterJustPressed() char
+        +deleteJustPressed() boolean
+    }
+    class KeyboardInitialsInput
     class PlayerInput {
         <<interface>>
         +movementDirection() Vector2
@@ -234,10 +252,10 @@ classDiagram
         +createWave(level) List~Alien~
     }
     class ScoreRepository {
-        <<local storage, not connected to end screens>>
+        <<persistent local storage>>
         +getTopScores() List
         +isEligibleForTop3(score) boolean
-        +addScore(name, score)
+        +addScore(name, score) boolean
     }
 
     Game <|-- SpaceNavigation
@@ -256,12 +274,15 @@ classDiagram
     GameAssets ..> TextureRegion
     SpaceNavigation --> GameAssets
     SpaceNavigation --> ScreenNavigator
+    SpaceNavigation --> ScoreRepository
+    SpaceNavigation --> InitialsInput
     SpaceNavigation --> MenuScreen
     SpaceNavigation --> GameScreen
     SpaceNavigation --> GameOverScreen
     SpaceNavigation --> VictoryScreen
     MenuScreen --> NavigationInput
     MenuScreen --> ScreenNavigator
+    MenuScreen --> ScoreRepository
     GameScreen --> GameWorld
     GameScreen --> WorldSnapshot
     GameScreen --> PlayerInput
@@ -294,9 +315,16 @@ classDiagram
     LevelDirector --> AlienBuilder
     AlienBuilder ..> Alien
     PlayerWeapon ..> PlayerProjectile
+    GameOverScreen --> ScoreRepository
+    GameOverScreen --> InitialsInput
+    VictoryScreen --> ScoreRepository
+    VictoryScreen --> InitialsInput
+    InitialsInput <|.. KeyboardInitialsInput
     ScoreRepository --> Preferences
 ```
 
-## Pendiente para la siguiente etapa
+## Estado y límites conocidos
 
-Nos falta conectar ScoreRepository a las pantallas finales y agregar el ingreso del nombre de tres caracteres. Dejamos provisional el multiplicador del dash en 3 hasta validarlo jugando. Todavía debemos revisar la atribución y las licencias de los recursos.
+Nosotros conectamos ScoreRepository con el menú, Game Over y Victoria. Un resultado que supera el tercer puntaje permite ingresar tres letras A-Z; Enter guarda y Retroceso borra. La pantalla muestra el Top 3 persistente almacenado con Preferences.
+
+Dejamos provisional el multiplicador del dash en 3 hasta validarlo jugando. No contamos con información verificable sobre el origen o la licencia de los recursos gráficos y de audio.
