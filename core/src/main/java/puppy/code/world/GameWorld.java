@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import puppy.code.config.GameConfig;
 import puppy.code.entities.Alien;
+import puppy.code.entities.Meteorite;
 import puppy.code.entities.PlayerProjectile;
 import puppy.code.entities.Ship;
 import puppy.code.factories.LevelDirector;
@@ -19,12 +20,14 @@ public final class GameWorld {
     private final PlayerWeapon playerWeapon;
     private final Ship ship;
     private final List<Alien> aliens = new ArrayList<>();
+    private final List<Meteorite> meteorites = new ArrayList<>();
     private final List<PlayerProjectile> playerProjectiles = new ArrayList<>();
     private int level;
     private int lives;
     private int score;
     private int aliensDestroyedInLevel;
     private GamePhase phase;
+    private float meteoriteSpawnTimer;
 
     public GameWorld(LevelDirector levelDirector, CollisionSystem collisions) {
         if (levelDirector == null || collisions == null) {
@@ -50,6 +53,7 @@ public final class GameWorld {
         phase = GamePhase.ACTIVE;
         ship.respawn(GameConfig.SHIP_START_X, GameConfig.SHIP_START_Y, 0f);
         aliens.clear();
+        meteorites.clear();
         playerProjectiles.clear();
         spawnWave();
     }
@@ -76,9 +80,21 @@ public final class GameWorld {
             alien.update(delta, GameConfig.WORLD_WIDTH);
         }
 
+        meteoriteSpawnTimer += delta;
+        if (meteoriteSpawnTimer >= 4f) { // Genera meteoritos periódicamente fuera de la cuota
+            meteoriteSpawnTimer = 0f;
+            meteorites.add(Meteorite.random(GameConfig.WORLD_WIDTH, GameConfig.WORLD_HEIGHT));
+        }
+
+        for (Meteorite met : meteorites) {
+            met.update(delta);
+        }
+        meteorites.removeIf(m -> !m.isActive() || m.getY() < -50f);
+
         aliens.removeIf(Alien::hasLeftWorld);
         resolveCollisions();
         aliens.removeIf(alien -> !alien.isActive());
+        meteorites.removeIf(m -> !m.isActive());
 
         checkQuotaProgression();
     }
@@ -99,7 +115,7 @@ public final class GameWorld {
     private int getQuotaForLevel(int currentLevel) {
         if (currentLevel == 1) return 15;
         if (currentLevel == 2) return 30;
-        return 45; // Nivel 3
+        return 45;
     }
 
     public void advanceToNextLevel() {
@@ -107,6 +123,7 @@ public final class GameWorld {
             level++;
             aliensDestroyedInLevel = 0;
             aliens.clear();
+            meteorites.clear();
             playerProjectiles.clear();
             phase = GamePhase.ACTIVE;
             spawnWave();
@@ -114,7 +131,7 @@ public final class GameWorld {
     }
 
     private void resolveCollisions() {
-        // Colisión de proyectiles del jugador con aliens
+        // Proyectiles con Aliens
         for (PlayerProjectile projectile : playerProjectiles) {
             if (!projectile.isActive()) continue;
             for (Alien alien : aliens) {
@@ -123,16 +140,35 @@ public final class GameWorld {
                     alien.deactivate();
                     score += 100;
                     aliensDestroyedInLevel++;
-                    break; // Asegura impacto de una sola bala por objetivo/fotograma
+                    break;
                 }
             }
         }
 
-        // Colisión nave con aliens
+        // Proyectiles con Meteoritos
+        for (PlayerProjectile projectile : playerProjectiles) {
+            if (!projectile.isActive()) continue;
+            for (Meteorite met : meteorites) {
+                if (met.isActive() && collisions.collides(projectile, met)) {
+                    projectile.deactivate();
+                    met.deactivate();
+                    score += met.getScoreValue(); // 25, 50 o 75 puntos según tamaño
+                    break;
+                }
+            }
+        }
+
+        // Colisión nave con aliens o meteoritos
         if (!ship.isInvulnerable()) {
-            List<Alien> contacts = collisions.collidingWith(ship, aliens);
-            for (Alien alien : contacts) {
+            List<Alien> alienContacts = collisions.collidingWith(ship, aliens);
+            for (Alien alien : alienContacts) {
                 alien.deactivate();
+                loseLife();
+            }
+
+            List<Meteorite> metContacts = collisions.collidingWith(ship, meteorites);
+            for (Meteorite met : metContacts) {
+                met.deactivate();
                 loseLife();
             }
         }
@@ -140,7 +176,7 @@ public final class GameWorld {
 
     private void loseLife() {
         lives--;
-        if (lives <= 50 && lives <= 0) { // Corrección lógica de vidas
+        if (lives <= 0) {
             lives = 0;
             phase = GamePhase.GAME_OVER;
             return;
@@ -149,7 +185,7 @@ public final class GameWorld {
                 GameConfig.SHIP_START_X,
                 GameConfig.SHIP_START_Y,
                 GameConfig.RESPAWN_INVULNERABILITY_SECONDS);
-        playerProjectiles.clear(); // Limpia proyectiles al hacer respawn
+        playerProjectiles.clear();
     }
 
     private void spawnWave() {
