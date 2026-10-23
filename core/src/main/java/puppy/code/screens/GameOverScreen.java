@@ -49,10 +49,10 @@ public final class GameOverScreen extends AbstractGameScreen {
     protected void handleInput(float delta) {
         // Al presionar la acción de confirmación (Enter / Espacio) reinicia la partida
         if (input.confirmJustPressed()) {
-            navigator.startNewGame();
+            navigator.showGame();
         } else if (input.backJustPressed()) {
             // Con ESC regresa al menú principal
-            navigator.showMainMenu();
+            navigator.showMenu();
         }
     }
 

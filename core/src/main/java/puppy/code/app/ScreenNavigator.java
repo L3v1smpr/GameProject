@@ -5,19 +5,9 @@ package puppy.code.app;
  */
 public interface ScreenNavigator {
 
-    void showMainMenu();
+    void showMenu();
 
-    void startNewGame();
-
-    /** Alias de dominio que coincide con las transiciones descritas en las bases. */
-    default void showMenu() {
-        showMainMenu();
-    }
-
-    /** Alias de dominio que coincide con las transiciones descritas en las bases. */
-    default void showGame() {
-        startNewGame();
-    }
+    void showGame();
 
     void showGameOver();
 

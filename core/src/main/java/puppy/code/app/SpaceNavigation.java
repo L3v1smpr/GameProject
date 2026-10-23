@@ -32,16 +32,16 @@ public final class SpaceNavigation extends Game implements ScreenNavigator {
         playerInput = new KeyboardPlayerInput();
         levelDirector = new LevelDirector();
         collisionSystem = new CollisionSystem();
-        showMainMenu();
+        showMenu();
     }
 
     @Override
-    public void showMainMenu() {
+    public void showMenu() {
         setScreen(new MenuScreen(assets, this, navigationInput));
     }
 
     @Override
-    public void startNewGame() {
+    public void showGame() {
         GameWorld world = new GameWorld(levelDirector, collisionSystem);
         setScreen(new GameScreen(assets, this, world, playerInput, navigationInput));
     }

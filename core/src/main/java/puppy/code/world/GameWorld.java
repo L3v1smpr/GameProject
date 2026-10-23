@@ -197,6 +197,8 @@ public final class GameWorld {
         for (Alien alien : aliens) {
             if (alien.isActive() && collisions.collides(ship, alien)) {
                 alien.deactivate();
+                score += GameConfig.ALIEN_SCORE;
+                aliensDestroyedInLevel++;
                 loseLife();
                 return;
             }
@@ -247,7 +249,9 @@ public final class GameWorld {
             aliens.clear();
             playerProjectiles.clear();
             alienProjectiles.clear();
-            phase = level == 3 ? GamePhase.VICTORY : GamePhase.LEVEL_COMPLETED;
+            phase = level == GameConfig.LAST_LEVEL
+                    ? GamePhase.VICTORY
+                    : GamePhase.LEVEL_COMPLETED;
         } else if (aliens.isEmpty()) {
             spawnWave();
         }
@@ -271,11 +275,11 @@ public final class GameWorld {
 
     private int getQuotaForLevel(int currentLevel) {
         switch (currentLevel) {
-            case 1:
+            case GameConfig.FIRST_LEVEL:
                 return GameConfig.LEVEL_ONE_ALIEN_QUOTA;
-            case 2:
+            case GameConfig.SECOND_LEVEL:
                 return GameConfig.LEVEL_TWO_ALIEN_QUOTA;
-            case 3:
+            case GameConfig.LAST_LEVEL:
                 return GameConfig.LEVEL_THREE_ALIEN_QUOTA;
             default:
                 throw new IllegalArgumentException("Solo se admiten los niveles 1, 2 y 3.");

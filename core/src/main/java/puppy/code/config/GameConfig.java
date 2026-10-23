@@ -41,6 +41,8 @@ public final class GameConfig {
     public static final float RESPAWN_INVULNERABILITY_SECONDS = 1.5f;
 
     public static final int FIRST_LEVEL = 1;
+    public static final int SECOND_LEVEL = 2;
+    public static final int LAST_LEVEL = 3;
 
     public static final int LEVEL_ONE_ALIEN_QUOTA = 15;
     public static final int LEVEL_TWO_ALIEN_QUOTA = 30;
@@ -90,7 +92,7 @@ public final class GameConfig {
     /** Provisional: segundos que dura cada tramo del zigzag antes de cambiar de lado. */
     public static final float ZIGZAG_HALF_PERIOD_SECONDS = 1.2f;
 
-    /** Provisional: cantidad de aliens por oleada hasta definir las cuotas por nivel. */
+    /** Cantidad de aliens que se generan a la vez dentro de una oleada. */
     public static final int WAVE_SIZE = 3;
 
     /** Separación entre el borde superior del mundo y los aliens recién creados. */
