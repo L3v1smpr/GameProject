@@ -17,6 +17,9 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
  */
 public final class GameAssets {
 
+    // CONSTANTE DE FONDO ESTÁTICO
+    public static final String BACKGROUND_TEXTURE = "background.png";
+
     // CONSTANTES DE METEORITOS (Requeridas por MeteoriteSize)
     public static final String SMALL_METEORITE_TEXTURE = "aGreySmall.png";
     public static final String MEDIUM_METEORITE_TEXTURE = "aGreyMedium4.png";
@@ -89,6 +92,9 @@ public final class GameAssets {
      * Precarga los recursos activos y orienta los sprites adecuadamente.
      */
     private void cargarRecursosBase() {
+        // 0. Fondo
+        cargarTexturaSiExiste(BACKGROUND_TEXTURE);
+
         // 1. Meteoritos
         cargarTexturaSiExiste(SMALL_METEORITE_TEXTURE);
         cargarTexturaSiExiste(MEDIUM_METEORITE_TEXTURE);
@@ -136,13 +142,12 @@ public final class GameAssets {
             this.alienFrames = TextureRegion.split(aSheet, 48, 48);
             for (TextureRegion[] fila : this.alienFrames) {
                 for (TextureRegion cuadro : fila) {
-                    // Inset de 1 pixel para corregir el sangrado de textura (Texture Bleeding) con la fila adyacente
                     cuadro.setRegion(
                             cuadro.getRegionX() + 1,
                             cuadro.getRegionY() + 1,
                             cuadro.getRegionWidth() - 2,
                             cuadro.getRegionHeight() - 2);
-                    cuadro.flip(false, true); // Inversión vertical: apunta al Sur
+                    cuadro.flip(false, true);
                 }
             }
         }
@@ -230,6 +235,9 @@ public final class GameAssets {
             throw new IllegalArgumentException("La ruta del recurso no puede estar vacía.");
         }
         if (!manager.isLoaded(path, type)) {
+            if (Gdx.files == null || !Gdx.files.internal(path).exists()) {
+                return null;
+            }
             manager.load(path, type);
             manager.finishLoadingAsset(path);
         }
