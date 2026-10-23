@@ -1,127 +1,66 @@
 # Reporte del proyecto — Space Navigation
 
-## Alcance de esta versión
+## Alcance de esta entrega
 
-Nosotros preparamos una base de desarrollo en Java 11 y LibGDX 1.12.1, manteniendo aparte el código
-histórico del paquete `puppy.code.prototype`. Nosotros implementamos los patrones y los modelos que
-no dependen de las reglas de colisión/vidas/respawn, las fases/progresión ni el puntaje/leaderboard.
-Nosotros dejamos esas tres secciones funcionales para la siguiente IA, junto con sus integraciones.
+Nosotros integramos una demo de escritorio jugable para recibir feedback. El código permite mover y disparar, recibir daño, reaparecer, destruir meteoritos, completar las cuotas 15/30/45 y llegar a Game Over o Victoria. Dejamos pendiente conectar ScoreRepository a las pantallas finales e ingresar el nombre de tres caracteres. No presentamos esta etapa como el producto completo.
 
-Nosotros distinguimos las secciones funcionales 3, 4 y 5 de los requisitos académicos GM-3, GM-4 y
-GM-5. Nosotros sí dejamos un UML actual, una clase abstracta, varias interfaces y evidencia de
-encapsulamiento y diseño; nosotros no completamos la jugabilidad de las secciones funcionales reservadas.
+## GM-1 — Experiencia del jugador
 
-## GM-1 — Juego desde la perspectiva del jugador
+Nosotros presentamos un arcade 2D en el que pilotamos una nave, esquivamos ataques y despejamos tres niveles. Empezamos con tres vidas; usamos WASD para mover, I mantenida para disparar y O para hacer dash. El nivel uno pide destruir 15 aliens con 1 HP; los niveles dos y tres piden 30 y 45 con 2 y 3 HP. Sumamos 100 puntos por alien destruido y 25, 50 o 75 por meteorito.
 
-Nosotros planteamos Space Navigation como un juego en que pilotamos una nave, esquivamos amenazas y
-despejamos oleadas alienígenas. Nosotros diseñamos tres arquetipos de nivel: 15, 30 y 45 aliens como
-cuotas; un impacto destruye un alien en el primer nivel, dos en el segundo y tres en el tercero.
-Nosotros definimos movimiento lineal para el primer nivel y zigzag para los dos siguientes. Nosotros
-preparamos un disparo alienígena lineal en el primer nivel y descargas dobles en V en los siguientes.
+Nosotros mostramos Nivel Superado al terminar los niveles uno y dos y esperamos una tecla o clic para continuar. La última cuota lleva a Victoria. Enter reinicia desde las pantallas finales y Escape vuelve al menú. Al perder una vida reaparecemos en el punto inicial con 1,5 segundos de invulnerabilidad; conservamos puntaje y progreso.
 
-Nosotros definimos W/A/S/D para mover, I mantenida para disparar, O para el dash, Enter para confirmar
-y Escape para volver. En esta base nosotros ya movemos la nave con W/A/S/D, detectamos la entrada de I
-y O, y preparamos el enfriamiento del arma; nosotros todavía no conectamos el arma ni el dash al ciclo
-de la partida. Nosotros dejamos los meteoritos modelados por tamaño y ruta de imagen, pero sin
-generación, colisión o puntaje integrados.
+Nosotros dejamos provisional el multiplicador de dash en 3. Las bases fijan duración y recarga, pero no el impulso; debemos validar este valor al probar.
 
-Nosotros no presentamos la cuota, el dash, la partida completa ni la tabla local como funciones listas.
-Nosotros dejamos su integración para la etapa siguiente y actualizaremos esta descripción cuando
-esas reglas estén conectadas y verificadas.
+## GM-2 — Comparación con el juego base
 
-## GM-2 — Análisis de ingeniería del juego base y los cambios
+Nosotros conservamos intacto el paquete puppy.code.prototype. El prototipo concentraba el ciclo del juego y las colisiones en PantallaJuego. En PantallaJuego.java, líneas 88–101, el proyectil recorre la colección de objetos y el ciclo de colisión continúa después de cada impacto. En el nuevo flujo retiramos el proyectil tras un único impacto y salimos del ciclo interno en GameWorld.java, líneas 148–172.
 
-Nosotros conservamos el prototipo para compararlo, sin modificar sus archivos. En el prototipo, nosotros
-concentramos creación de recursos, actualización, colisiones, puntaje y rondas en `prototype/PantallaJuego`;
-nosotros hacemos que `prototype/Nave4.draw()` lea el teclado y que la misma clase mueva la nave, gestione
-vidas y cree balas. Nosotros avanzamos proyectiles y asteroides por fotograma en `prototype/Bullet.update()`
-y `prototype/Ball2.update()`, por lo que su velocidad no está expresada en unidades por segundo.
+Nosotros expresamos el movimiento con delta en Ship.java, línea 22, y PlayerProjectile.java, línea 16. Centralizamos velocidades y cuotas en GameConfig. GameWorld mantiene listas privadas y entrega un WorldSnapshot con vistas inmutables para que la pantalla no modifique entidades.
 
-Nosotros creamos texturas, sonidos y música dentro de la pantalla de juego (`prototype/PantallaJuego`),
-de modo que el reinicio puede crear nuevos recursos. Nosotros observamos también que el ciclo de la
-bala continúa por los asteroides después del primer impacto; todavía no declaramos corregido ese caso,
-porque dejamos para la siguiente IA la resolución de colisiones de proyectiles.
+## GM-3 — UML y estructura
 
-En el flujo nuevo nosotros aislamos el teclado en `KeyboardPlayerInput`, usamos `delta` en las entidades,
-centralizamos los límites de mundo y velocidades en `GameConfig`, y dejamos `GameWorld` como dueño de
-la nave y los aliens. Nosotros separamos la presentación del estado mediante `WorldSnapshot`, y la
-carga de recursos compartidos mediante `GameAssets`. Nosotros dejamos los proyectiles y meteoritos como
-modelos independientes listos para integración; su ciclo de vida, impactos, efectos y puntaje siguen
-pendientes.
+Nosotros actualizamos UML_INICIAL.md para reflejar las clases y relaciones que compilamos. Organizamos el código por responsabilidades en app, assets, behaviors, config, entities, factories, input, screens, systems y world. Mantenemos el lanzador de escritorio en lwjgl3.
 
-## GM-3 — UML del dominio
+## GM-4 — Clases abstractas e interfaces
 
-Nosotros documentamos el corte implementado y sus clases LibGDX en [UML_INICIAL.md](UML_INICIAL.md).
-Nosotros mostramos `Lwjgl3Launcher` y `Game`, `ScreenAdapter`, `AssetManager`, `SpriteBatch`,
-`Rectangle`, y las clases propias en sus paquetes `app`, `assets`, `behaviors`, `config`, `entities`,
-`factories`, `input`, `screens`, `systems` y `world`.
+Nosotros hacemos que GameEntity implemente Collidable y que Ship, Alien, Meteorite, PlayerProjectile y AlienProjectile hereden ese contrato. GameEntity.bounds() devuelve un Rectangle nuevo (GameEntity.java, línea 56; Collidable.java, línea 9).
 
-Nosotros dejamos `ScoreRepository` fuera del diagrama implementado, porque no existe todavía. Nosotros
-documentamos que deberá aparecer en la integración futura junto con `ScoreEntry` y `HighScoreService`.
-Nosotros mantenemos `ScreenNavigator` con sus dos operaciones reales (`showMainMenu()` y
-`startNewGame()`) y `GamePhase` con sus dos valores actuales; nosotros no dibujamos como terminadas
-las transiciones o fases que reservamos.
-
-## GM-4 — Clase abstracta e interfaz
-
-Nosotros usamos `AbstractGameScreen` como clase abstracta común de `MenuScreen` y `GameScreen`.
-Nosotros hacemos que su `render(delta)` final conserve el orden limpiar, entrada, actualización y dibujo.
-Nosotros usamos `MovementStrategy` en `Alien` y la implementamos mediante `LinearMovementStrategy` y
-`ZigZagMovementStrategy`; así mostramos una interfaz polimórfica con dos implementaciones concretas.
-
-Nosotros hacemos que `GameEntity` implemente `Collidable` y que `Ship`, `Alien`, `PlayerProjectile`,
-`AlienProjectile` y `Meteorite` hereden el contrato de límites defensivos. Nosotros dejamos el método
-genérico `CollisionSystem.collidingWith()` preparado para recibir `Collidable`; nosotros reservamos
-para la siguiente IA la integración de las nuevas entidades en las reglas de contacto.
+Nosotros hacemos que AbstractGameScreen extienda ScreenAdapter. Su render(float delta) final mantiene la secuencia limpiar, leer entrada, actualizar y dibujar (AbstractGameScreen.java, línea 28). MovementStrategy tiene implementaciones LinearMovementStrategy y ZigZagMovementStrategy.
 
 ## GM-5 — Encapsulamiento, GRASP y SOLID
 
 ### Encapsulamiento
 
-Nosotros mantenemos privada la posición, tamaño y activación de `GameEntity`, y exponemos solamente
-lecturas o cambios controlados. Nosotros devolvemos un `Rectangle` nuevo desde `bounds()` para impedir
-que el llamador modifique los límites internos. Nosotros copiamos las entidades a valores `EntityView`
-y hacemos inmutable la lista de aliens en `WorldSnapshot`.
+Nosotros guardamos la posición y activación de cada entidad en campos privados. GameWorld no expone colecciones mutables; WorldSnapshot copia los datos a EntityView y envuelve las listas con Collections.unmodifiableList (WorldSnapshot.java, líneas 21–67).
 
 ### GRASP
 
-- Nosotros aplicamos **Information Expert** al dejar que cada entidad conozca su posición y límites, y que `Alien` conozca sus estrategias y cadencia.
-- Nosotros usamos **Creator** en `LevelDirector`, que conoce las configuraciones por nivel y dirige a `AlienBuilder` para crear aliens.
-- Nosotros usamos **Controller** en `GameWorld`, que coordina la actualización de la partida y aplica las consecuencias del contacto físico que ya están en el corte.
-- Nosotros buscamos **Low Coupling** al hacer que las pantallas reciban `ScreenNavigator` e interfaces de entrada, y que `Alien` dependa de estrategias.
-- Nosotros buscamos **High Cohesion** al reservar movimiento para sus estrategias, creación de recursos para `GameAssets`, detección de contactos para `CollisionSystem` y coordinación de juego para `GameWorld`.
-- Nosotros aplicamos **Pure Fabrication** en `CollisionSystem`, `GameAssets`, `PlayerWeapon` y `LevelDirector`, que concentran tareas que no pertenecen a una entidad del dominio.
-- Nosotros usamos **Indirection** mediante `PlayerInput`, `NavigationInput`, `Collidable`, `MovementStrategy` y `AlienAttackStrategy`.
-- Nosotros usamos **Polymorphism** al elegir movimiento y formación de ataque a través de interfaces.
+- Nosotros aplicamos Information Expert en Ship, Alien y Meteorite, que mantienen su propio estado y comportamiento.
+- Nosotros usamos Creator en LevelDirector y AlienBuilder para construir aliens según el nivel (LevelDirector.java, línea 37; AlienBuilder.java, línea 60).
+- Nosotros usamos Controller en GameWorld, que coordina la simulación y sus consecuencias (GameWorld.java, línea 72).
+- Nosotros buscamos Low Coupling y alta cohesión al separar entrada, presentación, detección de colisiones y reglas de partida.
+- Nosotros aplicamos Pure Fabrication en CollisionSystem, PlayerWeapon y GameAssets para responsabilidades que no corresponden a una entidad.
 
 ### SOLID
 
-- Nosotros seguimos **SRP** al separar entrada, presentación, mundo, detección de colisiones, construcción y recursos.
-- Nosotros dejamos un punto de extensión **OCP** en las estrategias de movimiento y ataque; agregar niveles todavía requiere registrar su configuración en `LevelDirector`.
-- Nosotros mantenemos **LSP** en las entidades que cumplen `Collidable`: `CollisionSystem` puede pedir límites sin conocer la clase concreta.
-- Nosotros aplicamos **ISP** con interfaces pequeñas para entrada de jugador, navegación, límites y estrategias.
-- Nosotros avanzamos hacia **DIP** en las pantallas y en `Alien`, que dependen de contratos; nosotros mantenemos una limitación pendiente porque `GameWorld` todavía recibe `CollisionSystem` y `LevelDirector` concretos.
+Nosotros separamos presentación y simulación (SRP), permitimos variar movimientos y ataques con estrategias (OCP), y dejamos que CollisionSystem opere sobre Collidable (LSP). PlayerInput, NavigationInput y las estrategias son contratos pequeños (ISP). Mantenemos una limitación en DIP: GameWorld recibe LevelDirector y CollisionSystem concretos, y SpaceNavigation obtiene GameAssets mediante Singleton.
 
-## GM-6 — Singleton: `GameAssets`
+## GM-6 — Singleton: GameAssets
 
-### 1. Problema concreto en el juego
+### 1. Problema concreto
 
-Nosotros necesitábamos compartir texturas, sonidos, música y recursos de dibujo entre pantallas sin
-crear una instancia distinta en cada cambio de pantalla.
+Nosotros necesitábamos compartir texturas, audio y objetos de dibujo entre pantallas y liberar los recursos al cerrar la aplicación.
 
 ### 2. Contexto
 
-Nosotros centralizamos las rutas actuales y el ciclo de vida en `GameAssets`, mientras `SpaceNavigation`
-obtiene la instancia al iniciar la aplicación.
+SpaceNavigation obtiene la instancia al iniciar. Las pantallas reciben GameAssets por constructor.
 
 ### 3. Solución implementada
 
-Nosotros limitamos el constructor, sincronizamos `getInstance()` y cargamos cada archivo bajo demanda
-mediante `AssetManager`. Nosotros liberamos el administrador y los recursos de dibujo en `dispose()`.
-Nosotros dejamos las rutas constantes en `GameAssets.java` (líneas 14–22), el acceso Singleton en las
-líneas 32–44 y la carga/liberación en las líneas 61–103.
+Nosotros usamos el campo estático instance, el constructor privado, getInstance() y dispose() en GameAssets.java (líneas 43, 61, 73 y 253). AssetManager carga y libera los recursos.
 
-### 4. Diagrama UML del patrón
+### 4. Diagrama del patrón
 
 ```mermaid
 classDiagram
@@ -130,165 +69,125 @@ classDiagram
         -instance: GameAssets
         -manager: AssetManager
         -GameAssets()
-        +getInstance() GameAssets
-        +dispose() void
+        +getInstance()
+        +dispose()
     }
     class AssetManager
-    SpaceNavigation --> GameAssets : obtiene y libera
-    GameAssets *-- AssetManager : posee
+    SpaceNavigation --> GameAssets
+    GameAssets *-- AssetManager
 ```
 
-## GM-7 — Strategy: movimiento de aliens
+## GM-7 — Strategy: movimiento y ataque
 
-### 1. Problema concreto en el juego
+### 1. Problema concreto
 
-Nosotros necesitamos cambiar la trayectoria según el nivel sin llenar `Alien` de condiciones que
-mezclen comportamientos.
+Nosotros necesitamos cambiar la trayectoria y la descarga alienígena sin concentrar condiciones de movimiento y ataque dentro de Alien.
 
 ### 2. Contexto
 
-Nosotros configuramos movimiento lineal a 90 px/s en el nivel uno y zigzag a 110 px/s en los niveles
-dos y tres. Nosotros mantenemos el movimiento separado de las formaciones de ataque.
+Nosotros configuramos movimiento lineal para el nivel uno y zigzag para los niveles dos y tres. Elegimos disparo dirigido en el nivel uno y descarga en V en los niveles siguientes.
 
 ### 3. Solución implementada
 
-Nosotros hacemos que `Alien` reciba `MovementStrategy` y consulte `nextPosition()` al actualizarse.
-Nosotros implementamos `LinearMovementStrategy` y `ZigZagMovementStrategy`, y dejamos que
-`LevelDirector` seleccione el arquetipo del nivel. Nosotros registramos el contrato en
-`MovementStrategy.java` (líneas 12–29), sus implementaciones en `LinearMovementStrategy.java`
-(líneas 6–27) y `ZigZagMovementStrategy.java` (líneas 11–44), y la selección en `LevelDirector.java`
-(líneas 37–65).
+Alien recibe MovementStrategy y AlienAttackStrategy, y las consulta al actualizarse y disparar (Alien.java, líneas 64 y 82). Implementamos movimiento lineal y zigzag en LinearMovementStrategy.java, línea 6, y ZigZagMovementStrategy.java, línea 11. Separamos los ataques en LinearAttackStrategy.java, línea 12, y VAttackStrategy.java, línea 13. LevelDirector selecciona las estrategias en LevelDirector.java, líneas 37–68.
 
-### 4. Diagrama UML del patrón
+### 4. Diagrama del patrón
 
 ```mermaid
 classDiagram
     class Alien
-    class MovementStrategy {
-        <<interface>>
-        +nextPosition(x, y, age, delta) Vector2
-    }
+    class MovementStrategy
     class LinearMovementStrategy
     class ZigZagMovementStrategy
-    class LevelDirector
-    Alien --> MovementStrategy : delega
+    class AlienAttackStrategy
+    class LinearAttackStrategy
+    class VAttackStrategy
+    Alien --> MovementStrategy
+    Alien --> AlienAttackStrategy
     MovementStrategy <|.. LinearMovementStrategy
     MovementStrategy <|.. ZigZagMovementStrategy
-    LevelDirector --> MovementStrategy : selecciona
+    AlienAttackStrategy <|.. LinearAttackStrategy
+    AlienAttackStrategy <|.. VAttackStrategy
 ```
 
-## GM-8 — Template Method: ciclo de pantalla
+## GM-8 — Template Method: AbstractGameScreen
 
-### 1. Problema concreto en el juego
+### 1. Problema concreto
 
-Nosotros necesitamos mantener el mismo orden de preparación, entrada, actualización y dibujo para
-que una pantalla no omita un paso del ciclo.
+Nosotros queremos que todas las pantallas limpien, procesen entrada, actualicen y dibujen en el mismo orden.
 
 ### 2. Contexto
 
-Nosotros hacemos que el menú y la partida compartan `AbstractGameScreen`, y dejamos que cada pantalla
-defina la entrada, actualización y dibujo concretos.
+MenuScreen, GameScreen, GameOverScreen y VictoryScreen comparten el ciclo de renderizado.
 
 ### 3. Solución implementada
 
-Nosotros declaramos final `render(delta)` y fijamos la secuencia `clearScreen()`, `handleInput(delta)`,
-`update(delta)` y `draw(delta)`. Nosotros ubicamos la plantilla y sus hooks en
-`AbstractGameScreen.java` (líneas 28–45), y sus subclases en `MenuScreen.java` y `GameScreen.java`.
+Nosotros declaramos render(float delta) final en AbstractGameScreen.java, línea 28, y dejamos clearScreen, handleInput, update y draw como pasos del algoritmo base.
 
-### 4. Diagrama UML del patrón
+### 4. Diagrama del patrón
 
 ```mermaid
 classDiagram
+    class ScreenAdapter
     class AbstractGameScreen {
-        <<abstract>>
         +render(delta) final
         #clearScreen()
         #handleInput(delta) abstract
         #update(delta) abstract
         #draw(delta) abstract
     }
-    class MenuScreen
     class GameScreen
-    AbstractGameScreen <|-- MenuScreen
+    class MenuScreen
+    ScreenAdapter <|-- AbstractGameScreen
     AbstractGameScreen <|-- GameScreen
+    AbstractGameScreen <|-- MenuScreen
 ```
 
-## GM-9 — Builder: configuración de aliens
+## GM-9 — Builder: AlienBuilder y LevelDirector
 
-### 1. Problema concreto en el juego
+### 1. Problema concreto
 
-Nosotros configuramos aliens con vida, movimiento, ataque, tamaño y posición. Nosotros usamos
-`AlienBuilder` para evitar constructores largos y rechazar configuraciones incompletas.
+Nosotros necesitamos construir aliens con combinaciones válidas de posición, vida, movimiento y ataque.
 
 ### 2. Contexto
 
-Nosotros dejamos que `LevelDirector` elija los arquetipos: el nivel uno tiene 1 HP, movimiento lineal
-y disparo unitario; los niveles dos y tres tienen 2 y 3 HP, zigzag y descarga en V. Nosotros todavía
-no conectamos la transición entre esos niveles a la partida.
+Los niveles tienen HP, movimiento y estrategia de ataque distintos; el resto de la partida los consume con la misma interfaz Alien.
 
 ### 3. Solución implementada
 
-Nosotros hacemos que `AlienBuilder` exija posición, vida, estrategia de movimiento y estrategia de
-ataque, y valide la velocidad reportada por el movimiento. Nosotros hacemos que `LevelDirector`
-construya oleadas de tres aliens con el arquetipo del nivel solicitado; nosotros dejamos la cantidad
-provisional, porque la cuota y la generación por nivel pertenecen a la progresión reservada.
-Nosotros ubicamos la validación en `AlienBuilder.java` (líneas 26–75) y la selección/configuración
-en `LevelDirector.java` (líneas 37–79).
+Nosotros validamos la configuración al llamar build() en AlienBuilder.java, línea 60. LevelDirector prepara y distribuye cada oleada con esas configuraciones en LevelDirector.java, línea 37.
 
-### 4. Diagrama UML del patrón
+### 4. Diagrama del patrón
 
 ```mermaid
 classDiagram
     class LevelDirector
     class AlienBuilder {
-        +position(x, y) AlienBuilder
-        +hitPoints(hp) AlienBuilder
-        +movement(strategy) AlienBuilder
-        +attack(strategy) AlienBuilder
+        +position(x, y)
+        +hitPoints(value)
+        +movement(strategy)
+        +attack(strategy)
         +build() Alien
     }
     class Alien
-    LevelDirector --> AlienBuilder : dirige
-    AlienBuilder --> Alien : construye
+    LevelDirector --> AlienBuilder
+    AlienBuilder ..> Alien
 ```
 
-## GM-10 — Uso de GitHub
+## GM-10 — GitHub y commits
 
-Nosotros trabajamos en `feature/base-patrones` y separamos los incrementos en commits. Nosotros
-verificamos cada incremento con `gradlew.bat test compileJava`; Gradle terminó correctamente con
-JDK 11. Nosotros no añadimos pruebas porque el repositorio todavía no contiene fuentes de prueba;
-el resultado de la tarea `test` es `NO-SOURCE`.
+Nosotros trabajamos sobre feature/rama-Alex y registramos avances pequeños. Los siete commits de este corte son:
 
-Nosotros dejamos estos commits de trabajo con mensajes en primera persona:
+1. cb7b090 — Corrijo los errores de compilación del juego.
+2. beae3fd — Conecto el combate y la progresión de la partida.
+3. ff6f2fc — Conecto las transiciones y cierro las reglas de nivel.
+4. e47eeb4 — Conecto los finales con el estado real de la partida.
+5. 34ace3d — Actualizo la guía para probar la demo jugable.
+6. ba9ad75 — Limpio el estado al volver al menú.
+7. b25a232 — Actualizo el UML con el flujo jugable real.
 
-| Commit | Mensaje |
-| --- | --- |
-| `a045e85` | Ajusto la compilación para usar Java 11 |
-| `fa7655b` | Centralizo las velocidades y las cadencias en GameConfig |
-| `f10a545` | Administro los recursos compartidos con el Singleton |
-| `b38219c` | Configuro los aliens de cada nivel con estrategias separadas |
-| `aba9ea2` | Preparo el disparo mantenido y los modelos de obstáculos |
-| `1db77b3` | Mantengo el ciclo de pantalla en un solo Template Method |
-| `d2c7d82` | Evito que Gradle escriba archivos auxiliares en assets |
+Nosotros ejecutamos gradlew.bat test compileJava. Gradle compiló core y lwjgl3 correctamente; no encontramos fuentes de pruebas automatizadas y las tareas test finalizaron como NO-SOURCE. Iniciamos lwjgl3:run, pero todavía debemos jugar manualmente para comprobar controles, dificultad y feedback visual.
 
-## Trabajo reservado para la siguiente IA
+## Trabajo pendiente
 
-Nosotros dejamos pendiente completar e integrar estas reglas, sin considerarlas terminadas en esta
-base:
-
-1. Nosotros dejamos para la siguiente IA las colisiones de proyectiles, el HP restante, el daño por
-   meteoritos, la pérdida de vida, el respawn de 1,5 s, la limpieza únicamente de proyectiles y la
-   invulnerabilidad común al respawn y al dash. Nosotros ya conservamos una resolución básica de
-   choque físico nave-alien de la iteración anterior, pero no la ampliamos en este trabajo.
-2. Nosotros dejamos para la siguiente IA las cuatro fases solicitadas, las cuotas 15/30/45, la
-   desactivación de aliens restantes, la continuación de nivel y las pantallas/transiciones finales.
-   Nosotros mantenemos la navegación actual solo con menú e inicio, y la fase existente solo tiene
-   `PLAYING` y `GAME_OVER`.
-3. Nosotros dejamos para la siguiente IA los puntos, el ingreso del nombre de tres caracteres y la
-   persistencia Top 3. Nosotros todavía no creamos `ScoreRepository` ni ubicamos una base local.
-
-Nosotros dejamos como dependencias directas la conexión de `PlayerWeapon`, `Alien.fireDue()`, ambos
-proyectiles y `Meteorite` al mundo y a `WorldSnapshot`; la vida/daño de entidades; la generación de
-meteoritos; el parámetro de impulso del dash; el uso visual de las rutas de `GameAssets`; y la
-integración del puntaje. Nosotros verificaremos esas piezas en conjunto cuando se implemente el bloque
-reservado.
+Nosotros dejamos ScoreRepository fuera del flujo de Game Over y Victoria. Aunque ScoreRepository guarda datos locales mediante Preferences, aún faltan el ingreso del nombre de tres caracteres y la consulta del Top 3 desde las pantallas. También debemos confirmar el multiplicador provisional del dash y registrar los créditos y licencias de los recursos.
