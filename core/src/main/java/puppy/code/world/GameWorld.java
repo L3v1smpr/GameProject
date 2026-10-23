@@ -8,6 +8,7 @@ import puppy.code.config.GameConfig;
 import puppy.code.entities.Alien;
 import puppy.code.entities.AlienProjectile;
 import puppy.code.entities.Meteorite;
+import puppy.code.entities.MeteoriteSize;
 import puppy.code.entities.PlayerProjectile;
 import puppy.code.entities.Ship;
 import puppy.code.factories.LevelDirector;
@@ -188,9 +189,18 @@ public final class GameWorld {
             for (Meteorite meteorite : meteorites) {
                 if (meteorite.isActive() && collisions.collides(projectile, meteorite)) {
                     projectile.deactivate();
-                    meteorite.deactivate();
-                    score += meteorite.getScoreValue();
-                    notifyAudio(WorldAudioListener::onMeteoriteDestroyed);
+                    if (meteorite.takeDamage()) {
+                        score += meteorite.getScoreValue();
+                        // Tanto el meteorito mediano como el grande activan el estruendo de destruccion total
+                        if (meteorite.getSize() == MeteoriteSize.MEDIUM || meteorite.getSize() == MeteoriteSize.LARGE) {
+                            notifyAudio(WorldAudioListener::onMeteoriteDestroyed);
+                        } else {
+                            notifyAudio(WorldAudioListener::onMeteoriteHit);
+                        }
+                    } else {
+                        // Impacto intermedio sin destruir (meteoritos medianos o grandes)
+                        notifyAudio(WorldAudioListener::onMeteoriteHit);
+                    }
                     break;
                 }
             }
@@ -212,7 +222,6 @@ public final class GameWorld {
         }
     }
 
-    /** Un solo contacto físico puede quitar vida; los objetos atraviesan durante la invulnerabilidad. */
     private void resolveShipCollisions() {
         if (phase != GamePhase.ACTIVE || ship.isInvulnerable()) {
             return;
@@ -284,7 +293,6 @@ public final class GameWorld {
         }
     }
 
-    /** Conserva vidas y puntaje; solo prepara la siguiente fase tras confirmación del jugador. */
     public void advanceToNextLevel() {
         if (phase != GamePhase.LEVEL_COMPLETED) {
             return;

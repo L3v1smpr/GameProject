@@ -96,7 +96,6 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
             return;
         }
 
-        // Transición cinemática con easing y fade out sonoro
         if (activeTransition != TransitionType.NONE) {
             transitionTimer = Math.max(0f, transitionTimer - delta);
             float linearProgress = Math.min(1f, 1f - (transitionTimer / TRANSITION_DURATION_SECONDS));
@@ -173,7 +172,6 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
 
     @Override
     protected void draw(float delta) {
-        // Bloquea el renderizado de entidades en el fotograma de cambio para eliminar el parpadeo
         if (transitionCompleted) {
             drawFinalCover();
             return;
@@ -200,7 +198,6 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
         drawTransitionOverlay();
     }
 
-    /** Dibuja el filtro en progreso con blending alfa sobre la batalla. */
     private void drawTransitionOverlay() {
         if (activeTransition == TransitionType.NONE) {
             return;
@@ -231,7 +228,6 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
         Gdx.gl.glDisable(GL20.GL_BLEND);
     }
 
-    /** Cubre el 100% de la pantalla en sólido justo en el frame en que se cambia de pantalla. */
     private void drawFinalCover() {
         Gdx.gl.glDisable(GL20.GL_BLEND);
         assets.shapes().setProjectionMatrix(camera.combined);
@@ -449,8 +445,17 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
     }
 
     @Override
-    public void onMeteoriteDestroyed() {
+    public void onMeteoriteHit() {
         assets.playSound(GameAssets.METEORITE_HIT_SOUND, 0.6f);
+    }
+
+    @Override
+    public void onMeteoriteDestroyed() {
+        if (assets.getSound(GameAssets.METEORITE_DESTROYED_SOUND) != null) {
+            assets.playSound(GameAssets.METEORITE_DESTROYED_SOUND, 0.85f);
+        } else {
+            assets.playSound(GameAssets.METEORITE_HIT_SOUND, 0.85f);
+        }
     }
 
     @Override

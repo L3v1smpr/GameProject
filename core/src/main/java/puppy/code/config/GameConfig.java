@@ -52,15 +52,24 @@ public final class GameConfig {
 
     public static final float METEORITE_SPAWN_COOLDOWN_SECONDS = 4f;
     public static final float METEORITE_FALL_SPEED = 100f;
-    public static final float SMALL_METEORITE_WIDTH = 38f;
-    public static final float SMALL_METEORITE_HEIGHT = 38f;
-    public static final float MEDIUM_METEORITE_WIDTH = 56f;
-    public static final float MEDIUM_METEORITE_HEIGHT = 56f;
-    public static final float LARGE_METEORITE_WIDTH = 80f;
-    public static final float LARGE_METEORITE_HEIGHT = 80f;
+
+    // Escala calibrada de meteoritos
+    public static final float SMALL_METEORITE_WIDTH = 36f;
+    public static final float SMALL_METEORITE_HEIGHT = 36f;
+    public static final float MEDIUM_METEORITE_WIDTH = 68f;
+    public static final float MEDIUM_METEORITE_HEIGHT = 68f;
+    public static final float LARGE_METEORITE_WIDTH = 136f;
+    public static final float LARGE_METEORITE_HEIGHT = 136f;
+
     public static final int SMALL_METEORITE_SCORE = 25;
     public static final int MEDIUM_METEORITE_SCORE = 50;
-    public static final int LARGE_METEORITE_SCORE = 75;
+    public static final int LARGE_METEORITE_SCORE = 100;
+
+    // Resistencia escalonada: 1, 2 y 3 impactos
+    public static final int SMALL_METEORITE_HIT_POINTS = 1;
+    public static final int MEDIUM_METEORITE_HIT_POINTS = 2;
+    public static final int LARGE_METEORITE_HIT_POINTS = 3;
+    public static final int METEORITE_HIT_POINTS = 1;
 
     public static final float ALIEN_WIDTH = 48f;
     public static final float ALIEN_HEIGHT = 48f;
@@ -87,8 +96,6 @@ public final class GameConfig {
     public static final int LEVEL_ONE_ALIEN_HIT_POINTS = 1;
     public static final int LEVEL_TWO_ALIEN_HIT_POINTS = 2;
     public static final int LEVEL_THREE_ALIEN_HIT_POINTS = 3;
-
-    public static final int METEORITE_HIT_POINTS = 1;
 
     /** Provisional: segundos que dura cada tramo del zigzag antes de cambiar de lado. */
     public static final float ZIGZAG_HALF_PERIOD_SECONDS = 1.2f;

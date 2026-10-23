@@ -45,6 +45,7 @@ public final class GameAssets {
     public static final String ALIEN_DEATH_SOUND = "alien_death.wav";
 
     public static final String METEORITE_HIT_SOUND = "meteorite_hit.wav";
+    public static final String METEORITE_DESTROYED_SOUND = "meteorite_destroyed.mp3";
     public static final String LEVEL_CLEAR_SOUND = "nivel_superado.MP3";
     public static final String VICTORY_MUSIC = "pantalla_victoria.mp3";
     public static final String GAMEOVER_MUSIC = "gameover.mp3";
@@ -109,6 +110,7 @@ public final class GameAssets {
         cargarAudioSiExiste(ALIEN_DEATH_SOUND, Sound.class);
 
         cargarAudioSiExiste(METEORITE_HIT_SOUND, Sound.class);
+        cargarAudioSiExiste(METEORITE_DESTROYED_SOUND, Sound.class);
         cargarAudioSiExiste(LEVEL_CLEAR_SOUND, Sound.class);
         cargarAudioSiExiste(VICTORY_MUSIC, Music.class);
         cargarAudioSiExiste(GAMEOVER_MUSIC, Music.class);
@@ -136,7 +138,6 @@ public final class GameAssets {
             }
         }
 
-        // Procesar alien_static.png: fila 0 = normal, fila 1 = disparando
         if (manager.isLoaded(ALIEN_STATIC_TEXTURE, Texture.class)) {
             Texture aStatic = manager.get(ALIEN_STATIC_TEXTURE, Texture.class);
             TextureRegion[][] splits = TextureRegion.split(aStatic, 48, 48);

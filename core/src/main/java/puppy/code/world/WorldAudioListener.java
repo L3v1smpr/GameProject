@@ -1,8 +1,6 @@
 package puppy.code.world;
 
-/**
- * Contrato de observación para desacoplar el modelo físico de la reproducción de audio (DIP).
- */
+/** Contrato desacoplado para escuchar eventos acústicos del mundo de juego. */
 public interface WorldAudioListener {
     void onPlayerShoot();
     void onPlayerDash();
@@ -10,6 +8,7 @@ public interface WorldAudioListener {
     void onAlienHurt();
     void onAlienDestroyed();
     void onAlienShoot();
+    void onMeteoriteHit();
     void onMeteoriteDestroyed();
     void onLevelCompleted();
 }
