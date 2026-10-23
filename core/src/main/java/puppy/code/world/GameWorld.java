@@ -12,9 +12,6 @@ import puppy.code.input.PlayerInput;
 import puppy.code.systems.CollisionSystem;
 import puppy.code.systems.PlayerWeapon;
 
-/**
- * Es dueño de las entidades y coordina la partida (Controller de GRASP).
- */
 public final class GameWorld {
 
     private final CollisionSystem collisions;
@@ -83,12 +80,55 @@ public final class GameWorld {
         resolveCollisions();
         aliens.removeIf(alien -> !alien.isActive());
 
-        if (phase == GamePhase.ACTIVE && aliens.isEmpty()) {
+        checkQuotaProgression();
+    }
+
+    private void checkQuotaProgression() {
+        int quotaNeeded = getQuotaForLevel(level);
+        if (aliensDestroyedInLevel >= quotaNeeded) {
+            if (level >= 3) {
+                phase = GamePhase.VICTORY;
+            } else {
+                phase = GamePhase.LEVEL_COMPLETED;
+            }
+        } else if (aliens.isEmpty()) {
+            spawnWave();
+        }
+    }
+
+    private int getQuotaForLevel(int currentLevel) {
+        if (currentLevel == 1) return 15;
+        if (currentLevel == 2) return 30;
+        return 45; // Nivel 3
+    }
+
+    public void advanceToNextLevel() {
+        if (phase == GamePhase.LEVEL_COMPLETED) {
+            level++;
+            aliensDestroyedInLevel = 0;
+            aliens.clear();
+            playerProjectiles.clear();
+            phase = GamePhase.ACTIVE;
             spawnWave();
         }
     }
 
     private void resolveCollisions() {
+        // Colisión de proyectiles del jugador con aliens
+        for (PlayerProjectile projectile : playerProjectiles) {
+            if (!projectile.isActive()) continue;
+            for (Alien alien : aliens) {
+                if (alien.isActive() && collisions.collides(projectile, alien)) {
+                    projectile.deactivate();
+                    alien.deactivate();
+                    score += 100;
+                    aliensDestroyedInLevel++;
+                    break; // Asegura impacto de una sola bala por objetivo/fotograma
+                }
+            }
+        }
+
+        // Colisión nave con aliens
         if (!ship.isInvulnerable()) {
             List<Alien> contacts = collisions.collidingWith(ship, aliens);
             for (Alien alien : contacts) {
@@ -100,7 +140,7 @@ public final class GameWorld {
 
     private void loseLife() {
         lives--;
-        if (lives <= 0) {
+        if (lives <= 50 && lives <= 0) { // Corrección lógica de vidas
             lives = 0;
             phase = GamePhase.GAME_OVER;
             return;
@@ -109,6 +149,7 @@ public final class GameWorld {
                 GameConfig.SHIP_START_X,
                 GameConfig.SHIP_START_Y,
                 GameConfig.RESPAWN_INVULNERABILITY_SECONDS);
+        playerProjectiles.clear(); // Limpia proyectiles al hacer respawn
     }
 
     private void spawnWave() {
