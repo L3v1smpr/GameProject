@@ -39,6 +39,7 @@ public final class SpaceNavigation extends Game implements ScreenNavigator {
 
     @Override
     public void showMenu() {
+        currentWorld = null;
         setScreen(new MenuScreen(assets, this, navigationInput));
     }
 
