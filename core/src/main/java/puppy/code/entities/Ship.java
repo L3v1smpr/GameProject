@@ -1,12 +1,15 @@
 package puppy.code.entities;
 
 import com.badlogic.gdx.math.Vector2;
+import puppy.code.config.GameConfig;
 
-/** Entidad que controla el jugador; conoce su movimiento, pero no el teclado ni la pantalla. */
 public final class Ship extends GameEntity {
 
     private final float speed;
-    private float invulnerabilityRemaining;
+    private float invulnerabilityTimer;
+    private float dashCooldownTimer;
+    private float dashDurationTimer;
+    private Vector2 dashDirection = new Vector2(0, 1);
 
     public Ship(float x, float y, float width, float height, float speed) {
         super(x, y, width, height);
@@ -16,37 +19,69 @@ public final class Ship extends GameEntity {
         this.speed = speed;
     }
 
-    public void update(float delta, Vector2 direction, float worldWidth, float worldHeight) {
+    public void update(float delta, Vector2 movementDirection, float worldWidth, float worldHeight) {
         if (!Float.isFinite(delta) || delta < 0f) {
             throw new IllegalArgumentException("delta debe ser finito y no negativo.");
         }
-        if (direction == null) {
+        if (movementDirection == null) {
             throw new IllegalArgumentException("La dirección de movimiento no puede ser null.");
         }
 
-        invulnerabilityRemaining = Math.max(0f, invulnerabilityRemaining - delta);
-
-        Vector2 normalizedDirection = direction.cpy();
-        if (normalizedDirection.len2() > 1f) {
-            normalizedDirection.nor();
+        Vector2 normalDirection = movementDirection.cpy();
+        if (normalDirection.len2() > 1f) {
+            normalDirection.nor();
         }
+        float dashSeconds = Math.min(delta, dashDurationTimer);
+        float regularSeconds = delta - dashSeconds;
+        float newX = getX()
+                + dashDirection.x * speed * GameConfig.DASH_SPEED_MULTIPLIER * dashSeconds
+                + normalDirection.x * speed * regularSeconds;
+        float newY = getY()
+                + dashDirection.y * speed * GameConfig.DASH_SPEED_MULTIPLIER * dashSeconds
+                + normalDirection.y * speed * regularSeconds;
 
-        float nextX = getX() + normalizedDirection.x * speed * delta;
-        float nextY = getY() + normalizedDirection.y * speed * delta;
-        setPositionInside(nextX, nextY, worldWidth, worldHeight);
+        setPositionInside(newX, newY, worldWidth, worldHeight);
+
+        invulnerabilityTimer = Math.max(0f, invulnerabilityTimer - delta);
+        dashCooldownTimer = Math.max(0f, dashCooldownTimer - delta);
+        if (dashDurationTimer > 0f) {
+            dashDurationTimer = Math.max(0f, dashDurationTimer - delta);
+        }
     }
 
-    /** Indica si la nave ignora el daño en este momento. */
-    public boolean isInvulnerable() {
-        return invulnerabilityRemaining > 0f;
+    public void triggerDash(Vector2 inputDirection) {
+        if (inputDirection == null) {
+            throw new IllegalArgumentException("La dirección del dash no puede ser null.");
+        }
+        if (dashCooldownTimer > 0f || dashDurationTimer > 0f) {
+            return;
+        }
+        dashDurationTimer = GameConfig.DASH_DURATION_SECONDS;
+        dashCooldownTimer = GameConfig.DASH_COOLDOWN_SECONDS;
+        invulnerabilityTimer = Math.max(invulnerabilityTimer, GameConfig.DASH_DURATION_SECONDS);
+
+        if (inputDirection.len2() > 0f) {
+            dashDirection.set(inputDirection).nor();
+        } else {
+            dashDirection.set(0f, 1f); // Por defecto hacia arriba si no hay dirección
+        }
     }
 
-    /** Coloca la nave en un punto fijo y le da un periodo de invulnerabilidad (puede ser cero). */
-    public void respawn(float x, float y, float invulnerabilitySeconds) {
+    public void respawn(float startX, float startY, float invulnerabilitySeconds) {
         if (!Float.isFinite(invulnerabilitySeconds) || invulnerabilitySeconds < 0f) {
             throw new IllegalArgumentException("La invulnerabilidad debe ser finita y no negativa.");
         }
-        setPosition(x, y);
-        invulnerabilityRemaining = invulnerabilitySeconds;
+        setPosition(startX, startY);
+        this.invulnerabilityTimer = invulnerabilitySeconds;
+        this.dashDurationTimer = 0f;
+        this.dashCooldownTimer = 0f;
+    }
+
+    public boolean isInvulnerable() {
+        return invulnerabilityTimer > 0f || dashDurationTimer > 0f;
+    }
+
+    public boolean canDash() {
+        return dashCooldownTimer <= 0f && dashDurationTimer <= 0f;
     }
 }

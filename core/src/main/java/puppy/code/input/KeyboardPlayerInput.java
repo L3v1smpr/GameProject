@@ -4,7 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.math.Vector2;
 
-/** Traduce las teclas acordadas a una dirección de movimiento normalizada. */
+/** Traduce las teclas WASD, I (disparo) y O (dash) a comandos del jugador. */
 public final class KeyboardPlayerInput implements PlayerInput {
 
     @Override

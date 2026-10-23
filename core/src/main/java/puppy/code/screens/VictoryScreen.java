@@ -45,10 +45,10 @@ public final class VictoryScreen extends AbstractGameScreen {
     protected void handleInput(float delta) {
         // Enter / Espacio: iniciar nueva partida
         if (input.confirmJustPressed()) {
-            navigator.startNewGame();
+            navigator.showGame();
         } else if (input.backJustPressed()) {
             // ESC: volver al menú principal
-            navigator.showMainMenu();
+            navigator.showMenu();
         }
     }
 

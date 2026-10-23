@@ -55,26 +55,26 @@ public final class LevelDirector {
     }
 
     private MovementStrategy movementFor(int level) {
-        if (level == 1) {
+        if (level == GameConfig.FIRST_LEVEL) {
             return linearMovement;
         }
-        if (level == 2 || level == 3) {
+        if (level == GameConfig.SECOND_LEVEL || level == GameConfig.LAST_LEVEL) {
             return zigZagMovement;
         }
         throw new IllegalArgumentException("Solo se admiten los niveles 1, 2 y 3.");
     }
 
     private AlienAttackStrategy attackFor(int level) {
-        return level == 1 ? linearAttack : vAttack;
+        return level == GameConfig.FIRST_LEVEL ? linearAttack : vAttack;
     }
 
     private int hitPointsFor(int level) {
         switch (level) {
-            case 1:
+            case GameConfig.FIRST_LEVEL:
                 return GameConfig.LEVEL_ONE_ALIEN_HIT_POINTS;
-            case 2:
+            case GameConfig.SECOND_LEVEL:
                 return GameConfig.LEVEL_TWO_ALIEN_HIT_POINTS;
-            case 3:
+            case GameConfig.LAST_LEVEL:
                 return GameConfig.LEVEL_THREE_ALIEN_HIT_POINTS;
             default:
                 throw new IllegalArgumentException("Solo se admiten los niveles 1, 2 y 3.");

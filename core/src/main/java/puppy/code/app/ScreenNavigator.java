@@ -1,19 +1,19 @@
 package puppy.code.app;
 
 /**
- * Define las transiciones de pantalla permitidas desde la aplicación (Indirección / DIP).
+ * Define las transiciones de pantalla permitidas desde la aplicación.
  */
 public interface ScreenNavigator {
 
-    void showMainMenu();
+    void showMenu();
 
-    void startNewGame();
+    void showGame();
 
     void showGameOver();
 
-    void showGameOver(int finalScore, int levelReached);
-
     void showVictory();
+
+    void showGameOver(int finalScore, int levelReached);
 
     void showVictory(int finalScore);
 }

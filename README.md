@@ -1,76 +1,46 @@
 # Space Navigation
 
-Videojuego 2D de escritorio hecho en Java y LibGDX. Construimos una base común para seguir
-implementando por etapas. La versión actual permite abrir el menú, iniciar la partida y mover la nave;
-las funciones pendientes están separadas para no confundir estructura con juego terminado.
+Demo jugable de escritorio en Java 11 y LibGDX para recibir feedback sobre el combate base.
 
-## Requisitos y ejecución
+## Ejecutar
 
-- JDK 11.
-- Windows: `gradlew.bat lwjgl3:run`.
-- Linux/macOS: `./gradlew lwjgl3:run`.
-- Verificación de compilación y pruebas existentes: `./gradlew test compileJava`.
+- Requisito: JDK 11.
+- Windows: gradlew.bat :lwjgl3:run
+- Linux/macOS: ./gradlew :lwjgl3:run
+- Compilar y ejecutar las pruebas disponibles: gradlew.bat test compileJava o ./gradlew test compileJava
 
-El módulo `lwjgl3` conserva las tareas normales de ejecución, JAR y `dist`. Retiramos la configuración
-opcional de empaquetado nativo `construo` porque requería ejecutar Gradle con Java 17, contrario al
-entorno Java 11 solicitado.
+Importamos la carpeta raíz como proyecto Gradle existente en Eclipse o NetBeans. Usamos el Gradle Wrapper incluido.
 
-## Importar el proyecto
+## Partida
 
-- **Eclipse:** importa la carpeta del proyecto como **Existing Gradle Project** y usa el wrapper incluido.
-- **NetBeans:** abre la carpeta raíz como proyecto Gradle y deja que NetBeans sincronice los módulos.
+Comenzamos con tres vidas. El objetivo es destruir aliens, esquivar sus ataques y completar las cuotas:
 
-La raíz contiene `settings.gradle`, `build.gradle`, `gradlew`, `gradlew.bat` y el directorio `gradle/`.
+| Nivel | Cuota | Vida del alien | Movimiento y ataque |
+| --- | ---: | ---: | --- |
+| 1 | 15 aliens | 1 impacto | Movimiento lineal y un disparo dirigido |
+| 2 | 30 aliens | 2 impactos | Zigzag y dos disparos en V |
+| 3 | 45 aliens | 3 impactos | Zigzag y dos disparos en V |
 
-## Controles disponibles y preparados
+Al completar los niveles 1 o 2, esperamos una tecla o un clic para continuar. Completar el nivel 3 muestra Victoria. Si perdemos las tres vidas, aparece Game Over. Enter reinicia desde el nivel 1 y Escape vuelve al menú desde las pantallas finales.
 
-| Tecla | Estado en este corte |
+## Controles
+
+| Tecla | Acción |
 | --- | --- |
-| `W/A/S/D` | Mueve la nave, con dirección diagonal normalizada. |
-| `ENTER` | Inicia una partida desde el menú. |
-| `ESC` | Vuelve al menú durante la partida. |
-| `I` mantenida | La entrada ya se detecta y `PlayerWeapon` aplica una cadencia de 0,25 s; falta conectar el arma al mundo y resolver impactos. |
-| `O` | La entrada ya se detecta; el dash queda pendiente junto con su invulnerabilidad y resolución de daño. |
+| W/A/S/D | Mover la nave en cuatro direcciones y en diagonal |
+| I mantenida | Disparar cada 0,25 segundos |
+| O | Hacer dash e ignorar daño durante 0,15 segundos; recarga de 3 segundos |
+| Enter | Iniciar, continuar desde una pantalla final o reiniciar |
+| Escape | Volver al menú durante la partida o desde una pantalla final |
 
-## Base implementada
+El movimiento usa delta y normaliza las diagonales. El dash usa provisionalmente un multiplicador de velocidad de 3; todavía debemos validar ese balance al jugar.
 
-- `GameAssets` es el Singleton de recursos compartidos. Las rutas existentes están centralizadas como
-  constantes y las texturas, sonidos y música se cargan bajo demanda mediante `AssetManager`.
-- `AbstractGameScreen` fija `clearScreen → handleInput → update → draw` con un `render(delta)` final.
-- `AlienBuilder` valida posición, vida, movimiento, velocidad y ataque. `LevelDirector` prepara los
-  arquetipos de los niveles 1 a 3.
-- `Alien` delega movimiento y ataque en estrategias independientes. Los niveles tienen 1, 2 y 3 HP;
-  el primero se desplaza en línea y dispara una bala dirigida; los otros dos usan zigzag y una descarga
-  en V de dos balas a 45° por lado.
-- `PlayerProjectile`, `AlienProjectile`, `Meteorite` y `PlayerWeapon` son modelos listos para integrarse;
-  todavía no participan en el ciclo de `GameWorld`.
-- `GameEntity` conserva el estado común y entrega límites defensivos mediante `Collidable`.
+Los aliens disparan cada 1,8 segundos. Perder una vida devuelve la nave a su posición inicial y la protege durante 1,5 segundos. En el respawn limpiamos los proyectiles activos y conservamos aliens, meteoritos, puntaje y progreso del nivel. Destruir un alien suma 100 puntos; los meteoritos destructibles suman 25, 50 o 75 según su tamaño.
 
-## Trabajo reservado para la siguiente IA
+## Estructura y estado de esta entrega
 
-Dejamos pendientes las secciones de colisiones/vidas/respawn e invulnerabilidad, fases/progresión y
-puntaje/leaderboard, junto con lo que depende de ellas: integrar proyectiles y meteoritos en el mundo,
-resolver impactos y HP, limpiar solo proyectiles al perder vida, completar dash, cambiar de nivel y
-pantalla, guardar el Top 3 e ingresar el nombre de tres caracteres. Las cuotas 15/30/45 ya están en la
-especificación, pero aún no las conectamos a la partida.
+GameWorld coordina la partida y expone un WorldSnapshot de solo lectura. Las pantallas dibujan ese estado. PlayerWeapon regula el disparo; CollisionSystem detecta impactos; Alien delega movimiento y ataque en estrategias; AlienBuilder y LevelDirector crean aliens para cada nivel. GameAssets administra los recursos compartidos y AbstractGameScreen fija el ciclo de renderizado.
 
-## Recursos
+La clase ScoreRepository ya permite guardar resultados localmente, pero todavía no la conectamos con Game Over, Victoria ni una interfaz para ingresar el nombre de tres caracteres. La captura y consulta del Top 3 queda pendiente para la siguiente etapa. También debemos validar jugando el balance provisional del dash y los recursos audiovisuales.
 
-Usamos únicamente las rutas ya presentes en `assets/`:
-
-| Tipo | Constante en `GameAssets` | Archivo |
-| --- | --- | --- |
-| Imagen | `PLAYER_SHIP_TEXTURE` | `MainShip3.png` |
-| Imagen | `PLAYER_PROJECTILE_TEXTURE` | `Rocket2.png` |
-| Imagen | `SMALL_METEORITE_TEXTURE` | `aGreySmall.png` |
-| Imagen | `MEDIUM_METEORITE_TEXTURE` | `aGreyMedium4.png` |
-| Imagen | `LARGE_METEORITE_TEXTURE` | `aGreyLarge.png` |
-| Audio | `EXPLOSION_SOUND` | `explosion.ogg` |
-| Audio | `HURT_SOUND` | `hurt.ogg` |
-| Audio | `POP_SOUND` | `pop-sound.mp3` |
-| Música | `BACKGROUND_MUSIC` | `piano-loops.wav` |
-
-No modificamos la carpeta `assets/` ni el paquete histórico `puppy.code.prototype`.
-
-Consulta [UML_INICIAL.md](UML_INICIAL.md) para el diagrama del corte y
-[`Planificacion/`](Planificacion/) para las decisiones de arquitectura.
+Usamos las rutas de assets/ existentes y dejamos intactos tanto ese directorio como el código histórico de puppy.code.prototype. El UML de la arquitectura está en UML_INICIAL.md; las decisiones y pendientes del equipo están en Planificacion/.

@@ -15,4 +15,17 @@ public final class KeyboardNavigationInput implements NavigationInput {
     public boolean backJustPressed() {
         return Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE);
     }
+
+    @Override
+    public boolean anyActionJustPressed() {
+        if (Gdx.input.justTouched()) {
+            return true;
+        }
+        for (int keyCode = 1; keyCode < 256; keyCode++) {
+            if (Gdx.input.isKeyJustPressed(keyCode)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

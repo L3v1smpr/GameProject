@@ -23,6 +23,13 @@ public final class GameConfig {
     /** Tiempo entre disparos mientras se mantiene presionada la tecla de fuego. */
     public static final float PLAYER_FIRE_COOLDOWN_SECONDS = 0.25f;
 
+    /** Multiplicador provisional del movimiento mientras se ejecuta el dash. */
+    public static final float DASH_SPEED_MULTIPLIER = 3f;
+
+    public static final float DASH_DURATION_SECONDS = 0.15f;
+
+    public static final float DASH_COOLDOWN_SECONDS = 3f;
+
     /** Punto fijo donde aparece la nave al iniciar y al perder una vida. */
     public static final float SHIP_START_X = WORLD_WIDTH / 2f - SHIP_WIDTH / 2f;
 
@@ -34,6 +41,26 @@ public final class GameConfig {
     public static final float RESPAWN_INVULNERABILITY_SECONDS = 1.5f;
 
     public static final int FIRST_LEVEL = 1;
+    public static final int SECOND_LEVEL = 2;
+    public static final int LAST_LEVEL = 3;
+
+    public static final int LEVEL_ONE_ALIEN_QUOTA = 15;
+    public static final int LEVEL_TWO_ALIEN_QUOTA = 30;
+    public static final int LEVEL_THREE_ALIEN_QUOTA = 45;
+
+    public static final int ALIEN_SCORE = 100;
+
+    public static final float METEORITE_SPAWN_COOLDOWN_SECONDS = 4f;
+    public static final float METEORITE_FALL_SPEED = 100f;
+    public static final float SMALL_METEORITE_WIDTH = 28f;
+    public static final float SMALL_METEORITE_HEIGHT = 28f;
+    public static final float MEDIUM_METEORITE_WIDTH = 42f;
+    public static final float MEDIUM_METEORITE_HEIGHT = 42f;
+    public static final float LARGE_METEORITE_WIDTH = 64f;
+    public static final float LARGE_METEORITE_HEIGHT = 64f;
+    public static final int SMALL_METEORITE_SCORE = 25;
+    public static final int MEDIUM_METEORITE_SCORE = 50;
+    public static final int LARGE_METEORITE_SCORE = 75;
 
     public static final float ALIEN_WIDTH = 40f;
     public static final float ALIEN_HEIGHT = 32f;
@@ -65,7 +92,7 @@ public final class GameConfig {
     /** Provisional: segundos que dura cada tramo del zigzag antes de cambiar de lado. */
     public static final float ZIGZAG_HALF_PERIOD_SECONDS = 1.2f;
 
-    /** Provisional: cantidad de aliens por oleada hasta definir las cuotas por nivel. */
+    /** Cantidad de aliens que se generan a la vez dentro de una oleada. */
     public static final int WAVE_SIZE = 3;
 
     /** Separación entre el borde superior del mundo y los aliens recién creados. */

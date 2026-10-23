@@ -1,51 +1,17 @@
-# Space Navigation — UML del corte actual
+# Space Navigation — UML de la demo jugable
 
-Nosotros mantenemos este diagrama fiel al código que ya existe. Las secciones siguientes distinguen
-el corte implementado de los contratos y módulos que todavía reservamos para la siguiente etapa.
-No modificamos `puppy.code.prototype` ni la carpeta `assets/`.
-
-## Clases implementadas
+Nosotros actualizamos este diagrama para reflejar el código integrado en la primera demo. El menú queda fuera de GamePhase. La clase ScoreRepository existe, pero la captura del nombre y su conexión con Game Over y Victoria siguen pendientes.
 
 ```mermaid
 classDiagram
     class Game {
         <<LibGDX>>
     }
-    class Lwjgl3Launcher {
-        <<LibGDX desktop>>
-    }
     class ScreenAdapter {
         <<LibGDX>>
         +render(delta: float)
-        +resize(width: int, height: int)
-    }
-    class OrthographicCamera {
-        <<LibGDX>>
-    }
-    class Viewport {
-        <<LibGDX>>
-        +apply()
-        +update(width: int, height: int, centerCamera: boolean)
-    }
-    class Vector2 {
-        <<LibGDX>>
     }
     class SpriteBatch {
-        <<LibGDX>>
-    }
-    class BitmapFont {
-        <<LibGDX>>
-    }
-    class ShapeRenderer {
-        <<LibGDX>>
-    }
-    class Texture {
-        <<LibGDX>>
-    }
-    class Sound {
-        <<LibGDX>>
-    }
-    class Music {
         <<LibGDX>>
     }
     class AssetManager {
@@ -57,54 +23,86 @@ classDiagram
     class Rectangle {
         <<LibGDX>>
     }
+    class Preferences {
+        <<LibGDX>>
+    }
+    class Vector2 {
+        <<LibGDX>>
+    }
+    class Texture {
+        <<LibGDX>>
+    }
+    class ShapeRenderer {
+        <<LibGDX>>
+    }
+    class TextureRegion {
+        <<LibGDX>>
+    }
 
     class SpaceNavigation {
         -assets: GameAssets
+        -currentWorld: GameWorld
         -navigationInput: NavigationInput
         -playerInput: PlayerInput
         -levelDirector: LevelDirector
         -collisionSystem: CollisionSystem
-        +create() void
-        +showMainMenu() void
-        +startNewGame() void
-        +dispose() void
+        +create()
+        +showMenu()
+        +showGame()
+        +showGameOver(finalScore, levelReached)
+        +showVictory(finalScore)
+        +dispose()
     }
     class ScreenNavigator {
         <<interface>>
-        +showMainMenu() void
-        +startNewGame() void
+        +showMenu()
+        +showGame()
+        +showGameOver()
+        +showVictory()
+        +showGameOver(finalScore, levelReached)
+        +showVictory(finalScore)
     }
     class GameAssets {
         -instance: GameAssets
         -manager: AssetManager
         -batch: SpriteBatch
-        -font: BitmapFont
-        -shapes: ShapeRenderer
         +getInstance() GameAssets
-        +texture(path: String) Texture
-        +sound(path: String) Sound
-        +music(path: String) Music
-        +dispose() void
+        +getTexture(path) Texture
+        +playMusic(path, loop, volume)
+        +dispose()
+    }
+    class GameConfig {
+        <<constants>>
+        +SHIP_SPEED
+        +PLAYER_FIRE_COOLDOWN_SECONDS
+        +DASH_DURATION_SECONDS
+        +DASH_COOLDOWN_SECONDS
+        +LEVEL_ONE_ALIEN_QUOTA
+        +LEVEL_TWO_ALIEN_QUOTA
+        +LEVEL_THREE_ALIEN_QUOTA
     }
 
     class AbstractGameScreen {
         <<abstract>>
         #assets: GameAssets
-        #camera: OrthographicCamera
-        #viewport: Viewport
-        +render(delta: float) final
-        +resize(width: int, height: int) final
-        #clearScreen() void
-        #handleInput(delta: float) abstract
-        #update(delta: float) abstract
-        #draw(delta: float) abstract
+        +render(delta) final
+        #clearScreen()
+        #handleInput(delta) abstract
+        #update(delta) abstract
+        #draw(delta) abstract
     }
     class MenuScreen
     class GameScreen
+    class GameOverScreen
+    class VictoryScreen
+    class AfterImage
+    class Lwjgl3Launcher
+    class StartupHelper
     class NavigationInput {
         <<interface>>
         +confirmJustPressed() boolean
         +backJustPressed() boolean
+        +anyActionJustPressed() boolean
     }
     class KeyboardNavigationInput
     class PlayerInput {
@@ -115,35 +113,39 @@ classDiagram
     }
     class KeyboardPlayerInput
 
-    class GameConfig {
-        <<constants>>
-    }
     class GameWorld {
         -ship: Ship
         -aliens: List~Alien~
-        -level: int
+        -meteorites: List~Meteorite~
+        -playerProjectiles: List~PlayerProjectile~
+        -alienProjectiles: List~AlienProjectile~
         -lives: int
+        -score: int
+        -level: int
+        -aliensDestroyedInLevel: int
         -phase: GamePhase
-        +update(delta: float, input: PlayerInput) void
+        +update(delta, input)
+        +advanceToNextLevel()
         +snapshot() WorldSnapshot
-        +restart() void
+        +restart()
     }
     class WorldSnapshot {
         -ship: EntityView
-        -shipInvulnerable: boolean
         -aliens: List~EntityView~
+        -meteorites: List~EntityView~
+        -playerProjectiles: List~EntityView~
+        -alienProjectiles: List~EntityView~
         -lives: int
+        -score: int
+        -level: int
         -phase: GamePhase
-        +getShip() EntityView
-        +isShipInvulnerable() boolean
-        +getAliens() List~EntityView~
-        +getLives() int
-        +getPhase() GamePhase
     }
     class GamePhase {
         <<enumeration>>
-        PLAYING
+        ACTIVE
+        LEVEL_COMPLETED
         GAME_OVER
+        VICTORY
     }
 
     class GameEntity {
@@ -154,7 +156,7 @@ classDiagram
         -height: float
         -active: boolean
         +bounds() Rectangle
-        +deactivate() void
+        +deactivate()
     }
     class Collidable {
         <<interface>>
@@ -162,33 +164,36 @@ classDiagram
     }
     class Ship {
         -speed: float
-        -invulnerabilityRemaining: float
-        +update(delta: float, direction: Vector2, worldWidth: float, worldHeight: float) void
-        +respawn(x: float, y: float, seconds: float) void
+        -invulnerabilityTimer: float
+        -dashCooldownTimer: float
+        -dashDurationTimer: float
+        +update(delta, direction, worldWidth, worldHeight)
+        +triggerDash(direction)
+        +respawn(x, y, seconds)
     }
     class Alien {
         -hitPoints: int
         -movement: MovementStrategy
         -attackStrategy: AlienAttackStrategy
-        -age: float
-        -fireCooldownRemaining: float
-        +update(delta: float, worldWidth: float) void
-        +fireDue(delta: float, target: Ship) List~AlienProjectile~
+        +takeDamage() boolean
+        +update(delta, worldWidth)
+        +fireDue(delta, target) List~AlienProjectile~
     }
     class PlayerProjectile {
         -speed: float
-        +update(delta: float) void
+        +update(delta)
     }
     class AlienProjectile {
         -direction: Vector2
         -speed: float
-        +update(delta: float) void
+        +update(delta)
     }
     class Meteorite {
         -size: MeteoriteSize
         -descentSpeed: float
-        -hitPoints: int
-        +update(delta: float) void
+        +random(worldWidth, worldHeight) Meteorite
+        +getScoreValue() int
+        +update(delta)
     }
     class MeteoriteSize {
         <<enumeration>>
@@ -198,111 +203,100 @@ classDiagram
     }
 
     class CollisionSystem {
-        +collides(first: Collidable, second: Collidable) boolean
-        +collidingWith(subject: Collidable, candidates: List) List
+        +collides(first, second) boolean
+        +collidingWith(subject, candidates) List
     }
     class PlayerWeapon {
         -cooldownRemaining: float
-        +update(delta: float, firePressed: boolean, ship: Ship) Optional
+        +update(delta, firePressed, ship) Optional
     }
     class MovementStrategy {
         <<interface>>
         +speed() float
-        +nextPosition(x: float, y: float, age: float, delta: float) Vector2
+        +nextPosition(x, y, age, delta) Vector2
     }
     class LinearMovementStrategy
     class ZigZagMovementStrategy
     class AlienAttackStrategy {
         <<interface>>
-        +createVolley(alien: Alien, target: Ship) List~AlienProjectile~
+        +createVolley(alien, target) List~AlienProjectile~
     }
     class LinearAttackStrategy
     class VAttackStrategy
-
     class AlienBuilder {
-        +position(x: float, y: float) AlienBuilder
-        +size(width: float, height: float) AlienBuilder
-        +hitPoints(hitPoints: int) AlienBuilder
-        +movement(strategy: MovementStrategy) AlienBuilder
-        +attack(strategy: AlienAttackStrategy) AlienBuilder
+        +position(x, y) AlienBuilder
+        +hitPoints(value) AlienBuilder
+        +movement(strategy) AlienBuilder
+        +attack(strategy) AlienBuilder
         +build() Alien
     }
     class LevelDirector {
-        +createWave(level: int) List~Alien~
+        +createWave(level) List~Alien~
+    }
+    class ScoreRepository {
+        <<local storage, not connected to end screens>>
+        +getTopScores() List
+        +isEligibleForTop3(score) boolean
+        +addScore(name, score)
     }
 
-    Lwjgl3Launcher --> SpaceNavigation : inicia
-    SpaceNavigation --|> Game
-    SpaceNavigation ..|> ScreenNavigator
-    SpaceNavigation --> GameAssets : obtiene y libera
-    SpaceNavigation --> MenuScreen : presenta
-    SpaceNavigation --> GameScreen : inicia
-    SpaceNavigation --> NavigationInput : configura
-    SpaceNavigation --> PlayerInput : configura
-    SpaceNavigation --> LevelDirector : comparte
-    SpaceNavigation --> CollisionSystem : comparte
-
+    Game <|-- SpaceNavigation
+    Lwjgl3Launcher --> SpaceNavigation
+    Lwjgl3Launcher ..> StartupHelper
+    ScreenNavigator <|.. SpaceNavigation
     ScreenAdapter <|-- AbstractGameScreen
     AbstractGameScreen <|-- MenuScreen
     AbstractGameScreen <|-- GameScreen
-    AbstractGameScreen --> OrthographicCamera
-    AbstractGameScreen --> Viewport
-    AbstractGameScreen --> SpriteBatch : usa mediante GameAssets
-    MenuScreen --> ScreenNavigator : solicita inicio
-    GameScreen --> ScreenNavigator : solicita retorno
+    AbstractGameScreen <|-- GameOverScreen
+    AbstractGameScreen <|-- VictoryScreen
+    GameAssets *-- AssetManager
+    GameAssets *-- SpriteBatch
+    GameAssets *-- ShapeRenderer
+    GameAssets ..> Texture
+    GameAssets ..> TextureRegion
+    SpaceNavigation --> GameAssets
+    SpaceNavigation --> ScreenNavigator
+    SpaceNavigation --> MenuScreen
+    SpaceNavigation --> GameScreen
+    SpaceNavigation --> GameOverScreen
+    SpaceNavigation --> VictoryScreen
     MenuScreen --> NavigationInput
-    GameScreen --> NavigationInput
-    KeyboardNavigationInput ..|> NavigationInput
-    KeyboardPlayerInput ..|> PlayerInput
+    MenuScreen --> ScreenNavigator
+    GameScreen --> GameWorld
+    GameScreen --> WorldSnapshot
     GameScreen --> PlayerInput
-    GameScreen --> GameWorld : actualiza
-    GameScreen --> WorldSnapshot : dibuja
-
-    GameAssets --> AssetManager : carga una vez y libera
-    GameAssets --> SpriteBatch
-    GameAssets --> Texture
-    GameAssets --> Sound
-    GameAssets --> Music
-
+    GameScreen --> NavigationInput
+    GameScreen --> ScreenNavigator
+    GameScreen o-- AfterImage
+    GameWorld *-- Ship
+    GameWorld o-- Alien
+    GameWorld o-- Meteorite
+    GameWorld o-- PlayerProjectile
+    GameWorld o-- AlienProjectile
+    GameWorld --> CollisionSystem
+    GameWorld --> PlayerWeapon
+    GameWorld --> LevelDirector
+    GameWorld --> WorldSnapshot
+    GameWorld --> GamePhase
     GameEntity ..|> Collidable
     GameEntity <|-- Ship
     GameEntity <|-- Alien
+    GameEntity <|-- Meteorite
     GameEntity <|-- PlayerProjectile
     GameEntity <|-- AlienProjectile
-    GameEntity <|-- Meteorite
-    Collidable --> Rectangle : devuelve copia defensiva
-    GameWorld *-- Ship : mantiene
-    GameWorld *-- Alien : mantiene
-    GameWorld --> PlayerInput : recibe
-    GameWorld --> CollisionSystem : resuelve el corte existente
-    GameWorld --> LevelDirector : solicita oleadas
-    GameWorld --> WorldSnapshot : crea
-    WorldSnapshot --> GamePhase : expone
-    GameWorld --> GameConfig : consulta balance
-    PlayerWeapon --> PlayerProjectile : crea
-
-    Alien --> MovementStrategy : delega movimiento
+    Collidable ..> Rectangle
+    Alien --> MovementStrategy
+    Alien --> AlienAttackStrategy
     MovementStrategy <|.. LinearMovementStrategy
     MovementStrategy <|.. ZigZagMovementStrategy
-    Alien --> AlienAttackStrategy : delega descarga
     AlienAttackStrategy <|.. LinearAttackStrategy
     AlienAttackStrategy <|.. VAttackStrategy
-    AlienAttackStrategy --> AlienProjectile : prepara
-    AlienBuilder --> Alien : construye
-    AlienBuilder --> MovementStrategy : valida velocidad
-    AlienBuilder --> AlienAttackStrategy : requiere
-    LevelDirector --> AlienBuilder : dirige
-    LevelDirector --> GameConfig : configura nivel
-    Meteorite --> MeteoriteSize : usa apariencia
+    LevelDirector --> AlienBuilder
+    AlienBuilder ..> Alien
+    PlayerWeapon ..> PlayerProjectile
+    ScoreRepository --> Preferences
 ```
 
-## Contratos que reservamos para el siguiente trabajo
+## Pendiente para la siguiente etapa
 
-Nosotros todavía no implementamos `ScoreRepository`, `ScoreEntry` ni `HighScoreService`; los dejamos
-fuera del diagrama actual para no presentarlos como código. Tampoco extendimos `ScreenNavigator` con
-las transiciones finales ni `GamePhase` con nivel superado y victoria. El siguiente UML de integración
-debe añadir esos contratos cuando queden conectados al juego.
-
-La integración de `PlayerWeapon`, los proyectiles, los meteoritos y `Alien.fireDue()` en `GameWorld`,
-así como los impactos y la progresión, también queda pendiente. En el diagrama mostramos sus modelos
-y dependencias locales, pero no una relación de composición falsa con el mundo.
+Nos falta conectar ScoreRepository a las pantallas finales y agregar el ingreso del nombre de tres caracteres. Dejamos provisional el multiplicador del dash en 3 hasta validarlo jugando. Todavía debemos revisar la atribución y las licencias de los recursos.

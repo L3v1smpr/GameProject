@@ -28,7 +28,7 @@ public final class MenuScreen extends AbstractGameScreen {
     @Override
     protected void update(float delta) {
         if (startRequested) {
-            navigator.startNewGame();
+            navigator.showGame();
         }
     }
 

@@ -13,6 +13,7 @@ import puppy.code.screens.MenuScreen;
 import puppy.code.screens.VictoryScreen;
 import puppy.code.systems.CollisionSystem;
 import puppy.code.world.GameWorld;
+import puppy.code.world.WorldSnapshot;
 
 /**
  * Punto de inicio: conecta las dependencias compartidas y coordina las pantallas.
@@ -24,6 +25,7 @@ public final class SpaceNavigation extends Game implements ScreenNavigator {
     private PlayerInput playerInput;
     private LevelDirector levelDirector;
     private CollisionSystem collisionSystem;
+    private GameWorld currentWorld;
 
     @Override
     public void create() {
@@ -32,23 +34,29 @@ public final class SpaceNavigation extends Game implements ScreenNavigator {
         playerInput = new KeyboardPlayerInput();
         levelDirector = new LevelDirector();
         collisionSystem = new CollisionSystem();
-        showMainMenu();
+        showMenu();
     }
 
     @Override
-    public void showMainMenu() {
+    public void showMenu() {
+        currentWorld = null;
         setScreen(new MenuScreen(assets, this, navigationInput));
     }
 
     @Override
-    public void startNewGame() {
-        GameWorld world = new GameWorld(levelDirector, collisionSystem);
-        setScreen(new GameScreen(assets, this, world, playerInput, navigationInput));
+    public void showGame() {
+        currentWorld = new GameWorld(levelDirector, collisionSystem);
+        setScreen(new GameScreen(assets, this, currentWorld, playerInput, navigationInput));
     }
 
     @Override
     public void showGameOver() {
-        showGameOver(0, 1);
+        if (currentWorld == null) {
+            showMenu();
+            return;
+        }
+        WorldSnapshot snapshot = currentWorld.snapshot();
+        showGameOver(snapshot.getScore(), snapshot.getLevel());
     }
 
     @Override
@@ -58,7 +66,11 @@ public final class SpaceNavigation extends Game implements ScreenNavigator {
 
     @Override
     public void showVictory() {
-        showVictory(0);
+        if (currentWorld == null) {
+            showMenu();
+            return;
+        }
+        showVictory(currentWorld.snapshot().getScore());
     }
 
     @Override
