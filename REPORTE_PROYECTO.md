@@ -186,7 +186,7 @@ classDiagram
 
 ## GM-10 — GitHub y commits
 
-Nosotros trabajamos sobre feature/rama-Alex y registramos avances pequeños. Los siete commits de este corte son:
+Nosotros trabajamos sobre feature/rama-Alex y registramos avances pequeños con mensajes en primera persona. La secuencia de implementación incluye estos ocho commits:
 
 1. cb7b090 — Corrijo los errores de compilación del juego.
 2. beae3fd — Conecto el combate y la progresión de la partida.
@@ -195,9 +195,10 @@ Nosotros trabajamos sobre feature/rama-Alex y registramos avances pequeños. Los
 5. 34ace3d — Actualizo la guía para probar la demo jugable.
 6. ba9ad75 — Limpio el estado al volver al menú.
 7. b25a232 — Actualizo el UML con el flujo jugable real.
+8. 099f775 — Conecto el Top 3 y cierro el flujo de iniciales.
 
 En una verificación anterior ejecutamos gradlew.bat test compileJava; se registró la compilación de core y lwjgl3, sin fuentes automatizadas de prueba (test finalizó como NO-SOURCE). En esta revisión aislada el wrapper no pudo conectar con su daemon. Para validar el cambio actual compilamos core y lwjgl3 con javac 11 y el classpath local. La prueba manual completa de controles y balance sigue pendiente.
 
-## Trabajo pendiente
+## Cierre y límites conocidos
 
-Nosotros conectamos ScoreRepository al menú, Game Over y Victoria. Si el resultado supera el tercer puntaje, el jugador ingresa tres letras A-Z; Retroceso corrige la entrada y Enter persiste el resultado. Mostramos el Top 3 en el menú y ambas pantallas finales. Dejamos como límites conocidos el multiplicador provisional del dash y el origen/licencia no documentados de los recursos gráficos y de audio.
+Nosotros completamos la conexión de ScoreRepository con el menú, Game Over y Victoria. Si el resultado supera el tercer puntaje, el jugador ingresa tres letras A-Z; Retroceso corrige la entrada y Enter persiste el resultado. Mostramos el Top 3 en el menú y ambas pantallas finales. Para el siguiente ciclo dejamos la validación manual de controles y del multiplicador provisional del dash. También sigue sin conocerse la fuente ni la licencia de los recursos gráficos y de audio.
