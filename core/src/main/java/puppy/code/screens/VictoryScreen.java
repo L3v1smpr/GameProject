@@ -42,6 +42,7 @@ public final class VictoryScreen extends AbstractGameScreen {
     @Override
     public void show() {
         assets.stopMusic();
+        assets.playMusic(GameAssets.VICTORY_MUSIC, false, 0.7f);
     }
 
     @Override

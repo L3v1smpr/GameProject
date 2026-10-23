@@ -34,9 +34,17 @@ public final class GameAssets {
     public static final String BANNER_VICTORIA_TEXTURE = "banner_victoria.png";
 
     // CONSTANTES DE AUDIO
-    public static final String EXPLOSION_SOUND = "explosion.ogg";
-    public static final String HURT_SOUND = "hurt.ogg";
-    public static final String POP_SOUND = "pop-sound.mp3";
+    public static final String PLAYER_SHOOT_SOUND = "player_ammo.wav";
+    public static final String PLAYER_DASH_SOUND = "player_dash.wav";
+    public static final String PLAYER_DEATH_SOUND = "player_death.wav";
+
+    public static final String ALIEN_SHOOT_SOUND = "alien_ammo.wav";
+    public static final String ALIEN_HURT_SOUND = "alien_hurt.wav";
+    public static final String ALIEN_DEATH_SOUND = "alien_death.wav";
+
+    public static final String METEORITE_HIT_SOUND = "meteorite_hit.wav";
+    public static final String LEVEL_CLEAR_SOUND = "nivel_superado.MP3";
+    public static final String VICTORY_MUSIC = "pantalla_victoria.mp3";
     public static final String GAMEOVER_MUSIC = "gameover.mp3";
     public static final String BACKGROUND_MUSIC = "background_music.MP3";
 
@@ -100,9 +108,17 @@ public final class GameAssets {
         cargarTexturaSiExiste(BANNER_VICTORIA_TEXTURE);
 
         // 4. Efectos de audio y pistas musicales
-        cargarAudioSiExiste(EXPLOSION_SOUND, Sound.class);
-        cargarAudioSiExiste(HURT_SOUND, Sound.class);
-        cargarAudioSiExiste(POP_SOUND, Sound.class);
+        cargarAudioSiExiste(PLAYER_SHOOT_SOUND, Sound.class);
+        cargarAudioSiExiste(PLAYER_DASH_SOUND, Sound.class);
+        cargarAudioSiExiste(PLAYER_DEATH_SOUND, Sound.class);
+
+        cargarAudioSiExiste(ALIEN_SHOOT_SOUND, Sound.class);
+        cargarAudioSiExiste(ALIEN_HURT_SOUND, Sound.class);
+        cargarAudioSiExiste(ALIEN_DEATH_SOUND, Sound.class);
+
+        cargarAudioSiExiste(METEORITE_HIT_SOUND, Sound.class);
+        cargarAudioSiExiste(LEVEL_CLEAR_SOUND, Sound.class);
+        cargarAudioSiExiste(VICTORY_MUSIC, Music.class);
         cargarAudioSiExiste(GAMEOVER_MUSIC, Music.class);
         cargarAudioSiExiste(BACKGROUND_MUSIC, Music.class);
 

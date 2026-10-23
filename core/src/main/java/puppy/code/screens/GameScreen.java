@@ -9,15 +9,15 @@ import java.util.Iterator;
 import java.util.List;
 import puppy.code.app.ScreenNavigator;
 import puppy.code.assets.GameAssets;
-import puppy.code.config.GameConfig;
 import puppy.code.input.NavigationInput;
 import puppy.code.input.PlayerInput;
 import puppy.code.world.GamePhase;
 import puppy.code.world.GameWorld;
+import puppy.code.world.WorldAudioListener;
 import puppy.code.world.WorldSnapshot;
 
 /** Presenta la partida y delega en GameWorld las reglas de combate y progresión. */
-public final class GameScreen extends AbstractGameScreen {
+public final class GameScreen extends AbstractGameScreen implements WorldAudioListener {
 
     private static final float BLINK_STEPS_PER_SECOND = 10f;
     private static final float DASH_EFFECT_SECONDS = 0.20f;
@@ -47,6 +47,7 @@ public final class GameScreen extends AbstractGameScreen {
         }
         this.navigator = navigator;
         this.world = world;
+        this.world.setAudioListener(this); // Suscripción desacoplada a eventos de audio (DIP)
         this.playerInput = playerInput;
         this.navigationInput = navigationInput;
         snapshot = world.snapshot();
@@ -87,6 +88,7 @@ public final class GameScreen extends AbstractGameScreen {
             if (navigationInput.anyActionJustPressed()) {
                 world.advanceToNextLevel();
                 snapshot = world.snapshot();
+                assets.playMusic(GameAssets.BACKGROUND_MUSIC, true, 0.45f); // Reanudar música al pasar de nivel
             }
             return;
         }
@@ -211,11 +213,20 @@ public final class GameScreen extends AbstractGameScreen {
                 "Puntaje: " + snapshot.getScore(),
                 24f,
                 718f);
+
+        // Integración gráfica del icono de cuota
+        Texture quotaIcon = assets.getTexture(GameAssets.ICON_CUOTA_TEXTURE);
+        float quotaTextX = 24f;
+        if (quotaIcon != null) {
+            assets.batch().draw(quotaIcon, 24f, 674f, 20f, 20f);
+            quotaTextX = 50f;
+        }
+
         assets.font().draw(
                 assets.batch(),
                 "Nivel " + snapshot.getLevel() + "  Aliens: "
                         + snapshot.getAliensDestroyedInLevel() + "/" + snapshot.getQuotaForLevel(),
-                24f,
+                quotaTextX,
                 690f);
         assets.font().draw(
                 assets.batch(),
@@ -296,5 +307,48 @@ public final class GameScreen extends AbstractGameScreen {
     private void drawFallbackRect(WorldSnapshot.EntityView entity, Color color) {
         assets.shapes().setColor(color);
         assets.shapes().rect(entity.getX(), entity.getY(), entity.getWidth(), entity.getHeight());
+    }
+
+    // --- IMPLEMENTACIÓN DEL CONTRATO WORLDAUDIOLISTENER (SFX) ---
+
+    @Override
+    public void onPlayerShoot() {
+        assets.playSound(GameAssets.PLAYER_SHOOT_SOUND, 0.45f);
+    }
+
+    @Override
+    public void onPlayerDash() {
+        assets.playSound(GameAssets.PLAYER_DASH_SOUND, 0.75f);
+    }
+
+    @Override
+    public void onPlayerHurt() {
+        assets.playSound(GameAssets.PLAYER_DEATH_SOUND, 0.9f);
+    }
+
+    @Override
+    public void onAlienHurt() {
+        assets.playSound(GameAssets.ALIEN_HURT_SOUND, 0.4f);
+    }
+
+    @Override
+    public void onAlienDestroyed() {
+        assets.playSound(GameAssets.ALIEN_DEATH_SOUND, 0.7f);
+    }
+
+    @Override
+    public void onAlienShoot() {
+        assets.playSound(GameAssets.ALIEN_SHOOT_SOUND, 0.35f);
+    }
+
+    @Override
+    public void onMeteoriteDestroyed() {
+        assets.playSound(GameAssets.METEORITE_HIT_SOUND, 0.6f);
+    }
+
+    @Override
+    public void onLevelCompleted() {
+        assets.stopMusic();
+        assets.playSound(GameAssets.LEVEL_CLEAR_SOUND, 0.85f);
     }
 }
