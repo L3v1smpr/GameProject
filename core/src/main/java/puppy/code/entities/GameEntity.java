@@ -51,9 +51,12 @@ public abstract class GameEntity implements Collidable {
         active = false;
     }
 
-    /** Devuelve una copia para que nadie modifique los límites internos de la entidad. */
+    /** 
+     * Devuelve los límites de colisión de la entidad. 
+     * Las subclases pueden sobrescribirlo para definir hitboxes ajustadas a su silueta visual.
+     */
     @Override
-    public final Rectangle bounds() {
+    public Rectangle bounds() {
         return new Rectangle(x, y, width, height);
     }
 

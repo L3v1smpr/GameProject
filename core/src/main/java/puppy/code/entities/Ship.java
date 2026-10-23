@@ -1,5 +1,6 @@
 package puppy.code.entities;
 
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import puppy.code.config.GameConfig;
 
@@ -17,6 +18,19 @@ public final class Ship extends GameEntity {
             throw new IllegalArgumentException("La velocidad debe ser positiva y finita.");
         }
         this.speed = speed;
+    }
+
+    /**
+     * Hitbox centrada de 26x48 px ajustada al cono triangular de la nave.
+     * Evita colisiones indeseadas en las esquinas transparentes del sprite de 48x48 px.
+     */
+    @Override
+    public Rectangle bounds() {
+        return new Rectangle(
+                getX() + GameConfig.SHIP_HITBOX_OFFSET_X,
+                getY(),
+                GameConfig.SHIP_HITBOX_WIDTH,
+                GameConfig.SHIP_HITBOX_HEIGHT);
     }
 
     public void update(float delta, Vector2 movementDirection, float worldWidth, float worldHeight) {

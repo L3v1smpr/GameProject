@@ -14,8 +14,13 @@ public final class GameConfig {
     public static final float SHIP_WIDTH = 48f;
     public static final float SHIP_HEIGHT = 48f;
 
-    /** Velocidad de la nave, en px/s. */
-    public static final float SHIP_SPEED = 260f;
+    // Dimensiones de la hitbox reducida y centrada de la nave (26x48 px)
+    public static final float SHIP_HITBOX_WIDTH = 26f;
+    public static final float SHIP_HITBOX_HEIGHT = 48f;
+    public static final float SHIP_HITBOX_OFFSET_X = (SHIP_WIDTH - SHIP_HITBOX_WIDTH) / 2f; // 11 px
+
+    /** Velocidad aumentada de la nave a 1.5x (de 260 a 390 px/s). */
+    public static final float SHIP_SPEED = 390f;
 
     /** Velocidad de los proyectiles del jugador, en px/s. */
     public static final float PLAYER_PROJECTILE_SPEED = 450f;
@@ -65,7 +70,6 @@ public final class GameConfig {
     public static final int MEDIUM_METEORITE_SCORE = 50;
     public static final int LARGE_METEORITE_SCORE = 100;
 
-    // Resistencia escalonada: 1, 2 y 3 impactos
     public static final int SMALL_METEORITE_HIT_POINTS = 1;
     public static final int MEDIUM_METEORITE_HIT_POINTS = 2;
     public static final int LARGE_METEORITE_HIT_POINTS = 3;
@@ -83,7 +87,7 @@ public final class GameConfig {
     /** Velocidad de los proyectiles de los aliens, en px/s. */
     public static final float ALIEN_PROJECTILE_SPEED = 220f;
 
-    /** Dimensiones escaladas de los proyectiles aliados y alienígenas para mayor impacto visual. */
+    /** Dimensiones de proyectiles (12x24 px). */
     public static final float PROJECTILE_WIDTH = 12f;
     public static final float PROJECTILE_HEIGHT = 24f;
 
