@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import puppy.code.config.GameConfig;
 import puppy.code.entities.Alien;
+import puppy.code.entities.AlienProjectile;
 import puppy.code.entities.Meteorite;
 import puppy.code.entities.PlayerProjectile;
 import puppy.code.entities.Ship;
@@ -20,6 +21,7 @@ public final class GameWorld {
     private final PlayerWeapon playerWeapon;
     private final Ship ship;
     private final List<Alien> aliens = new ArrayList<>();
+    private final List<AlienProjectile> alienProjectiles = new ArrayList<>();
     private final List<Meteorite> meteorites = new ArrayList<>();
     private final List<PlayerProjectile> playerProjectiles = new ArrayList<>();
     private int level;
@@ -53,6 +55,7 @@ public final class GameWorld {
         phase = GamePhase.ACTIVE;
         ship.respawn(GameConfig.SHIP_START_X, GameConfig.SHIP_START_Y, 0f);
         aliens.clear();
+        alienProjectiles.clear();
         meteorites.clear();
         playerProjectiles.clear();
         spawnWave();
@@ -123,6 +126,7 @@ public final class GameWorld {
             level++;
             aliensDestroyedInLevel = 0;
             aliens.clear();
+            alienProjectiles.clear();
             meteorites.clear();
             playerProjectiles.clear();
             phase = GamePhase.ACTIVE;
@@ -193,6 +197,17 @@ public final class GameWorld {
     }
 
     public WorldSnapshot snapshot() {
-        return new WorldSnapshot(ship, aliens, playerProjectiles, lives, score, level, phase);
+        return new WorldSnapshot(
+                ship,
+                aliens,
+                playerProjectiles,
+                alienProjectiles,
+                meteorites,
+                lives,
+                score,
+                level,
+                aliensDestroyedInLevel,
+                getQuotaForLevel(level),
+                phase);
     }
 }

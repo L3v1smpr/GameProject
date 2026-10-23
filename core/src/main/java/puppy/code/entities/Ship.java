@@ -1,6 +1,5 @@
 package puppy.code.entities;
 
-import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import puppy.code.config.GameConfig;
 
@@ -14,33 +13,43 @@ public final class Ship extends GameEntity {
 
     public Ship(float x, float y, float width, float height, float speed) {
         super(x, y, width, height);
+        if (!Float.isFinite(speed) || speed <= 0f) {
+            throw new IllegalArgumentException("La velocidad debe ser positiva y finita.");
+        }
         this.speed = speed;
     }
 
     public void update(float delta, Vector2 movementDirection, float worldWidth, float worldHeight) {
-        if (invulnerabilityTimer > 0f) {
-            invulnerabilityTimer = Math.max(0f, invulnerabilityTimer - delta);
+        if (!Float.isFinite(delta) || delta < 0f) {
+            throw new IllegalArgumentException("delta debe ser finito y no negativo.");
         }
-        if (dashCooldownTimer > 0f) {
-            dashCooldownTimer = Math.max(0f, dashCooldownTimer - delta);
+        if (movementDirection == null) {
+            throw new IllegalArgumentException("La dirección de movimiento no puede ser null.");
         }
 
-        float currentSpeed = speed;
+        boolean dashing = dashDurationTimer > 0f;
+        Vector2 direction = (dashing ? dashDirection : movementDirection).cpy();
+        if (direction.len2() > 1f) {
+            direction.nor();
+        }
 
-        if (dashDurationTimer > 0f) {
+        float currentSpeed = dashing ? speed * GameConfig.DASH_SPEED_MULTIPLIER : speed;
+        float newX = getX() + direction.x * currentSpeed * delta;
+        float newY = getY() + direction.y * currentSpeed * delta;
+
+        setPositionInside(newX, newY, worldWidth, worldHeight);
+
+        invulnerabilityTimer = Math.max(0f, invulnerabilityTimer - delta);
+        dashCooldownTimer = Math.max(0f, dashCooldownTimer - delta);
+        if (dashing) {
             dashDurationTimer = Math.max(0f, dashDurationTimer - delta);
-            currentSpeed = speed * GameConfig.DASH_SPEED_MULTIPLIER;
-            movementDirection = dashDirection;
         }
-
-        float newX = getX() + movementDirection.x * currentSpeed * delta;
-        float newY = getY() + movementDirection.y * currentSpeed * delta;
-
-        setX(Math.max(0f, Math.min(worldWidth - getWidth(), newX)));
-        setY(Math.max(0f, Math.min(worldHeight - getHeight(), newY)));
     }
 
     public void triggerDash(Vector2 inputDirection) {
+        if (inputDirection == null) {
+            throw new IllegalArgumentException("La dirección del dash no puede ser null.");
+        }
         if (dashCooldownTimer > 0f || dashDurationTimer > 0f) {
             return;
         }
@@ -56,8 +65,10 @@ public final class Ship extends GameEntity {
     }
 
     public void respawn(float startX, float startY, float invulnerabilitySeconds) {
-        setX(startX);
-        setY(startY);
+        if (!Float.isFinite(invulnerabilitySeconds) || invulnerabilitySeconds < 0f) {
+            throw new IllegalArgumentException("La invulnerabilidad debe ser finita y no negativa.");
+        }
+        setPosition(startX, startY);
         this.invulnerabilityTimer = invulnerabilitySeconds;
         this.dashDurationTimer = 0f;
         this.dashCooldownTimer = 0f;
@@ -67,8 +78,7 @@ public final class Ship extends GameEntity {
         return invulnerabilityTimer > 0f || dashDurationTimer > 0f;
     }
 
-    @Override
-    public Rectangle bounds() {
-        return new Rectangle(getX(), getY(), getWidth(), getHeight());
+    public boolean canDash() {
+        return dashCooldownTimer <= 0f && dashDurationTimer <= 0f;
     }
 }

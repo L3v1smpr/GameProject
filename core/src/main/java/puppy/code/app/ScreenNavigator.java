@@ -9,6 +9,20 @@ public interface ScreenNavigator {
 
     void startNewGame();
 
+    /** Alias de dominio que coincide con las transiciones descritas en las bases. */
+    default void showMenu() {
+        showMainMenu();
+    }
+
+    /** Alias de dominio que coincide con las transiciones descritas en las bases. */
+    default void showGame() {
+        startNewGame();
+    }
+
+    void showGameOver();
+
+    void showVictory();
+
     void showGameOver(int finalScore, int levelReached);
 
     void showVictory(int finalScore);

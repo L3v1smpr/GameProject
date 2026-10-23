@@ -1,5 +1,6 @@
 package puppy.code.entities;
 
+import com.badlogic.gdx.math.MathUtils;
 import puppy.code.config.GameConfig;
 
 /** Obstáculo descendente de un impacto; el mundo decide su generación y resolución de choques. */
@@ -28,6 +29,25 @@ public final class Meteorite extends GameEntity {
         hitPoints = GameConfig.METEORITE_HIT_POINTS;
     }
 
+    /** Crea un meteorito aleatorio por encima del área de juego. */
+    public static Meteorite random(float worldWidth, float worldHeight) {
+        if (!Float.isFinite(worldWidth) || worldWidth <= 0f
+                || !Float.isFinite(worldHeight) || worldHeight <= 0f) {
+            throw new IllegalArgumentException("Las dimensiones del mundo deben ser positivas y finitas.");
+        }
+        MeteoriteSize[] sizes = MeteoriteSize.values();
+        MeteoriteSize size = sizes[MathUtils.random(sizes.length - 1)];
+        float maxX = Math.max(0f, worldWidth - size.getWidth());
+        float x = MathUtils.random(0f, maxX);
+        return new Meteorite(
+                x,
+                worldHeight,
+                size.getWidth(),
+                size.getHeight(),
+                GameConfig.METEORITE_FALL_SPEED,
+                size);
+    }
+
     public void update(float delta) {
         if (!Float.isFinite(delta) || delta < 0f) {
             throw new IllegalArgumentException("delta debe ser finito y no negativo.");
@@ -45,6 +65,10 @@ public final class Meteorite extends GameEntity {
 
     public int getHitPoints() {
         return hitPoints;
+    }
+
+    public int getScoreValue() {
+        return size.getScoreValue();
     }
 
     public String getAssetPath() {

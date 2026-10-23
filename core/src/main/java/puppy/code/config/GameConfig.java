@@ -23,6 +23,13 @@ public final class GameConfig {
     /** Tiempo entre disparos mientras se mantiene presionada la tecla de fuego. */
     public static final float PLAYER_FIRE_COOLDOWN_SECONDS = 0.25f;
 
+    /** Multiplicador provisional del movimiento mientras se ejecuta el dash. */
+    public static final float DASH_SPEED_MULTIPLIER = 3f;
+
+    public static final float DASH_DURATION_SECONDS = 0.15f;
+
+    public static final float DASH_COOLDOWN_SECONDS = 3f;
+
     /** Punto fijo donde aparece la nave al iniciar y al perder una vida. */
     public static final float SHIP_START_X = WORLD_WIDTH / 2f - SHIP_WIDTH / 2f;
 
@@ -34,6 +41,15 @@ public final class GameConfig {
     public static final float RESPAWN_INVULNERABILITY_SECONDS = 1.5f;
 
     public static final int FIRST_LEVEL = 1;
+
+    public static final int LEVEL_ONE_ALIEN_QUOTA = 15;
+    public static final int LEVEL_TWO_ALIEN_QUOTA = 30;
+    public static final int LEVEL_THREE_ALIEN_QUOTA = 45;
+
+    public static final int ALIEN_SCORE = 100;
+
+    public static final float METEORITE_SPAWN_COOLDOWN_SECONDS = 4f;
+    public static final float METEORITE_FALL_SPEED = 100f;
 
     public static final float ALIEN_WIDTH = 40f;
     public static final float ALIEN_HEIGHT = 32f;
