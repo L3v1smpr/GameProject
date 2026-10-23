@@ -122,21 +122,44 @@ public final class WorldSnapshot {
         private final float width;
         private final float height;
         private final String assetPath;
+        private final float rotation;
+        private final boolean firing;
 
-        private EntityView(float x, float y, float width, float height, String assetPath) {
+        private EntityView(
+                float x,
+                float y,
+                float width,
+                float height,
+                String assetPath,
+                float rotation,
+                boolean firing) {
             this.x = x;
             this.y = y;
             this.width = width;
             this.height = height;
             this.assetPath = assetPath;
+            this.rotation = rotation;
+            this.firing = firing;
         }
 
         private static EntityView from(GameEntity entity) {
             String assetPath = entity instanceof Meteorite
                     ? ((Meteorite) entity).getAssetPath()
                     : null;
+            float rotation = entity instanceof AlienProjectile
+                    ? ((AlienProjectile) entity).getRotation()
+                    : 0f;
+            boolean firing = entity instanceof Alien
+                    ? ((Alien) entity).isFiring()
+                    : false;
             return new EntityView(
-                    entity.getX(), entity.getY(), entity.getWidth(), entity.getHeight(), assetPath);
+                    entity.getX(),
+                    entity.getY(),
+                    entity.getWidth(),
+                    entity.getHeight(),
+                    assetPath,
+                    rotation,
+                    firing);
         }
 
         public float getX() {
@@ -157,6 +180,14 @@ public final class WorldSnapshot {
 
         public String getAssetPath() {
             return assetPath;
+        }
+
+        public float getRotation() {
+            return rotation;
+        }
+
+        public boolean isFiring() {
+            return firing;
         }
     }
 }

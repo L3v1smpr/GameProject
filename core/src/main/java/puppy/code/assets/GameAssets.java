@@ -13,11 +13,10 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 /**
  * Gestor centralizado de recursos del juego.
  * Implementa el patrón creacional Singleton para garantizar una
- * unica instancia global encargada del ciclo de vida de texturas, fuentes y audio.
+ * única instancia global encargada del ciclo de vida de texturas, fuentes y audio.
  */
 public final class GameAssets {
 
-    // CONSTANTE DE FONDO ESTÁTICO
     public static final String BACKGROUND_TEXTURE = "background.png";
 
     // CONSTANTES DE METEORITOS (Requeridas por MeteoriteSize)
@@ -59,16 +58,14 @@ public final class GameAssets {
     private final ShapeRenderer shapes;
     private boolean disposed;
 
-    // Sprite Sheets divididos en matrices [fila][columna] de 48x48 px
     private TextureRegion[][] playerFrames;
     private TextureRegion[][] alienFrames;
-    private TextureRegion alienStaticRegion;
+    private TextureRegion alienStaticNormal;
+    private TextureRegion alienStaticFiring;
+    private TextureRegion alienAmmoRegion;
 
     private Music currentMusic;
 
-    /**
-     * Constructor privado para encapsular la instanciación (Singleton).
-     */
     private GameAssets() {
         this.manager = new AssetManager();
         this.batch = new SpriteBatch();
@@ -78,9 +75,6 @@ public final class GameAssets {
         cargarRecursosBase();
     }
 
-    /**
-     * Punto de acceso global controlado a la instancia única.
-     */
     public static synchronized GameAssets getInstance() {
         if (instance == null || instance.disposed) {
             instance = new GameAssets();
@@ -88,32 +82,24 @@ public final class GameAssets {
         return instance;
     }
 
-    /**
-     * Precarga los recursos activos y orienta los sprites adecuadamente.
-     */
     private void cargarRecursosBase() {
-        // 0. Fondo
         cargarTexturaSiExiste(BACKGROUND_TEXTURE);
 
-        // 1. Meteoritos
         cargarTexturaSiExiste(SMALL_METEORITE_TEXTURE);
         cargarTexturaSiExiste(MEDIUM_METEORITE_TEXTURE);
         cargarTexturaSiExiste(LARGE_METEORITE_TEXTURE);
 
-        // 2. Entidades y proyectiles oficiales
         cargarTexturaSiExiste(PLAYER_SHEET_TEXTURE);
         cargarTexturaSiExiste(ALIEN_SHEET_TEXTURE);
         cargarTexturaSiExiste(ALIEN_STATIC_TEXTURE);
         cargarTexturaSiExiste(PLAYER_AMMO_TEXTURE);
         cargarTexturaSiExiste(ALIEN_AMMO_TEXTURE);
 
-        // 3. Elementos de HUD y Banners de cierre
         cargarTexturaSiExiste(PLAYER_LIFE_TEXTURE);
         cargarTexturaSiExiste(ICON_CUOTA_TEXTURE);
         cargarTexturaSiExiste(BANNER_GAMEOVER_TEXTURE);
         cargarTexturaSiExiste(BANNER_VICTORIA_TEXTURE);
 
-        // 4. Efectos de audio y pistas musicales
         cargarAudioSiExiste(PLAYER_SHOOT_SOUND, Sound.class);
         cargarAudioSiExiste(PLAYER_DASH_SOUND, Sound.class);
         cargarAudioSiExiste(PLAYER_DEATH_SOUND, Sound.class);
@@ -130,13 +116,11 @@ public final class GameAssets {
 
         manager.finishLoading();
 
-        // 5. Procesar Sprite Sheet del jugador (Mantiene vista al Norte)
         if (manager.isLoaded(PLAYER_SHEET_TEXTURE, Texture.class)) {
             Texture pSheet = manager.get(PLAYER_SHEET_TEXTURE, Texture.class);
             this.playerFrames = TextureRegion.split(pSheet, 48, 48);
         }
 
-        // 6. Procesar Sprite Sheet del Alien (Invertido verticalmente para encarar al jugador)
         if (manager.isLoaded(ALIEN_SHEET_TEXTURE, Texture.class)) {
             Texture aSheet = manager.get(ALIEN_SHEET_TEXTURE, Texture.class);
             this.alienFrames = TextureRegion.split(aSheet, 48, 48);
@@ -152,10 +136,26 @@ public final class GameAssets {
             }
         }
 
-        // 7. Variante estática del alien invertida
+        // Procesar alien_static.png: fila 0 = normal, fila 1 = disparando
         if (manager.isLoaded(ALIEN_STATIC_TEXTURE, Texture.class)) {
-            this.alienStaticRegion = new TextureRegion(manager.get(ALIEN_STATIC_TEXTURE, Texture.class));
-            this.alienStaticRegion.flip(false, true);
+            Texture aStatic = manager.get(ALIEN_STATIC_TEXTURE, Texture.class);
+            TextureRegion[][] splits = TextureRegion.split(aStatic, 48, 48);
+            if (splits.length >= 2) {
+                this.alienStaticNormal = new TextureRegion(splits[0][0]);
+                this.alienStaticFiring = new TextureRegion(splits[1][0]);
+            } else if (splits[0].length >= 2) {
+                this.alienStaticNormal = new TextureRegion(splits[0][0]);
+                this.alienStaticFiring = new TextureRegion(splits[0][1]);
+            } else {
+                this.alienStaticNormal = new TextureRegion(splits[0][0]);
+                this.alienStaticFiring = this.alienStaticNormal;
+            }
+            this.alienStaticNormal.flip(false, true);
+            this.alienStaticFiring.flip(false, true);
+        }
+
+        if (manager.isLoaded(ALIEN_AMMO_TEXTURE, Texture.class)) {
+            this.alienAmmoRegion = new TextureRegion(manager.get(ALIEN_AMMO_TEXTURE, Texture.class));
         }
     }
 
@@ -170,8 +170,6 @@ public final class GameAssets {
             manager.load(ruta, tipo);
         }
     }
-
-    // GETTERS PARA DIBUJO Y REGIONES
 
     public SpriteBatch batch() {
         ensureOpen();
@@ -198,12 +196,29 @@ public final class GameAssets {
         return alienFrames;
     }
 
-    public TextureRegion getAlienStaticRegion() {
+    public TextureRegion getAlienStaticNormal() {
         ensureOpen();
-        return alienStaticRegion;
+        return alienStaticNormal;
     }
 
-    // ACCESO A RECURSOS (Texturas, Sonidos y Música)
+    public TextureRegion getAlienStaticFiring() {
+        ensureOpen();
+        return alienStaticFiring;
+    }
+
+    public TextureRegion getAlienStaticRegion(boolean firing) {
+        ensureOpen();
+        return firing && alienStaticFiring != null ? alienStaticFiring : alienStaticNormal;
+    }
+
+    public TextureRegion getAlienStaticRegion() {
+        return getAlienStaticRegion(false);
+    }
+
+    public TextureRegion getAlienAmmoRegion() {
+        ensureOpen();
+        return alienAmmoRegion;
+    }
 
     public synchronized Texture texture(String path) {
         return load(path, Texture.class);
@@ -244,8 +259,6 @@ public final class GameAssets {
         return manager.get(path, type);
     }
 
-    // REPRODUCCIÓN DE AUDIO CENTRALIZADA
-
     public synchronized void playSound(String fileName, float volume) {
         ensureOpen();
         Sound s = sound(fileName);
@@ -271,8 +284,6 @@ public final class GameAssets {
             currentMusic = null;
         }
     }
-
-    // DESTRUCCIÓN CONTROLADA (Dispose)
 
     public synchronized void dispose() {
         if (disposed) {

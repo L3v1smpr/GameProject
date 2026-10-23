@@ -11,11 +11,14 @@ import puppy.code.config.GameConfig;
 /** Alien configurable que delega movimiento y ataque en estrategias separadas. */
 public final class Alien extends GameEntity {
 
+    private static final float FIRING_FRAME_DURATION_SECONDS = 0.20f;
+
     private int hitPoints;
     private final MovementStrategy movement;
     private final AlienAttackStrategy attackStrategy;
     private float age;
     private float fireCooldownRemaining = GameConfig.ALIEN_FIRE_COOLDOWN_SECONDS;
+    private float firingTimer;
 
     public Alien(
             float x,
@@ -47,6 +50,10 @@ public final class Alien extends GameEntity {
         return hitPoints;
     }
 
+    public boolean isFiring() {
+        return firingTimer > 0f;
+    }
+
     /** Aplica un impacto y devuelve true solo cuando este impacto destruye al alien. */
     public boolean takeDamage() {
         if (!isActive()) {
@@ -70,6 +77,8 @@ public final class Alien extends GameEntity {
         }
 
         age += delta;
+        firingTimer = Math.max(0f, firingTimer - delta);
+
         Vector2 next = movement.nextPosition(getX(), getY(), age, delta);
         float maxX = Math.max(0f, worldWidth - getWidth());
         setPosition(Math.max(0f, Math.min(next.x, maxX)), next.y);
@@ -77,7 +86,7 @@ public final class Alien extends GameEntity {
 
     /**
      * Actualiza la cadencia del alien y devuelve las descargas que vencieron en este delta.
-     * El mundo conserva la responsabilidad de incorporar y retirar los proyectiles.
+     * Activa el estado visual de disparo durante una fracción de segundo.
      */
     public List<AlienProjectile> fireDue(float delta, Ship target) {
         if (!Float.isFinite(delta) || delta < 0f) {
@@ -90,7 +99,11 @@ public final class Alien extends GameEntity {
         fireCooldownRemaining -= delta;
         List<AlienProjectile> projectiles = new ArrayList<>();
         while (fireCooldownRemaining <= 0f) {
-            projectiles.addAll(attackStrategy.createVolley(this, target));
+            List<AlienProjectile> volley = attackStrategy.createVolley(this, target);
+            if (!volley.isEmpty()) {
+                projectiles.addAll(volley);
+                firingTimer = FIRING_FRAME_DURATION_SECONDS;
+            }
             fireCooldownRemaining += GameConfig.ALIEN_FIRE_COOLDOWN_SECONDS;
         }
         return Collections.unmodifiableList(projectiles);

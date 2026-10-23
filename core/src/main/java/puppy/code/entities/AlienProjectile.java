@@ -31,4 +31,12 @@ public final class AlienProjectile extends GameEntity {
     public float getSpeed() {
         return speed;
     }
+
+    /**
+     * Devuelve la rotación en grados para que el sprite apunte hacia su vector de viaje.
+     * Como alien_ammo.png apunta al Sur (270 grados en LibGDX), se resta 270 grados.
+     */
+    public float getRotation() {
+        return direction.angleDeg() - 270f;
+    }
 }

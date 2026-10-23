@@ -74,8 +74,9 @@ public final class GameConfig {
     /** Velocidad de los proyectiles de los aliens, en px/s. */
     public static final float ALIEN_PROJECTILE_SPEED = 220f;
 
-    public static final float PROJECTILE_WIDTH = 8f;
-    public static final float PROJECTILE_HEIGHT = 12f;
+    /** Dimensiones escaladas de los proyectiles aliados y alienígenas para mayor impacto visual. */
+    public static final float PROJECTILE_WIDTH = 12f;
+    public static final float PROJECTILE_HEIGHT = 24f;
 
     /** Apertura angular a cada lado del eje de puntería para el disparo en V. */
     public static final float V_ATTACK_SPREAD_ANGLE_DEGREES = 45f;

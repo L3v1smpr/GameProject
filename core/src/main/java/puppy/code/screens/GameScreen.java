@@ -47,7 +47,7 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
         }
         this.navigator = navigator;
         this.world = world;
-        this.world.setAudioListener(this); // Suscripción desacoplada a eventos de audio (DIP)
+        this.world.setAudioListener(this);
         this.playerInput = playerInput;
         this.navigationInput = navigationInput;
         snapshot = world.snapshot();
@@ -88,7 +88,7 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
             if (navigationInput.anyActionJustPressed()) {
                 world.advanceToNextLevel();
                 snapshot = world.snapshot();
-                assets.playMusic(GameAssets.BACKGROUND_MUSIC, true, 0.45f); // Reanudar música al pasar de nivel
+                assets.playMusic(GameAssets.BACKGROUND_MUSIC, true, 0.45f);
             }
             return;
         }
@@ -160,8 +160,8 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
     }
 
     private void drawAliens() {
-        TextureRegion region = resolveAlienRegion();
         for (WorldSnapshot.EntityView alien : snapshot.getAliens()) {
+            TextureRegion region = assets.getAlienStaticRegion(alien.isFiring());
             if (region != null) {
                 assets.batch().draw(region, alien.getX(), alien.getY(), alien.getWidth(), alien.getHeight());
             }
@@ -170,19 +170,32 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
 
     private void drawProjectiles() {
         Texture playerAmmo = assets.getTexture(GameAssets.PLAYER_AMMO_TEXTURE);
-        Texture alienAmmo = assets.getTexture(GameAssets.ALIEN_AMMO_TEXTURE);
+        TextureRegion alienAmmo = assets.getAlienAmmoRegion();
+
         for (WorldSnapshot.EntityView projectile : snapshot.getPlayerProjectiles()) {
             if (playerAmmo != null) {
                 assets.batch().draw(
-                        playerAmmo, projectile.getX(), projectile.getY(),
-                        projectile.getWidth(), projectile.getHeight());
+                        playerAmmo,
+                        projectile.getX(),
+                        projectile.getY(),
+                        projectile.getWidth(),
+                        projectile.getHeight());
             }
         }
+
         for (WorldSnapshot.EntityView projectile : snapshot.getAlienProjectiles()) {
             if (alienAmmo != null) {
                 assets.batch().draw(
-                        alienAmmo, projectile.getX(), projectile.getY(),
-                        projectile.getWidth(), projectile.getHeight());
+                        alienAmmo,
+                        projectile.getX(),
+                        projectile.getY(),
+                        projectile.getWidth() / 2f,
+                        projectile.getHeight() / 2f,
+                        projectile.getWidth(),
+                        projectile.getHeight(),
+                        1f,
+                        1f,
+                        projectile.getRotation());
             }
         }
     }
@@ -192,8 +205,11 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
             Texture texture = assets.getTexture(meteorite.getAssetPath());
             if (texture != null) {
                 assets.batch().draw(
-                        texture, meteorite.getX(), meteorite.getY(),
-                        meteorite.getWidth(), meteorite.getHeight());
+                        texture,
+                        meteorite.getX(),
+                        meteorite.getY(),
+                        meteorite.getWidth(),
+                        meteorite.getHeight());
             }
         }
     }
@@ -214,7 +230,6 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
                 24f,
                 718f);
 
-        // Integración gráfica del icono de cuota
         Texture quotaIcon = assets.getTexture(GameAssets.ICON_CUOTA_TEXTURE);
         float quotaTextX = 24f;
         if (quotaIcon != null) {
@@ -246,14 +261,6 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
         }
     }
 
-    private TextureRegion resolveAlienRegion() {
-        TextureRegion[][] frames = assets.getAlienFrames();
-        if (frames != null && frames.length > 0 && frames[0].length > 1) {
-            return frames[0][1];
-        }
-        return assets.getAlienStaticRegion();
-    }
-
     private TextureRegion resolveShipRegion(TextureRegion[][] frames) {
         if (frames == null || frames.length == 0 || frames[0].length == 0) {
             return null;
@@ -271,10 +278,10 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
         boolean shipNeedsFallback = resolveShipRegion(assets.getPlayerFrames()) == null
                 && (!snapshot.isShipInvulnerable()
                         || (((int) (elapsedSeconds * BLINK_STEPS_PER_SECOND)) % 2 == 0));
-        boolean aliensNeedFallback = resolveAlienRegion() == null;
+        boolean aliensNeedFallback = assets.getAlienStaticRegion() == null;
         boolean playerProjectilesNeedFallback = assets.getTexture(GameAssets.PLAYER_AMMO_TEXTURE) == null
                 && !snapshot.getPlayerProjectiles().isEmpty();
-        boolean alienProjectilesNeedFallback = assets.getTexture(GameAssets.ALIEN_AMMO_TEXTURE) == null
+        boolean alienProjectilesNeedFallback = assets.getAlienAmmoRegion() == null
                 && !snapshot.getAlienProjectiles().isEmpty();
         if (!shipNeedsFallback && !aliensNeedFallback
                 && !playerProjectilesNeedFallback && !alienProjectilesNeedFallback) {
@@ -308,8 +315,6 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
         assets.shapes().setColor(color);
         assets.shapes().rect(entity.getX(), entity.getY(), entity.getWidth(), entity.getHeight());
     }
-
-    // --- IMPLEMENTACIÓN DEL CONTRATO WORLDAUDIOLISTENER (SFX) ---
 
     @Override
     public void onPlayerShoot() {
