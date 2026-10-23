@@ -11,7 +11,7 @@ import puppy.code.config.GameConfig;
 /** Alien configurable que delega movimiento y ataque en estrategias separadas. */
 public final class Alien extends GameEntity {
 
-    private final int hitPoints;
+    private int hitPoints;
     private final MovementStrategy movement;
     private final AlienAttackStrategy attackStrategy;
     private float age;
@@ -45,6 +45,20 @@ public final class Alien extends GameEntity {
 
     public int getHitPoints() {
         return hitPoints;
+    }
+
+    /** Aplica un impacto y devuelve true solo cuando este impacto destruye al alien. */
+    public boolean takeDamage() {
+        if (!isActive()) {
+            return false;
+        }
+        hitPoints--;
+        if (hitPoints <= 0) {
+            hitPoints = 0;
+            deactivate();
+            return true;
+        }
+        return false;
     }
 
     public void update(float delta, float worldWidth) {

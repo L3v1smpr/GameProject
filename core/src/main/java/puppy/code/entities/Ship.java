@@ -27,21 +27,24 @@ public final class Ship extends GameEntity {
             throw new IllegalArgumentException("La dirección de movimiento no puede ser null.");
         }
 
-        boolean dashing = dashDurationTimer > 0f;
-        Vector2 direction = (dashing ? dashDirection : movementDirection).cpy();
-        if (direction.len2() > 1f) {
-            direction.nor();
+        Vector2 normalDirection = movementDirection.cpy();
+        if (normalDirection.len2() > 1f) {
+            normalDirection.nor();
         }
-
-        float currentSpeed = dashing ? speed * GameConfig.DASH_SPEED_MULTIPLIER : speed;
-        float newX = getX() + direction.x * currentSpeed * delta;
-        float newY = getY() + direction.y * currentSpeed * delta;
+        float dashSeconds = Math.min(delta, dashDurationTimer);
+        float regularSeconds = delta - dashSeconds;
+        float newX = getX()
+                + dashDirection.x * speed * GameConfig.DASH_SPEED_MULTIPLIER * dashSeconds
+                + normalDirection.x * speed * regularSeconds;
+        float newY = getY()
+                + dashDirection.y * speed * GameConfig.DASH_SPEED_MULTIPLIER * dashSeconds
+                + normalDirection.y * speed * regularSeconds;
 
         setPositionInside(newX, newY, worldWidth, worldHeight);
 
         invulnerabilityTimer = Math.max(0f, invulnerabilityTimer - delta);
         dashCooldownTimer = Math.max(0f, dashCooldownTimer - delta);
-        if (dashing) {
+        if (dashDurationTimer > 0f) {
             dashDurationTimer = Math.max(0f, dashDurationTimer - delta);
         }
     }

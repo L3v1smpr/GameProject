@@ -3,6 +3,7 @@ package puppy.code.world;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import com.badlogic.gdx.math.Vector2;
 import puppy.code.config.GameConfig;
 import puppy.code.entities.Alien;
 import puppy.code.entities.AlienProjectile;
@@ -14,6 +15,10 @@ import puppy.code.input.PlayerInput;
 import puppy.code.systems.CollisionSystem;
 import puppy.code.systems.PlayerWeapon;
 
+/**
+ * Coordina las entidades y aplica las reglas de una partida (Controller de GRASP).
+ * Mantiene las listas privadas y entrega a las pantallas un snapshot inmutable.
+ */
 public final class GameWorld {
 
     private final CollisionSystem collisions;
@@ -21,9 +26,10 @@ public final class GameWorld {
     private final PlayerWeapon playerWeapon;
     private final Ship ship;
     private final List<Alien> aliens = new ArrayList<>();
-    private final List<AlienProjectile> alienProjectiles = new ArrayList<>();
     private final List<Meteorite> meteorites = new ArrayList<>();
     private final List<PlayerProjectile> playerProjectiles = new ArrayList<>();
+    private final List<AlienProjectile> alienProjectiles = new ArrayList<>();
+
     private int level;
     private int lives;
     private int score;
@@ -37,8 +43,8 @@ public final class GameWorld {
         }
         this.levelDirector = levelDirector;
         this.collisions = collisions;
-        this.playerWeapon = new PlayerWeapon();
-        this.ship = new Ship(
+        playerWeapon = new PlayerWeapon();
+        ship = new Ship(
                 GameConfig.SHIP_START_X,
                 GameConfig.SHIP_START_Y,
                 GameConfig.SHIP_WIDTH,
@@ -47,21 +53,26 @@ public final class GameWorld {
         restart();
     }
 
+    /** Inicia una partida desde el nivel uno con tres vidas y puntaje cero. */
     public void restart() {
         level = GameConfig.FIRST_LEVEL;
         lives = GameConfig.INITIAL_LIVES;
         score = 0;
         aliensDestroyedInLevel = 0;
+        meteoriteSpawnTimer = 0f;
         phase = GamePhase.ACTIVE;
         ship.respawn(GameConfig.SHIP_START_X, GameConfig.SHIP_START_Y, 0f);
         aliens.clear();
-        alienProjectiles.clear();
         meteorites.clear();
         playerProjectiles.clear();
+        alienProjectiles.clear();
         spawnWave();
     }
 
     public void update(float delta, PlayerInput input) {
+        if (!Float.isFinite(delta) || delta < 0f) {
+            throw new IllegalArgumentException("delta debe ser finito y no negativo.");
+        }
         if (input == null) {
             throw new IllegalArgumentException("PlayerInput no puede ser null.");
         }
@@ -69,127 +80,206 @@ public final class GameWorld {
             return;
         }
 
-        ship.update(delta, input.movementDirection(), GameConfig.WORLD_WIDTH, GameConfig.WORLD_HEIGHT);
-        
-        Optional<PlayerProjectile> newProjectile = playerWeapon.update(delta, input.firePressed(), ship);
+        Vector2 movement = input.movementDirection();
+        if (input.dashJustPressed()) {
+            ship.triggerDash(movement);
+        }
+        ship.update(delta, movement, GameConfig.WORLD_WIDTH, GameConfig.WORLD_HEIGHT);
+
+        Optional<PlayerProjectile> newProjectile =
+                playerWeapon.update(delta, input.firePressed(), ship);
         newProjectile.ifPresent(playerProjectiles::add);
 
+        updatePlayerProjectiles(delta);
+        updateAliens(delta);
+        updateAlienProjectiles(delta);
+        updateMeteorites(delta);
+
+        resolveProjectileCollisions();
+        resolveShipCollisions();
+        removeInactiveEntities();
+        updateQuotaProgression();
+    }
+
+    private void updatePlayerProjectiles(float delta) {
         for (PlayerProjectile projectile : playerProjectiles) {
             projectile.update(delta);
         }
-        playerProjectiles.removeIf(p -> !p.isActive() || p.getY() > GameConfig.WORLD_HEIGHT);
+        playerProjectiles.removeIf(projectile ->
+                !projectile.isActive() || projectile.getY() > GameConfig.WORLD_HEIGHT);
+    }
 
+    private void updateAliens(float delta) {
         for (Alien alien : aliens) {
+            if (!alien.isActive()) {
+                continue;
+            }
             alien.update(delta, GameConfig.WORLD_WIDTH);
+            alienProjectiles.addAll(alien.fireDue(delta, ship));
         }
+        aliens.removeIf(Alien::hasLeftWorld);
+    }
 
+    private void updateAlienProjectiles(float delta) {
+        for (AlienProjectile projectile : alienProjectiles) {
+            projectile.update(delta);
+        }
+        alienProjectiles.removeIf(projectile ->
+                !projectile.isActive()
+                        || projectile.getX() + projectile.getWidth() < 0f
+                        || projectile.getX() > GameConfig.WORLD_WIDTH
+                        || projectile.getY() + projectile.getHeight() < 0f
+                        || projectile.getY() > GameConfig.WORLD_HEIGHT);
+    }
+
+    private void updateMeteorites(float delta) {
         meteoriteSpawnTimer += delta;
-        if (meteoriteSpawnTimer >= 4f) { // Genera meteoritos periódicamente fuera de la cuota
-            meteoriteSpawnTimer = 0f;
+        if (meteoriteSpawnTimer >= GameConfig.METEORITE_SPAWN_COOLDOWN_SECONDS) {
+            meteoriteSpawnTimer -= GameConfig.METEORITE_SPAWN_COOLDOWN_SECONDS;
             meteorites.add(Meteorite.random(GameConfig.WORLD_WIDTH, GameConfig.WORLD_HEIGHT));
         }
-
-        for (Meteorite met : meteorites) {
-            met.update(delta);
+        for (Meteorite meteorite : meteorites) {
+            meteorite.update(delta);
         }
-        meteorites.removeIf(m -> !m.isActive() || m.getY() < -50f);
-
-        aliens.removeIf(Alien::hasLeftWorld);
-        resolveCollisions();
-        aliens.removeIf(alien -> !alien.isActive());
-        meteorites.removeIf(m -> !m.isActive());
-
-        checkQuotaProgression();
+        meteorites.removeIf(meteorite ->
+                !meteorite.isActive() || meteorite.getY() + meteorite.getHeight() < 0f);
     }
 
-    private void checkQuotaProgression() {
-        int quotaNeeded = getQuotaForLevel(level);
-        if (aliensDestroyedInLevel >= quotaNeeded) {
-            if (level >= 3) {
-                phase = GamePhase.VICTORY;
-            } else {
-                phase = GamePhase.LEVEL_COMPLETED;
-            }
-        } else if (aliens.isEmpty()) {
-            spawnWave();
-        }
-    }
-
-    private int getQuotaForLevel(int currentLevel) {
-        if (currentLevel == 1) return 15;
-        if (currentLevel == 2) return 30;
-        return 45;
-    }
-
-    public void advanceToNextLevel() {
-        if (phase == GamePhase.LEVEL_COMPLETED) {
-            level++;
-            aliensDestroyedInLevel = 0;
-            aliens.clear();
-            alienProjectiles.clear();
-            meteorites.clear();
-            playerProjectiles.clear();
-            phase = GamePhase.ACTIVE;
-            spawnWave();
-        }
-    }
-
-    private void resolveCollisions() {
-        // Proyectiles con Aliens
+    private void resolveProjectileCollisions() {
         for (PlayerProjectile projectile : playerProjectiles) {
-            if (!projectile.isActive()) continue;
+            if (!projectile.isActive()) {
+                continue;
+            }
             for (Alien alien : aliens) {
                 if (alien.isActive() && collisions.collides(projectile, alien)) {
                     projectile.deactivate();
-                    alien.deactivate();
-                    score += 100;
-                    aliensDestroyedInLevel++;
+                    if (alien.takeDamage()) {
+                        score += GameConfig.ALIEN_SCORE;
+                        aliensDestroyedInLevel++;
+                    }
                     break;
                 }
             }
-        }
-
-        // Proyectiles con Meteoritos
-        for (PlayerProjectile projectile : playerProjectiles) {
-            if (!projectile.isActive()) continue;
-            for (Meteorite met : meteorites) {
-                if (met.isActive() && collisions.collides(projectile, met)) {
+            if (!projectile.isActive()) {
+                continue;
+            }
+            for (Meteorite meteorite : meteorites) {
+                if (meteorite.isActive() && collisions.collides(projectile, meteorite)) {
                     projectile.deactivate();
-                    met.deactivate();
-                    score += met.getScoreValue(); // 25, 50 o 75 puntos según tamaño
+                    meteorite.deactivate();
+                    score += meteorite.getScoreValue();
                     break;
                 }
             }
         }
 
-        // Colisión nave con aliens o meteoritos
-        if (!ship.isInvulnerable()) {
-            List<Alien> alienContacts = collisions.collidingWith(ship, aliens);
-            for (Alien alien : alienContacts) {
+        if (ship.isInvulnerable()) {
+            return;
+        }
+        boolean shipWasHit = false;
+        for (AlienProjectile projectile : alienProjectiles) {
+            if (projectile.isActive() && collisions.collides(ship, projectile)) {
+                projectile.deactivate();
+                shipWasHit = true;
+                break;
+            }
+        }
+        if (shipWasHit) {
+            loseLife();
+        }
+    }
+
+    /** Un solo contacto físico puede quitar vida; los objetos atraviesan durante la invulnerabilidad. */
+    private void resolveShipCollisions() {
+        if (phase != GamePhase.ACTIVE || ship.isInvulnerable()) {
+            return;
+        }
+        for (Alien alien : aliens) {
+            if (alien.isActive() && collisions.collides(ship, alien)) {
                 alien.deactivate();
                 loseLife();
+                return;
             }
-
-            List<Meteorite> metContacts = collisions.collidingWith(ship, meteorites);
-            for (Meteorite met : metContacts) {
-                met.deactivate();
+        }
+        if (ship.isInvulnerable() || phase != GamePhase.ACTIVE) {
+            return;
+        }
+        for (Meteorite meteorite : meteorites) {
+            if (meteorite.isActive() && collisions.collides(ship, meteorite)) {
+                meteorite.deactivate();
                 loseLife();
+                return;
             }
         }
     }
 
     private void loseLife() {
-        lives--;
-        if (lives <= 0) {
-            lives = 0;
+        if (phase != GamePhase.ACTIVE) {
+            return;
+        }
+        lives = Math.max(0, lives - 1);
+        if (lives == 0) {
             phase = GamePhase.GAME_OVER;
             return;
         }
+
         ship.respawn(
                 GameConfig.SHIP_START_X,
                 GameConfig.SHIP_START_Y,
                 GameConfig.RESPAWN_INVULNERABILITY_SECONDS);
         playerProjectiles.clear();
+        alienProjectiles.clear();
+    }
+
+    private void removeInactiveEntities() {
+        aliens.removeIf(alien -> !alien.isActive());
+        meteorites.removeIf(meteorite -> !meteorite.isActive());
+        playerProjectiles.removeIf(projectile -> !projectile.isActive());
+        alienProjectiles.removeIf(projectile -> !projectile.isActive());
+    }
+
+    private void updateQuotaProgression() {
+        if (phase != GamePhase.ACTIVE) {
+            return;
+        }
+        if (aliensDestroyedInLevel >= getQuotaForLevel(level)) {
+            aliens.forEach(Alien::deactivate);
+            aliens.clear();
+            playerProjectiles.clear();
+            alienProjectiles.clear();
+            phase = level == 3 ? GamePhase.VICTORY : GamePhase.LEVEL_COMPLETED;
+        } else if (aliens.isEmpty()) {
+            spawnWave();
+        }
+    }
+
+    /** Conserva vidas y puntaje; solo prepara la siguiente fase tras confirmación del jugador. */
+    public void advanceToNextLevel() {
+        if (phase != GamePhase.LEVEL_COMPLETED) {
+            return;
+        }
+        level++;
+        aliensDestroyedInLevel = 0;
+        meteoriteSpawnTimer = 0f;
+        aliens.clear();
+        meteorites.clear();
+        playerProjectiles.clear();
+        alienProjectiles.clear();
+        phase = GamePhase.ACTIVE;
+        spawnWave();
+    }
+
+    private int getQuotaForLevel(int currentLevel) {
+        switch (currentLevel) {
+            case 1:
+                return GameConfig.LEVEL_ONE_ALIEN_QUOTA;
+            case 2:
+                return GameConfig.LEVEL_TWO_ALIEN_QUOTA;
+            case 3:
+                return GameConfig.LEVEL_THREE_ALIEN_QUOTA;
+            default:
+                throw new IllegalArgumentException("Solo se admiten los niveles 1, 2 y 3.");
+        }
     }
 
     private void spawnWave() {

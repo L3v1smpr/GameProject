@@ -15,6 +15,7 @@ public final class WorldSnapshot {
 
     private final EntityView ship;
     private final boolean shipInvulnerable;
+    private final boolean shipDashReady;
     private final List<EntityView> aliens;
     private final List<EntityView> playerProjectiles;
     private final List<EntityView> alienProjectiles;
@@ -40,6 +41,7 @@ public final class WorldSnapshot {
             GamePhase phase) {
         this.ship = EntityView.from(ship);
         this.shipInvulnerable = ship.isInvulnerable();
+        this.shipDashReady = ship.canDash();
         this.aliens = viewsOf(aliens);
         this.playerProjectiles = viewsOf(playerProjectiles);
         this.alienProjectiles = viewsOf(alienProjectiles);
@@ -66,6 +68,10 @@ public final class WorldSnapshot {
 
     public boolean isShipInvulnerable() {
         return shipInvulnerable;
+    }
+
+    public boolean isShipDashReady() {
+        return shipDashReady;
     }
 
     public List<EntityView> getAliens() {
@@ -115,16 +121,22 @@ public final class WorldSnapshot {
         private final float y;
         private final float width;
         private final float height;
+        private final String assetPath;
 
-        private EntityView(float x, float y, float width, float height) {
+        private EntityView(float x, float y, float width, float height, String assetPath) {
             this.x = x;
             this.y = y;
             this.width = width;
             this.height = height;
+            this.assetPath = assetPath;
         }
 
         private static EntityView from(GameEntity entity) {
-            return new EntityView(entity.getX(), entity.getY(), entity.getWidth(), entity.getHeight());
+            String assetPath = entity instanceof Meteorite
+                    ? ((Meteorite) entity).getAssetPath()
+                    : null;
+            return new EntityView(
+                    entity.getX(), entity.getY(), entity.getWidth(), entity.getHeight(), assetPath);
         }
 
         public float getX() {
@@ -141,6 +153,10 @@ public final class WorldSnapshot {
 
         public float getHeight() {
             return height;
+        }
+
+        public String getAssetPath() {
+            return assetPath;
         }
     }
 }

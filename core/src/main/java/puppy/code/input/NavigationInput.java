@@ -8,4 +8,7 @@ public interface NavigationInput {
 
     /** Indica si el jugador pidió volver atrás en este cuadro. */
     boolean backJustPressed();
+
+    /** Indica si se presionó una tecla o un botón del mouse en este cuadro. */
+    boolean anyActionJustPressed();
 }

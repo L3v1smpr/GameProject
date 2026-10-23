@@ -50,6 +50,15 @@ public final class GameConfig {
 
     public static final float METEORITE_SPAWN_COOLDOWN_SECONDS = 4f;
     public static final float METEORITE_FALL_SPEED = 100f;
+    public static final float SMALL_METEORITE_WIDTH = 28f;
+    public static final float SMALL_METEORITE_HEIGHT = 28f;
+    public static final float MEDIUM_METEORITE_WIDTH = 42f;
+    public static final float MEDIUM_METEORITE_HEIGHT = 42f;
+    public static final float LARGE_METEORITE_WIDTH = 64f;
+    public static final float LARGE_METEORITE_HEIGHT = 64f;
+    public static final int SMALL_METEORITE_SCORE = 25;
+    public static final int MEDIUM_METEORITE_SCORE = 50;
+    public static final int LARGE_METEORITE_SCORE = 75;
 
     public static final float ALIEN_WIDTH = 40f;
     public static final float ALIEN_HEIGHT = 32f;
