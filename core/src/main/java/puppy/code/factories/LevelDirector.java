@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import com.badlogic.gdx.math.MathUtils;
 import puppy.code.behaviors.AlienAttackStrategy;
+import puppy.code.behaviors.AlternatingAttackStrategy;
 import puppy.code.behaviors.LinearAttackStrategy;
 import puppy.code.behaviors.LinearMovementStrategy;
 import puppy.code.behaviors.MovementStrategy;
@@ -23,11 +24,13 @@ public final class LevelDirector {
     private final AlienAttackStrategy linearAttack;
     private final AlienAttackStrategy vAttack;
     private final AlienAttackStrategy spreadAttack;
+    private final AlienAttackStrategy alternatingAttack;
 
     public LevelDirector() {
         linearAttack = new LinearAttackStrategy();
         vAttack = new VAttackStrategy();
         spreadAttack = new SpreadAttackStrategy();
+        alternatingAttack = new AlternatingAttackStrategy();
     }
 
     public List<Alien> createWave(int level) {
@@ -60,7 +63,6 @@ public final class LevelDirector {
             float jitter = MathUtils.random(0f, Math.max(0f, zoneWidth - GameConfig.ALIEN_WIDTH));
             float spawnX = zoneStart + jitter;
 
-            // Nacimiento completamente fuera de pantalla (por encima de WORLD_HEIGHT = 800)
             float staggerY = MathUtils.random(15f, 75f);
             float spawnY = GameConfig.WORLD_HEIGHT + staggerY;
 
@@ -77,12 +79,12 @@ public final class LevelDirector {
     }
 
     /**
-     * Construye un alien estático que entra descendiendo desde fuera de pantalla 
-     * hasta su altitud objetivo.
+     * Construye un alien estático según el nivel:
+     * - Nivel 2: Ataque alternado aleatorio (recto hacia abajo o apuntando a la nave).
+     * - Nivel 3: Disparo en abanico de 3 perdigones dirigido al jugador.
      */
     public Alien createStaticAlien(int level, float x, float targetY) {
-        AlienAttackStrategy attack = (level >= GameConfig.LAST_LEVEL) ? spreadAttack : linearAttack;
-        // Nace por encima de la pantalla y desciende a 120 px/s hasta targetY
+        AlienAttackStrategy attack = (level >= GameConfig.LAST_LEVEL) ? spreadAttack : alternatingAttack;
         float spawnY = GameConfig.WORLD_HEIGHT + 15f;
         return new AlienBuilder()
                 .position(x, spawnY)

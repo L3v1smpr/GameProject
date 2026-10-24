@@ -72,7 +72,10 @@ public final class Ship extends GameEntity {
         }
         dashDurationTimer = GameConfig.DASH_DURATION_SECONDS;
         dashCooldownTimer = GameConfig.DASH_COOLDOWN_SECONDS;
-        invulnerabilityTimer = Math.max(invulnerabilityTimer, GameConfig.DASH_DURATION_SECONDS);
+
+        // Se extiende la invulnerabilidad durante el dash y 1 segundo más después de completarlo
+        float totalInvulnerability = GameConfig.DASH_DURATION_SECONDS + GameConfig.DASH_INVULNERABILITY_POST_SECONDS;
+        invulnerabilityTimer = Math.max(invulnerabilityTimer, totalInvulnerability);
 
         if (inputDirection.len2() > 0f) {
             dashDirection.set(inputDirection).nor();

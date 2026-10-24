@@ -32,6 +32,9 @@ public final class GameConfig {
     public static final float DASH_DURATION_SECONDS = 0.15f;
     public static final float DASH_COOLDOWN_SECONDS = 3f;
 
+    /** Segundos de invulnerabilidad adicionales al finalizar el impulso del dash. */
+    public static final float DASH_INVULNERABILITY_POST_SECONDS = 0.5f;
+
     public static final float SHIP_START_X = WORLD_WIDTH / 2f - SHIP_WIDTH / 2f;
     public static final float SHIP_START_Y = 55f;
 
@@ -54,7 +57,6 @@ public final class GameConfig {
     public static final float LEVEL_THREE_METEORITE_COOLDOWN = 1.5f;
     public static final float METEORITE_SPAWN_COOLDOWN_SECONDS = 3.5f;
 
-    /** Velocidad de caída de meteoritos (más rápida que los aliens para ser obstáculo activo). */
     public static final float METEORITE_FALL_SPEED = 160f;
 
     // Escala y resistencia calibrada de meteoritos

@@ -53,6 +53,11 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
     private boolean returnToMenuRequested;
     private boolean paused;
 
+    // Control de sacudida de pantalla (Screen Shake)
+    private float shakeTimer;
+    private float shakeDuration;
+    private float shakeIntensity;
+
     private TransitionType activeTransition = TransitionType.NONE;
     private float transitionTimer;
     private boolean transitionCompleted;
@@ -81,10 +86,12 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
         transitionTimer = 0f;
         transitionCompleted = false;
         paused = false;
+        shakeTimer = 0f;
         playerRings.clear();
         fireRings.clear();
         debrisParticles.clear();
         afterImages.clear();
+        resetCameraPosition();
         assets.playMusic(GameAssets.BACKGROUND_MUSIC, true, BASE_MUSIC_VOLUME);
     }
 
@@ -92,17 +99,46 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
     public void hide() {
         assets.stopMusic();
         paused = false;
+        shakeTimer = 0f;
+        resetCameraPosition();
         afterImages.clear();
         fireRings.clear();
         playerRings.clear();
         debrisParticles.clear();
     }
 
+    private void resetCameraPosition() {
+        camera.position.set(GameConfig.WORLD_WIDTH / 2f, GameConfig.WORLD_HEIGHT / 2f, 0f);
+        camera.update();
+    }
+
+    private void triggerScreenShake(float duration, float intensity) {
+        this.shakeDuration = duration;
+        this.shakeTimer = duration;
+        this.shakeIntensity = intensity;
+    }
+
+    private void updateScreenShake(float delta) {
+        if (shakeTimer > 0f) {
+            shakeTimer = Math.max(0f, shakeTimer - delta);
+            float progress = shakeTimer / shakeDuration;
+            float currentIntensity = shakeIntensity * progress;
+            float offsetX = MathUtils.random(-currentIntensity, currentIntensity);
+            float offsetY = MathUtils.random(-currentIntensity, currentIntensity);
+            camera.position.set(
+                    GameConfig.WORLD_WIDTH / 2f + offsetX,
+                    GameConfig.WORLD_HEIGHT / 2f + offsetY,
+                    0f);
+        } else {
+            camera.position.set(GameConfig.WORLD_WIDTH / 2f, GameConfig.WORLD_HEIGHT / 2f, 0f);
+        }
+        camera.update();
+    }
+
     @Override
     protected void handleInput(float delta) {
         returnToMenuRequested = navigationInput.backJustPressed();
 
-        // Alternar pausa únicamente durante la partida activa (sin transiciones activas)
         if (playerInput.pauseJustPressed()
                 && activeTransition == TransitionType.NONE
                 && snapshot.getPhase() == GamePhase.ACTIVE) {
@@ -125,11 +161,11 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
             return;
         }
 
-        // Si está en pausa, congelar la simulación por completo
         if (paused) {
             return;
         }
 
+        updateScreenShake(delta);
         updateVisualEffects(delta);
 
         if (activeTransition != TransitionType.NONE) {
@@ -406,11 +442,8 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
                 if (alien.isHurt()) {
                     assets.batch().setColor(1f, 0.25f, 0.25f, 0.85f);
                 } else if (alien.isStatic()) {
-                    if (snapshot.getLevel() >= GameConfig.LAST_LEVEL) {
-                        assets.batch().setColor(0.85f, 0.35f, 1.0f, 1.0f);
-                    } else {
-                        assets.batch().setColor(1.0f, 0.75f, 0.25f, 1.0f);
-                    }
+                    // Tinte ámbar/dorado unificado para todas las torretas estáticas
+                    assets.batch().setColor(1.0f, 0.75f, 0.25f, 1.0f);
                 }
 
                 assets.batch().draw(region, alien.getX(), alien.getY(), alien.getWidth(), alien.getHeight());
@@ -508,7 +541,6 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
                 quotaTextX,
                 690f);
 
-        // Guía de controles actualizada con la tecla P
         assets.font().draw(
                 assets.batch(),
                 "WASD: mover   I: disparar   O: dash   P: pausa   ESC: menu",
@@ -597,6 +629,8 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
     public void onPlayerHurt(float centerX, float centerY) {
         assets.playSound(GameAssets.PLAYER_DEATH_SOUND, 0.9f);
         playerRings.add(new PlayerRing(centerX, centerY));
+        // Sacudida enérgica de cámara al perder vida (5 px, 220 ms)
+        triggerScreenShake(0.22f, 5f);
     }
 
     @Override
@@ -628,6 +662,8 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
             } else {
                 assets.playSound(GameAssets.METEORITE_HIT_SOUND, 0.85f);
             }
+            // Micro-sacudida de impacto al detonar meteoritos pesados (3 px, 140 ms)
+            triggerScreenShake(0.14f, 3f);
         } else {
             assets.playSound(GameAssets.METEORITE_HIT_SOUND, 0.6f);
         }
