@@ -11,6 +11,7 @@ public final class Ship extends GameEntity {
     private float dashCooldownTimer;
     private float dashDurationTimer;
     private Vector2 dashDirection = new Vector2(0, 1);
+    private boolean godMode;
 
     public Ship(float x, float y, float width, float height, float speed) {
         super(x, y, width, height);
@@ -111,5 +112,13 @@ public final class Ship extends GameEntity {
             return 1.0f;
         }
         return Math.max(0f, Math.min(1f, 1f - (dashCooldownTimer / GameConfig.DASH_COOLDOWN_SECONDS)));
+    }
+    
+    public boolean isGodMode() {
+        return godMode;
+    }
+
+    public void setGodMode(boolean godMode) {
+        this.godMode = godMode;
     }
 }

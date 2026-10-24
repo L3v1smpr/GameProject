@@ -3,7 +3,7 @@ package puppy.code.input;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 
-/** Traduce Enter y Escape a las acciones de navegación; es el único lugar que lee esas teclas. */
+/** Traduce el teclado a las acciones de navegación de menús. */
 public final class KeyboardNavigationInput implements NavigationInput {
 
     @Override
@@ -27,5 +27,25 @@ public final class KeyboardNavigationInput implements NavigationInput {
             }
         }
         return false;
+    }
+
+    @Override
+    public boolean upJustPressed() {
+        return Gdx.input.isKeyJustPressed(Input.Keys.UP) || Gdx.input.isKeyJustPressed(Input.Keys.W);
+    }
+
+    @Override
+    public boolean downJustPressed() {
+        return Gdx.input.isKeyJustPressed(Input.Keys.DOWN) || Gdx.input.isKeyJustPressed(Input.Keys.S);
+    }
+
+    @Override
+    public boolean leftJustPressed() {
+        return Gdx.input.isKeyJustPressed(Input.Keys.LEFT) || Gdx.input.isKeyJustPressed(Input.Keys.A);
+    }
+
+    @Override
+    public boolean rightJustPressed() {
+        return Gdx.input.isKeyJustPressed(Input.Keys.RIGHT) || Gdx.input.isKeyJustPressed(Input.Keys.D);
     }
 }

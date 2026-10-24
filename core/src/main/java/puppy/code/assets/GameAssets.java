@@ -18,6 +18,11 @@ public final class GameAssets {
 
     private static GameAssets instance;
 
+    // Deslizadores al 100% por defecto
+    private float musicVolume = 1.0f;
+    private float soundVolume = 1.0f;
+    private final Map<Music, Float> musicBaseVolumes = new HashMap<>();
+
     // Fondo (en la raíz de assets/)
     public static final String BACKGROUND_TEXTURE = "background.png";
 
@@ -58,6 +63,10 @@ public final class GameAssets {
     public static final String METEORITE_DESTROYED_SOUND = "audio/sfx/meteorite_destroyed.MP3";
     public static final String LEVEL_CLEAR_SOUND = "audio/sfx/nivel_superado.MP3";
 
+    // Efectos de sonido de UI y Secreto
+    public static final String MENU_SFX = "audio/sfx/menu_sfx.MP3";
+    public static final String EASTER_EGG_SOUND = "audio/sfx/easter_egg.MP3";
+
     private final SpriteBatch batch = new SpriteBatch();
     private final ShapeRenderer shapes = new ShapeRenderer();
     private final BitmapFont font = new BitmapFont();
@@ -74,7 +83,7 @@ public final class GameAssets {
 
     public GameAssets() {
         instance = this;
-        loadAll(); // Carga inmediata al instanciar
+        loadAll();
     }
 
     public static synchronized GameAssets getInstance() {
@@ -85,7 +94,6 @@ public final class GameAssets {
     }
 
     public void loadAll() {
-        // Texturas
         loadTexture(BACKGROUND_TEXTURE);
         loadTexture(PLAYER_SHEET_TEXTURE);
         loadTexture(PLAYER_AMMO_TEXTURE);
@@ -101,13 +109,11 @@ public final class GameAssets {
         loadTexture(BANNER_GAMEOVER_TEXTURE);
         loadTexture(BANNER_VICTORIA_TEXTURE);
 
-        // Subdivisión de Spritesheets (2 filas: reposo arriba, disparo abajo)
         Texture pSheet = textures.get(PLAYER_SHEET_TEXTURE);
         if (pSheet != null) {
             playerFrames = TextureRegion.split(pSheet, pSheet.getWidth() / 3, pSheet.getHeight() / 2);
         }
 
-     // Subdivisión y orientación de Spritesheets alienígenas (apuntando al Sur)
         Texture aStatic = textures.get(ALIEN_STATIC_TEXTURE);
         if (aStatic != null) {
             alienStaticFrames = TextureRegion.split(aStatic, aStatic.getWidth(), aStatic.getHeight() / 2);
@@ -131,7 +137,6 @@ public final class GameAssets {
             alienAmmoRegion = new TextureRegion(aAmmo);
         }
 
-        // Audio
         loadMusic(BACKGROUND_MUSIC);
         loadMusic(GAMEOVER_MUSIC);
         loadMusic(VICTORY_MUSIC);
@@ -145,6 +150,8 @@ public final class GameAssets {
         loadSound(METEORITE_HIT_SOUND);
         loadSound(METEORITE_DESTROYED_SOUND);
         loadSound(LEVEL_CLEAR_SOUND);
+        loadSound(MENU_SFX);
+        loadSound(EASTER_EGG_SOUND);
     }
 
     private void loadTexture(String path) {
@@ -196,16 +203,36 @@ public final class GameAssets {
     public ShapeRenderer shapes() { return shapes; }
     public BitmapFont font() { return font; }
 
+    public float getMusicVolume() { return musicVolume; }
+
+    public void setMusicVolume(float volume) {
+        this.musicVolume = Math.round(Math.max(0f, Math.min(1f, volume)) * 100f) / 100f;
+        for (Map.Entry<String, Music> entry : music.entrySet()) {
+            Music m = entry.getValue();
+            float baseVol = musicBaseVolumes.getOrDefault(m, 1.0f);
+            m.setVolume(baseVol * this.musicVolume);
+        }
+    }
+
+    public float getSoundVolume() { return soundVolume; }
+
+    public void setSoundVolume(float volume) {
+        this.soundVolume = Math.round(Math.max(0f, Math.min(1f, volume)) * 100f) / 100f;
+    }
+
     public void playSound(String path, float volume) {
         Sound s = sounds.get(path);
-        if (s != null) s.play(volume);
+        if (s != null) {
+            s.play(volume * soundVolume);
+        }
     }
 
     public void playMusic(String path, boolean loop, float volume) {
         Music m = music.get(path);
         if (m != null) {
+            musicBaseVolumes.put(m, volume);
             m.setLooping(loop);
-            m.setVolume(volume);
+            m.setVolume(volume * musicVolume);
             m.play();
         }
     }
@@ -225,14 +252,14 @@ public final class GameAssets {
         for (Music m : music.values()) m.dispose();
         instance = null;
     }
-    
+
     private void flipFrames(TextureRegion[][] frames) {
         if (frames == null) {
             return;
         }
         for (TextureRegion[] row : frames) {
             for (TextureRegion frame : row) {
-                frame.flip(false, true); // Invierte la orientación para que apunten hacia la nave del jugador
+                frame.flip(false, true);
             }
         }
     }

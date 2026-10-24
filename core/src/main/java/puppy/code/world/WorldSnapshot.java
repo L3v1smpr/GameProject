@@ -27,6 +27,7 @@ public final class WorldSnapshot {
     private final int aliensDestroyedInLevel;
     private final int quotaForLevel;
     private final GamePhase phase;
+    private final boolean godMode;
 
     WorldSnapshot(
             Ship ship,
@@ -39,7 +40,8 @@ public final class WorldSnapshot {
             int level,
             int aliensDestroyedInLevel,
             int quotaForLevel,
-            GamePhase phase) {
+            GamePhase phase, 
+            boolean godMode) {
         this.ship = EntityView.from(ship);
         this.shipInvulnerable = ship.isInvulnerable();
         this.shipDashReady = ship.canDash();
@@ -54,6 +56,7 @@ public final class WorldSnapshot {
         this.aliensDestroyedInLevel = aliensDestroyedInLevel;
         this.quotaForLevel = quotaForLevel;
         this.phase = phase;
+        this.godMode = godMode;
     }
 
     private static <T extends GameEntity> List<EntityView> viewsOf(List<T> entities) {
@@ -118,6 +121,10 @@ public final class WorldSnapshot {
 
     public GamePhase getPhase() {
         return phase;
+    }
+    
+    public boolean isGodMode() {
+        return godMode;
     }
 
     public static final class EntityView {

@@ -263,7 +263,7 @@ public final class GameWorld {
     }
 
     private void loseLife() {
-        if (phase != GamePhase.ACTIVE) {
+        if (phase != GamePhase.ACTIVE || ship.isGodMode()) {
             return;
         }
         lives = Math.max(0, lives - 1);
@@ -436,6 +436,15 @@ public final class GameWorld {
                 level,
                 aliensDestroyedInLevel,
                 getQuotaForLevel(level),
-                phase);
+                phase,
+                ship.isGodMode());
+    }
+    
+    public boolean isGodMode() {
+        return ship.isGodMode();
+    }
+
+    public void setGodMode(boolean godMode) {
+        ship.setGodMode(godMode);
     }
 }

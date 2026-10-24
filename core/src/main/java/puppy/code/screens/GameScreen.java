@@ -5,6 +5,7 @@ import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 import com.badlogic.gdx.math.Interpolation;
@@ -38,10 +39,31 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
         VICTORY_FADE
     }
 
+    private enum PauseMenuState {
+        MAIN,
+        OPTIONS,
+        DEBUG
+    }
+
+    private enum KonamiKey {
+        UP, DOWN, LEFT, RIGHT, FIRE, DASH
+    }
+
+    private static final KonamiKey[] KONAMI_SEQUENCE = {
+        KonamiKey.UP, KonamiKey.UP,
+        KonamiKey.DOWN, KonamiKey.DOWN,
+        KonamiKey.LEFT, KonamiKey.RIGHT,
+        KonamiKey.LEFT, KonamiKey.RIGHT,
+        KonamiKey.FIRE,
+        KonamiKey.DASH
+    };
+
     private final ScreenNavigator navigator;
     private final GameWorld world;
     private final PlayerInput playerInput;
     private final NavigationInput navigationInput;
+    private final GlyphLayout glyphLayout = new GlyphLayout();
+
     private final List<AfterImage> afterImages = new ArrayList<>();
     private final List<FireRing> fireRings = new ArrayList<>();
     private final List<PlayerRing> playerRings = new ArrayList<>();
@@ -51,8 +73,17 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
     private float elapsedSeconds;
     private float dashEffectTimer;
     private float dashSpawnCooldown;
-    private boolean returnToMenuRequested;
+
+    // Estado del modal de pausa
     private boolean paused;
+    private PauseMenuState pauseState = PauseMenuState.MAIN;
+    private int pauseMenuIndex = 0;
+    private int optionsMenuIndex = 0;
+    private int debugMenuIndex = 0;
+
+    // Easter Egg Konami
+    private int konamiIndex = 0;
+    private boolean debugUnlocked = false;
 
     // Control de sacudida de pantalla (Screen Shake)
     private float shakeTimer;
@@ -90,6 +121,11 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
         transitionTimer = 0f;
         transitionCompleted = false;
         paused = false;
+        pauseState = PauseMenuState.MAIN;
+        pauseMenuIndex = 0;
+        optionsMenuIndex = 0;
+        debugMenuIndex = 0;
+        konamiIndex = 0;
         shakeTimer = 0f;
         sectorCompletedTimer = 0f;
         playerRings.clear();
@@ -143,30 +179,149 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
 
     @Override
     protected void handleInput(float delta) {
-        returnToMenuRequested = navigationInput.backJustPressed();
+        if (activeTransition != TransitionType.NONE || snapshot.getPhase() != GamePhase.ACTIVE) {
+            return;
+        }
 
-        if (playerInput.pauseJustPressed()
-                && activeTransition == TransitionType.NONE
-                && snapshot.getPhase() == GamePhase.ACTIVE) {
-            paused = !paused;
-            Music bgm = assets.getMusic(GameAssets.BACKGROUND_MUSIC);
-            if (bgm != null) {
-                if (paused && bgm.isPlaying()) {
-                    bgm.pause();
-                } else if (!paused && !bgm.isPlaying()) {
-                    bgm.play();
+        if (paused) {
+            handleKonamiCodeInput();
+
+            if (navigationInput.backJustPressed()) {
+                assets.playSound(GameAssets.MENU_SFX, 0.6f);
+                if (pauseState == PauseMenuState.OPTIONS || pauseState == PauseMenuState.DEBUG) {
+                    pauseState = PauseMenuState.MAIN;
+                } else {
+                    resumeGame();
                 }
+                return;
+            }
+
+            if (pauseState == PauseMenuState.MAIN) {
+                int totalOptions = debugUnlocked ? 4 : 3;
+                if (navigationInput.upJustPressed()) {
+                    pauseMenuIndex = (pauseMenuIndex - 1 + totalOptions) % totalOptions;
+                    assets.playSound(GameAssets.MENU_SFX, 0.5f);
+                } else if (navigationInput.downJustPressed()) {
+                    pauseMenuIndex = (pauseMenuIndex + 1) % totalOptions;
+                    assets.playSound(GameAssets.MENU_SFX, 0.5f);
+                }
+
+                if (navigationInput.confirmJustPressed()) {
+                    assets.playSound(GameAssets.MENU_SFX, 0.65f);
+                    if (pauseMenuIndex == 0) {
+                        resumeGame();
+                    } else if (pauseMenuIndex == 1) {
+                        pauseState = PauseMenuState.OPTIONS;
+                        optionsMenuIndex = 0;
+                    } else if (pauseMenuIndex == 2) {
+                        paused = false;
+                        navigator.showMenu();
+                    } else if (pauseMenuIndex == 3 && debugUnlocked) {
+                        pauseState = PauseMenuState.DEBUG;
+                        debugMenuIndex = 0;
+                    }
+                }
+            } else if (pauseState == PauseMenuState.OPTIONS) {
+                if (navigationInput.upJustPressed()) {
+                    optionsMenuIndex = (optionsMenuIndex - 1 + 3) % 3;
+                    assets.playSound(GameAssets.MENU_SFX, 0.5f);
+                } else if (navigationInput.downJustPressed()) {
+                    optionsMenuIndex = (optionsMenuIndex + 1) % 3;
+                    assets.playSound(GameAssets.MENU_SFX, 0.5f);
+                }
+
+                if (optionsMenuIndex == 0) {
+                    if (navigationInput.leftJustPressed()) {
+                        assets.setMusicVolume(assets.getMusicVolume() - 0.10f);
+                        assets.playSound(GameAssets.MENU_SFX, 0.5f);
+                    } else if (navigationInput.rightJustPressed()) {
+                        assets.setMusicVolume(assets.getMusicVolume() + 0.10f);
+                        assets.playSound(GameAssets.MENU_SFX, 0.5f);
+                    }
+                } else if (optionsMenuIndex == 1) {
+                    if (navigationInput.leftJustPressed()) {
+                        assets.setSoundVolume(assets.getSoundVolume() - 0.10f);
+                        assets.playSound(GameAssets.PLAYER_SHOOT_SOUND, 0.45f);
+                    } else if (navigationInput.rightJustPressed()) {
+                        assets.setSoundVolume(assets.getSoundVolume() + 0.10f);
+                        assets.playSound(GameAssets.PLAYER_SHOOT_SOUND, 0.45f);
+                    }
+                } else if (optionsMenuIndex == 2) {
+                    if (navigationInput.confirmJustPressed()) {
+                        assets.playSound(GameAssets.MENU_SFX, 0.6f);
+                        pauseState = PauseMenuState.MAIN;
+                    }
+                }
+            } else if (pauseState == PauseMenuState.DEBUG) {
+                if (navigationInput.upJustPressed()) {
+                    debugMenuIndex = (debugMenuIndex - 1 + 2) % 2;
+                    assets.playSound(GameAssets.MENU_SFX, 0.5f);
+                } else if (navigationInput.downJustPressed()) {
+                    debugMenuIndex = (debugMenuIndex + 1) % 2;
+                    assets.playSound(GameAssets.MENU_SFX, 0.5f);
+                }
+
+                if (debugMenuIndex == 0) {
+                    if (navigationInput.leftJustPressed() || navigationInput.rightJustPressed() || navigationInput.confirmJustPressed()) {
+                        boolean current = world.isGodMode();
+                        world.setGodMode(!current);
+                        assets.playSound(GameAssets.MENU_SFX, 0.65f);
+                    }
+                } else if (debugMenuIndex == 1) {
+                    if (navigationInput.confirmJustPressed()) {
+                        assets.playSound(GameAssets.MENU_SFX, 0.6f);
+                        pauseState = PauseMenuState.MAIN;
+                    }
+                }
+            }
+            return;
+        }
+
+        if (navigationInput.backJustPressed()) {
+            assets.playSound(GameAssets.MENU_SFX, 0.6f);
+            pauseGame();
+        }
+    }
+
+    private void handleKonamiCodeInput() {
+        if (debugUnlocked) {
+            return;
+        }
+
+        KonamiKey inputKey = null;
+        if (navigationInput.upJustPressed()) inputKey = KonamiKey.UP;
+        else if (navigationInput.downJustPressed()) inputKey = KonamiKey.DOWN;
+        else if (navigationInput.leftJustPressed()) inputKey = KonamiKey.LEFT;
+        else if (navigationInput.rightJustPressed()) inputKey = KonamiKey.RIGHT;
+        else if (playerInput.fireJustPressed()) inputKey = KonamiKey.FIRE;
+        else if (playerInput.dashJustPressed()) inputKey = KonamiKey.DASH;
+
+        if (inputKey != null) {
+            if (inputKey == KONAMI_SEQUENCE[konamiIndex]) {
+                konamiIndex++;
+                if (konamiIndex >= KONAMI_SEQUENCE.length) {
+                    debugUnlocked = true;
+                    konamiIndex = 0;
+                    assets.playSound(GameAssets.EASTER_EGG_SOUND, 0.85f);
+                }
+            } else {
+                konamiIndex = (inputKey == KONAMI_SEQUENCE[0]) ? 1 : 0;
             }
         }
     }
 
+    private void pauseGame() {
+        paused = true;
+        pauseState = PauseMenuState.MAIN;
+        pauseMenuIndex = 0;
+    }
+
+    private void resumeGame() {
+        paused = false;
+    }
+
     @Override
     protected void update(float delta) {
-        if (returnToMenuRequested) {
-            navigator.showMenu();
-            return;
-        }
-
         if (paused) {
             return;
         }
@@ -181,7 +336,7 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
 
             Music bgm = assets.getMusic(GameAssets.BACKGROUND_MUSIC);
             if (bgm != null && bgm.isPlaying()) {
-                bgm.setVolume(Math.max(0f, BASE_MUSIC_VOLUME * (1f - soundProgress)));
+                bgm.setVolume(Math.max(0f, BASE_MUSIC_VOLUME * (1f - soundProgress) * assets.getMusicVolume()));
             }
 
             if (transitionTimer <= 0f && !transitionCompleted) {
@@ -390,13 +545,13 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
         assets.font().setColor(Color.WHITE);
         assets.font().draw(
                 assets.batch(),
-                "Amenazas eliminadas: " + snapshot.getQuotaForLevel() + " naves",
+                "AMENAZAS ELIMINADAS: " + snapshot.getQuotaForLevel() + " NAVES",
                 modalX + 130f,
                 modalY + modalHeight - 85f);
 
         assets.font().draw(
                 assets.batch(),
-                "Puntaje acumulado:   " + snapshot.getScore() + " pts",
+                "PUNTAJE ACUMULADO:   " + snapshot.getScore() + " PTS",
                 modalX + 130f,
                 modalY + modalHeight - 125f);
 
@@ -405,16 +560,16 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
             assets.font().setColor(0.70f, 0.75f, 0.85f, 1.0f);
             assets.font().draw(
                     assets.batch(),
-                    "Sincronizando salto hiperespacial... " + remaining + "s",
-                    modalX + 105f,
+                    "SINCRONIZANDO SALTO HIPERESPACIAL... " + remaining + "S",
+                    modalX + 85f,
                     modalY + 45f);
         } else {
             float blinkAlpha = 0.55f + 0.45f * MathUtils.sin(elapsedSeconds * 4f);
             assets.font().setColor(1.0f, 0.85f, 0.35f, blinkAlpha);
             assets.font().draw(
                     assets.batch(),
-                    "Presiona cualquier tecla para iniciar el salto",
-                    modalX + 85f,
+                    "PRESIONA CUALQUIER TECLA PARA INICIAR EL SALTO",
+                    modalX + 65f,
                     modalY + 45f);
         }
 
@@ -422,23 +577,163 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
         assets.batch().end();
     }
 
+    private void drawCenteredText(String text, float boxX, float boxY, float boxWidth, float boxHeight, Color color) {
+        glyphLayout.setText(assets.font(), text);
+        float textX = boxX + (boxWidth - glyphLayout.width) / 2f;
+        float textY = boxY + (boxHeight + glyphLayout.height) / 2f;
+        assets.font().setColor(color);
+        assets.font().draw(assets.batch(), text, textX, textY);
+    }
+
     private void drawPauseOverlay() {
+        float modalWidth = 480f;
+        float modalHeight;
+        if (pauseState == PauseMenuState.MAIN) {
+            modalHeight = debugUnlocked ? 285f : 240f;
+        } else if (pauseState == PauseMenuState.OPTIONS) {
+            modalHeight = 250f;
+        } else {
+            modalHeight = 220f;
+        }
+
+        float modalX = (GameConfig.WORLD_WIDTH - modalWidth) / 2f;
+        float modalY = (GameConfig.WORLD_HEIGHT - modalHeight) / 2f;
+
         Gdx.gl.glEnable(GL20.GL_BLEND);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 
         assets.shapes().setProjectionMatrix(camera.combined);
+
+        // 1. RELLENOS Y FONDOS
         assets.shapes().begin(ShapeType.Filled);
-        assets.shapes().setColor(0f, 0f, 0f, 0.60f);
+
+        // Velo oscuro general
+        assets.shapes().setColor(0f, 0f, 0f, 0.70f);
         assets.shapes().rect(0f, 0f, GameConfig.WORLD_WIDTH, GameConfig.WORLD_HEIGHT);
+
+        // Ventana central
+        assets.shapes().setColor(0.08f, 0.10f, 0.14f, 0.95f);
+        assets.shapes().rect(modalX, modalY, modalWidth, modalHeight);
+
+        // Resaltado de selección
+        assets.shapes().setColor(0.18f, 0.45f, 0.65f, 0.50f);
+        if (pauseState == PauseMenuState.MAIN) {
+            float topOffset = debugUnlocked ? 22f : 16f;
+            float gap = debugUnlocked ? 10f : 12f;
+            float itemH = 34f;
+            float topBoxY = modalY + modalHeight - 44f - topOffset - itemH;
+            float selectY = topBoxY - pauseMenuIndex * (itemH + gap);
+            assets.shapes().rect(modalX + 35f, selectY, modalWidth - 70f, itemH);
+        } else if (pauseState == PauseMenuState.OPTIONS) {
+            if (optionsMenuIndex == 0) {
+                assets.shapes().rect(modalX + 30f, modalY + 148f, modalWidth - 60f, 36f);
+            } else if (optionsMenuIndex == 1) {
+                assets.shapes().rect(modalX + 30f, modalY + 100f, modalWidth - 60f, 36f);
+            } else if (optionsMenuIndex == 2) {
+                assets.shapes().rect(modalX + 35f, modalY + 50f, modalWidth - 70f, 32f);
+            }
+        } else if (pauseState == PauseMenuState.DEBUG) {
+            if (debugMenuIndex == 0) {
+                assets.shapes().rect(modalX + 30f, modalY + 110f, modalWidth - 60f, 38f);
+            } else if (debugMenuIndex == 1) {
+                assets.shapes().rect(modalX + 35f, modalY + 55f, modalWidth - 70f, 32f);
+            }
+        }
+
+        // Barras de volumen en opciones
+        if (pauseState == PauseMenuState.OPTIONS) {
+            float barW = 180f;
+            float barH = 14f;
+
+            assets.shapes().setColor(0.15f, 0.20f, 0.28f, 1f);
+            assets.shapes().rect(modalX + 155f, modalY + 159f, barW, barH);
+            assets.shapes().setColor(0.20f, 0.90f, 0.85f, 1f);
+            assets.shapes().rect(modalX + 155f, modalY + 159f, barW * assets.getMusicVolume(), barH);
+
+            assets.shapes().setColor(0.15f, 0.20f, 0.28f, 1f);
+            assets.shapes().rect(modalX + 155f, modalY + 111f, barW, barH);
+            assets.shapes().setColor(0.20f, 0.90f, 0.85f, 1f);
+            assets.shapes().rect(modalX + 155f, modalY + 111f, barW * assets.getSoundVolume(), barH);
+        }
+        assets.shapes().end();
+
+        // 2. LÍNEAS Y BORDES
+        assets.shapes().begin(ShapeType.Line);
+        assets.shapes().setColor(0.25f, 0.85f, 0.95f, 0.85f);
+        assets.shapes().rect(modalX, modalY, modalWidth, modalHeight);
+        assets.shapes().line(modalX + 25f, modalY + modalHeight - 44f, modalX + modalWidth - 25f, modalY + modalHeight - 44f);
+        assets.shapes().line(modalX + 25f, modalY + 36f, modalX + modalWidth - 25f, modalY + 36f);
+
+        if (pauseState == PauseMenuState.OPTIONS) {
+            float barW = 180f;
+            float barH = 14f;
+            assets.shapes().setColor(0.40f, 0.60f, 0.75f, 0.90f);
+            assets.shapes().rect(modalX + 155f, modalY + 159f, barW, barH);
+            assets.shapes().rect(modalX + 155f, modalY + 111f, barW, barH);
+        }
         assets.shapes().end();
 
         Gdx.gl.glDisable(GL20.GL_BLEND);
 
+        // 3. TEXTOS PERFECTAMENTE CENTRADOS
         assets.batch().setProjectionMatrix(camera.combined);
         assets.batch().begin();
+
+        if (pauseState == PauseMenuState.MAIN) {
+            drawCenteredText("JUEGO PAUSADO", modalX, modalY + modalHeight - 44f, modalWidth, 44f, new Color(0.35f, 1.0f, 0.95f, 1f));
+
+            float topOffset = debugUnlocked ? 22f : 16f;
+            float gap = debugUnlocked ? 10f : 12f;
+            float itemH = 34f;
+            float topBoxY = modalY + modalHeight - 44f - topOffset - itemH;
+            float itemW = modalWidth - 70f;
+            float itemX = modalX + 35f;
+
+            drawCenteredText("CONTINUAR", itemX, topBoxY, itemW, itemH, pauseMenuIndex == 0 ? Color.YELLOW : Color.WHITE);
+            drawCenteredText("OPCIONES", itemX, topBoxY - 1 * (itemH + gap), itemW, itemH, pauseMenuIndex == 1 ? Color.YELLOW : Color.WHITE);
+            drawCenteredText("SALIR AL MENU PRINCIPAL", itemX, topBoxY - 2 * (itemH + gap), itemW, itemH, pauseMenuIndex == 2 ? Color.YELLOW : Color.WHITE);
+
+            if (debugUnlocked) {
+                Color debugColor = pauseMenuIndex == 3 ? Color.YELLOW : new Color(0.9f, 0.35f, 1.0f, 1f);
+                drawCenteredText("DEBUG", itemX, topBoxY - 3 * (itemH + gap), itemW, itemH, debugColor);
+            }
+
+            drawCenteredText("W/S: ELEGIR   ENTER: SELECCIONAR   ESC: REANUDAR", modalX, modalY, modalWidth, 36f, new Color(0.70f, 0.75f, 0.80f, 0.85f));
+        } else if (pauseState == PauseMenuState.OPTIONS) {
+            drawCenteredText("OPCIONES DE AUDIO", modalX, modalY + modalHeight - 44f, modalWidth, 44f, new Color(0.35f, 1.0f, 0.95f, 1f));
+
+            int musicPct = Math.round(assets.getMusicVolume() * 100f);
+            assets.font().setColor(optionsMenuIndex == 0 ? Color.YELLOW : Color.WHITE);
+            assets.font().draw(assets.batch(), "MUSICA", modalX + 45f, modalY + 171f);
+            assets.font().draw(assets.batch(), "< " + musicPct + "% >", modalX + 355f, modalY + 171f);
+
+            int soundPct = Math.round(assets.getSoundVolume() * 100f);
+            assets.font().setColor(optionsMenuIndex == 1 ? Color.YELLOW : Color.WHITE);
+            assets.font().draw(assets.batch(), "EFECTOS", modalX + 45f, modalY + 123f);
+            assets.font().draw(assets.batch(), "< " + soundPct + "% >", modalX + 355f, modalY + 123f);
+
+            drawCenteredText("< VOLVER AL MENU DE PAUSA", modalX + 35f, modalY + 50f, modalWidth - 70f, 32f, optionsMenuIndex == 2 ? Color.YELLOW : Color.WHITE);
+            drawCenteredText("A/D: AJUSTAR VOLUMEN   ENTER/ESC: VOLVER", modalX, modalY, modalWidth, 36f, new Color(0.70f, 0.75f, 0.80f, 0.85f));
+        } else if (pauseState == PauseMenuState.DEBUG) {
+            drawCenteredText("MENU DEBUG (SECRETO)", modalX, modalY + modalHeight - 44f, modalWidth, 44f, new Color(0.9f, 0.35f, 1.0f, 1f));
+
+            boolean godMode = world.isGodMode();
+            assets.font().setColor(debugMenuIndex == 0 ? Color.YELLOW : Color.WHITE);
+            assets.font().draw(assets.batch(), "MODO DIOS (INVULNERABLE):", modalX + 45f, modalY + 134f);
+
+            if (godMode) {
+                assets.font().setColor(0.2f, 1.0f, 0.4f, 1.0f);
+                assets.font().draw(assets.batch(), "< ACTIVADO >", modalX + 325f, modalY + 134f);
+            } else {
+                assets.font().setColor(0.85f, 0.3f, 0.3f, 1.0f);
+                assets.font().draw(assets.batch(), "< DESACTIVADO >", modalX + 310f, modalY + 134f);
+            }
+
+            drawCenteredText("< VOLVER AL MENU DE PAUSA", modalX + 35f, modalY + 55f, modalWidth - 70f, 32f, debugMenuIndex == 1 ? Color.YELLOW : Color.WHITE);
+            drawCenteredText("ENTER o A/D: ALTERNAR   ESC: VOLVER", modalX, modalY, modalWidth, 36f, new Color(0.70f, 0.75f, 0.80f, 0.85f));
+        }
+
         assets.font().setColor(Color.WHITE);
-        assets.font().draw(assets.batch(), "JUEGO PAUSADO", 540f, 430f);
-        assets.font().draw(assets.batch(), "Presiona P para continuar", 495f, 390f);
         assets.batch().end();
     }
 
@@ -562,7 +857,6 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
         for (WorldSnapshot.EntityView alien : snapshot.getAliens()) {
             TextureRegion region;
 
-            // Asignación de sprite dedicado según el tipo de nave
             if (alien.isStatic()) {
                 region = assets.getAlienSentryRegion(alien.isFiring());
             } else if (alien.isBomber()) {
@@ -572,7 +866,6 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
             }
 
             if (region != null) {
-                // Tinte rojo únicamente al recibir daño
                 if (alien.isHurt()) {
                     assets.batch().setColor(1f, 0.25f, 0.25f, 0.85f);
                 }
@@ -654,7 +947,7 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
                 assets.batch().draw(lifeTexture, 24f + index * 28f, 750f, 24f, 24f);
             }
         } else {
-            assets.font().draw(assets.batch(), "Vidas: " + snapshot.getLives(), 24f, 770f);
+            assets.font().draw(assets.batch(), "VIDAS: " + snapshot.getLives(), 24f, 770f);
         }
 
         assets.font().draw(assets.batch(), "DASH", 130f, 768f);
@@ -664,9 +957,15 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
             assets.font().setColor(Color.WHITE);
         }
 
+        if (snapshot.isGodMode()) {
+            assets.font().setColor(1.0f, 0.85f, 0.20f, 1.0f);
+            assets.font().draw(assets.batch(), "[MODO DIOS]", 340f, 768f);
+            assets.font().setColor(Color.WHITE);
+        }
+
         assets.font().draw(
                 assets.batch(),
-                "Puntaje: " + snapshot.getScore(),
+                "PUNTAJE: " + snapshot.getScore(),
                 24f,
                 718f);
 
@@ -679,14 +978,14 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
 
         assets.font().draw(
                 assets.batch(),
-                "Sector " + snapshot.getLevel() + "  Aliens: "
+                "SECTOR " + snapshot.getLevel() + "  ALIENS: "
                         + snapshot.getAliensDestroyedInLevel() + "/" + snapshot.getQuotaForLevel(),
                 quotaTextX,
                 690f);
 
         assets.font().draw(
                 assets.batch(),
-                "WASD: mover   I: disparar   O: dash   P: pausa   ESC: menu",
+                "WASD: MOVER   I: DISPARAR   O: DASH   ESC: PAUSA/MENU",
                 24f,
                 662f);
     }
