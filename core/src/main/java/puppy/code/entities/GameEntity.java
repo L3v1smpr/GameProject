@@ -5,11 +5,14 @@ import com.badlogic.gdx.math.Rectangle;
 /** Mantiene el estado privado común de los objetos que ocupan espacio en el mundo. */
 public abstract class GameEntity implements Collidable {
 
+    private static final float HURT_DURATION_SECONDS = 0.12f;
+
     private float x;
     private float y;
     private final float width;
     private final float height;
     private boolean active = true;
+    private float hurtTimer;
 
     protected GameEntity(float x, float y, float width, float height) {
         if (!Float.isFinite(x) || !Float.isFinite(y)) {
@@ -41,20 +44,39 @@ public abstract class GameEntity implements Collidable {
         return height;
     }
 
-    /** Indica si la entidad sigue participando en la partida. */
     public final boolean isActive() {
         return active;
     }
 
-    /** Marca la entidad como retirada; el mundo la elimina en su siguiente actualización. */
     public final void deactivate() {
         active = false;
     }
 
+    /** Indica si la entidad se encuentra en el fotograma de retroalimentación de daño. */
+    public final boolean isHurt() {
+        return hurtTimer > 0f;
+    }
+
+    /** Activa el destello visual de impacto durante una fracción de segundo. */
+    protected final void triggerHurt() {
+        hurtTimer = HURT_DURATION_SECONDS;
+    }
+
+    /** Actualiza la caducidad del destello de daño en cada cuadro de simulación. */
+    protected final void updateHurtTimer(float delta) {
+        if (hurtTimer > 0f) {
+            hurtTimer = Math.max(0f, hurtTimer - delta);
+        }
+    }
+
     /** 
-     * Devuelve los límites de colisión de la entidad. 
-     * Las subclases pueden sobrescribirlo para definir hitboxes ajustadas a su silueta visual.
+     * Método hook polimórfico: procesa un impacto y devuelve true si destruye a la entidad.
+     * Las subclases destructibles deben sobrescribirlo.
      */
+    public boolean takeDamage() {
+        return false;
+    }
+
     @Override
     public Rectangle bounds() {
         return new Rectangle(x, y, width, height);

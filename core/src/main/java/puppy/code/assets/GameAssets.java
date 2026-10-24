@@ -138,8 +138,11 @@ public final class GameAssets {
             }
         }
 
+        // Carga y procesamiento anti-sangrado para alien_static.png
         if (manager.isLoaded(ALIEN_STATIC_TEXTURE, Texture.class)) {
             Texture aStatic = manager.get(ALIEN_STATIC_TEXTURE, Texture.class);
+            aStatic.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+
             TextureRegion[][] splits = TextureRegion.split(aStatic, 48, 48);
             if (splits.length >= 2) {
                 this.alienStaticNormal = new TextureRegion(splits[0][0]);
@@ -151,12 +154,27 @@ public final class GameAssets {
                 this.alienStaticNormal = new TextureRegion(splits[0][0]);
                 this.alienStaticFiring = this.alienStaticNormal;
             }
+
+            // Recorte vertical de 2 px para eliminar cualquier pixel verde adyacente
+            recortarMargenSeguro(this.alienStaticNormal);
+            recortarMargenSeguro(this.alienStaticFiring);
+
             this.alienStaticNormal.flip(false, true);
             this.alienStaticFiring.flip(false, true);
         }
 
         if (manager.isLoaded(ALIEN_AMMO_TEXTURE, Texture.class)) {
             this.alienAmmoRegion = new TextureRegion(manager.get(ALIEN_AMMO_TEXTURE, Texture.class));
+        }
+    }
+
+    private void recortarMargenSeguro(TextureRegion region) {
+        if (region != null) {
+            region.setRegion(
+                    region.getRegionX() + 1,
+                    region.getRegionY() + 2,
+                    region.getRegionWidth() - 2,
+                    region.getRegionHeight() - 4);
         }
     }
 

@@ -173,10 +173,12 @@ public final class GameWorld {
             for (Alien alien : aliens) {
                 if (alien.isActive() && collisions.collides(projectile, alien)) {
                     projectile.deactivate();
+                    float centerX = alien.getX() + alien.getWidth() / 2f;
+                    float centerY = alien.getY() + alien.getHeight() / 2f;
                     if (alien.takeDamage()) {
                         score += GameConfig.ALIEN_SCORE;
                         aliensDestroyedInLevel++;
-                        notifyAudio(WorldAudioListener::onAlienDestroyed);
+                        notifyAudio(l -> l.onAlienDestroyed(centerX, centerY));
                     } else {
                         notifyAudio(WorldAudioListener::onAlienHurt);
                     }
@@ -189,16 +191,14 @@ public final class GameWorld {
             for (Meteorite meteorite : meteorites) {
                 if (meteorite.isActive() && collisions.collides(projectile, meteorite)) {
                     projectile.deactivate();
+                    float centerX = meteorite.getX() + meteorite.getWidth() / 2f;
+                    float centerY = meteorite.getY() + meteorite.getHeight() / 2f;
                     if (meteorite.takeDamage()) {
                         score += meteorite.getScoreValue();
-                        // Tanto el meteorito mediano como el grande activan el estruendo de destruccion total
-                        if (meteorite.getSize() == MeteoriteSize.MEDIUM || meteorite.getSize() == MeteoriteSize.LARGE) {
-                            notifyAudio(WorldAudioListener::onMeteoriteDestroyed);
-                        } else {
-                            notifyAudio(WorldAudioListener::onMeteoriteHit);
-                        }
+                        boolean isMajor = meteorite.getSize() == MeteoriteSize.MEDIUM
+                                || meteorite.getSize() == MeteoriteSize.LARGE;
+                        notifyAudio(l -> l.onMeteoriteDestroyed(centerX, centerY, isMajor));
                     } else {
-                        // Impacto intermedio sin destruir (meteoritos medianos o grandes)
                         notifyAudio(WorldAudioListener::onMeteoriteHit);
                     }
                     break;
@@ -252,7 +252,10 @@ public final class GameWorld {
             return;
         }
         lives = Math.max(0, lives - 1);
-        notifyAudio(WorldAudioListener::onPlayerHurt);
+        float centerX = ship.getX() + ship.getWidth() / 2f;
+        float centerY = ship.getY() + ship.getHeight() / 2f;
+        notifyAudio(l -> l.onPlayerHurt(centerX, centerY));
+
         if (lives == 0) {
             phase = GamePhase.GAME_OVER;
             return;

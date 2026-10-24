@@ -124,6 +124,7 @@ public final class WorldSnapshot {
         private final String assetPath;
         private final float rotation;
         private final boolean firing;
+        private final boolean hurt;
 
         private EntityView(
                 float x,
@@ -132,7 +133,8 @@ public final class WorldSnapshot {
                 float height,
                 String assetPath,
                 float rotation,
-                boolean firing) {
+                boolean firing,
+                boolean hurt) {
             this.x = x;
             this.y = y;
             this.width = width;
@@ -140,6 +142,7 @@ public final class WorldSnapshot {
             this.assetPath = assetPath;
             this.rotation = rotation;
             this.firing = firing;
+            this.hurt = hurt;
         }
 
         private static EntityView from(GameEntity entity) {
@@ -159,7 +162,8 @@ public final class WorldSnapshot {
                     entity.getHeight(),
                     assetPath,
                     rotation,
-                    firing);
+                    firing,
+                    entity.isHurt());
         }
 
         public float getX() {
@@ -188,6 +192,10 @@ public final class WorldSnapshot {
 
         public boolean isFiring() {
             return firing;
+        }
+
+        public boolean isHurt() {
+            return hurt;
         }
     }
 }

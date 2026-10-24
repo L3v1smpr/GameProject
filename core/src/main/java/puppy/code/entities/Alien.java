@@ -54,12 +54,13 @@ public final class Alien extends GameEntity {
         return firingTimer > 0f;
     }
 
-    /** Aplica un impacto y devuelve true solo cuando este impacto destruye al alien. */
+    @Override
     public boolean takeDamage() {
         if (!isActive()) {
             return false;
         }
         hitPoints--;
+        triggerHurt();
         if (hitPoints <= 0) {
             hitPoints = 0;
             deactivate();
@@ -78,16 +79,13 @@ public final class Alien extends GameEntity {
 
         age += delta;
         firingTimer = Math.max(0f, firingTimer - delta);
+        updateHurtTimer(delta);
 
         Vector2 next = movement.nextPosition(getX(), getY(), age, delta);
         float maxX = Math.max(0f, worldWidth - getWidth());
         setPosition(Math.max(0f, Math.min(next.x, maxX)), next.y);
     }
 
-    /**
-     * Actualiza la cadencia del alien y devuelve las descargas que vencieron en este delta.
-     * Activa el estado visual de disparo durante una fracción de segundo.
-     */
     public List<AlienProjectile> fireDue(float delta, Ship target) {
         if (!Float.isFinite(delta) || delta < 0f) {
             throw new IllegalArgumentException("delta debe ser finito y no negativo.");
@@ -109,7 +107,6 @@ public final class Alien extends GameEntity {
         return Collections.unmodifiableList(projectiles);
     }
 
-    /** Indica si el alien ya salió por completo por el borde inferior del mundo. */
     public boolean hasLeftWorld() {
         return getY() + getHeight() < 0f;
     }

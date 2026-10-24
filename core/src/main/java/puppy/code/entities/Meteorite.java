@@ -29,7 +29,6 @@ public final class Meteorite extends GameEntity {
         this.hitPoints = size.getHitPoints();
     }
 
-    /** Crea un meteorito aleatorio por encima del área de juego. */
     public static Meteorite random(float worldWidth, float worldHeight) {
         if (!Float.isFinite(worldWidth) || worldWidth <= 0f
                 || !Float.isFinite(worldHeight) || worldHeight <= 0f) {
@@ -48,12 +47,13 @@ public final class Meteorite extends GameEntity {
                 size);
     }
 
-    /** Aplica un impacto y devuelve true únicamente cuando el impacto destruye al meteorito. */
+    @Override
     public boolean takeDamage() {
         if (!isActive()) {
             return false;
         }
         hitPoints--;
+        triggerHurt();
         if (hitPoints <= 0) {
             hitPoints = 0;
             deactivate();
@@ -66,6 +66,7 @@ public final class Meteorite extends GameEntity {
         if (!Float.isFinite(delta) || delta < 0f) {
             throw new IllegalArgumentException("delta debe ser finito y no negativo.");
         }
+        updateHurtTimer(delta);
         setPosition(getX(), getY() - descentSpeed * delta);
     }
 

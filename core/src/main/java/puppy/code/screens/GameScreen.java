@@ -8,6 +8,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 import com.badlogic.gdx.math.Interpolation;
+import com.badlogic.gdx.math.MathUtils;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -41,6 +42,9 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
     private final PlayerInput playerInput;
     private final NavigationInput navigationInput;
     private final List<AfterImage> afterImages = new ArrayList<>();
+    private final List<FireRing> fireRings = new ArrayList<>();
+    private final List<PlayerRing> playerRings = new ArrayList<>();
+    private final List<DebrisParticle> debrisParticles = new ArrayList<>();
 
     private WorldSnapshot snapshot;
     private float elapsedSeconds;
@@ -75,6 +79,10 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
         activeTransition = TransitionType.NONE;
         transitionTimer = 0f;
         transitionCompleted = false;
+        playerRings.clear();
+        fireRings.clear();
+        debrisParticles.clear();
+        afterImages.clear();
         assets.playMusic(GameAssets.BACKGROUND_MUSIC, true, BASE_MUSIC_VOLUME);
     }
 
@@ -82,6 +90,9 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
     public void hide() {
         assets.stopMusic();
         afterImages.clear();
+        fireRings.clear();
+        playerRings.clear();
+        debrisParticles.clear();
     }
 
     @Override
@@ -95,6 +106,9 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
             navigator.showMenu();
             return;
         }
+
+        // Se actualizan siempre los efectos visuales para que se animen durante las transiciones
+        updateVisualEffects(delta);
 
         if (activeTransition != TransitionType.NONE) {
             transitionTimer = Math.max(0f, transitionTimer - delta);
@@ -170,6 +184,29 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
         }
     }
 
+    private void updateVisualEffects(float delta) {
+        Iterator<FireRing> ringIterator = fireRings.iterator();
+        while (ringIterator.hasNext()) {
+            if (ringIterator.next().update(delta)) {
+                ringIterator.remove();
+            }
+        }
+
+        Iterator<PlayerRing> playerRingIterator = playerRings.iterator();
+        while (playerRingIterator.hasNext()) {
+            if (playerRingIterator.next().update(delta)) {
+                playerRingIterator.remove();
+            }
+        }
+
+        Iterator<DebrisParticle> particleIterator = debrisParticles.iterator();
+        while (particleIterator.hasNext()) {
+            if (particleIterator.next().update(delta)) {
+                particleIterator.remove();
+            }
+        }
+    }
+
     @Override
     protected void draw(float delta) {
         if (transitionCompleted) {
@@ -194,8 +231,67 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
         drawPhaseMessage();
 
         assets.batch().end();
+
+        drawVisualEffects();
         drawFallbackEntities();
         drawTransitionOverlay();
+    }
+
+    private void drawVisualEffects() {
+        if (fireRings.isEmpty() && debrisParticles.isEmpty() && playerRings.isEmpty()) {
+            return;
+        }
+
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        assets.shapes().setProjectionMatrix(camera.combined);
+
+        // 1. Dibujar partículas grises de meteoritos
+        if (!debrisParticles.isEmpty()) {
+            Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+            assets.shapes().begin(ShapeType.Filled);
+            for (DebrisParticle particle : debrisParticles) {
+                float a = particle.getAlpha();
+                float shade = particle.getShade();
+                assets.shapes().setColor(shade, shade, shade, a);
+                assets.shapes().rect(
+                        particle.getX(), particle.getY(), particle.getSize(), particle.getSize());
+            }
+            assets.shapes().end();
+        }
+
+        // 2. Dibujar anillos de energía (aliens y jugador) con mezcla aditiva
+        if (!fireRings.isEmpty() || !playerRings.isEmpty()) {
+            Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE);
+            assets.shapes().begin(ShapeType.Line);
+
+            for (FireRing ring : fireRings) {
+                float a = ring.getAlpha();
+                assets.shapes().setColor(1.0f, 0.25f, 0.05f, a);
+                assets.shapes().circle(ring.getX(), ring.getY(), ring.getRadius(), 32);
+
+                if (ring.getRadius() > 4f) {
+                    assets.shapes().setColor(1.0f, 0.85f, 0.40f, a * 0.9f);
+                    assets.shapes().circle(ring.getX(), ring.getY(), ring.getRadius() - 3.5f, 32);
+                }
+            }
+
+            for (PlayerRing ring : playerRings) {
+                float a = ring.getAlpha();
+                // Anillo exterior azul ultramar (#3f00ff)
+                assets.shapes().setColor(63f / 255f, 0f, 1f, a);
+                assets.shapes().circle(ring.getX(), ring.getY(), ring.getRadius(), 36);
+
+                // Anillo interior blanco brillante
+                if (ring.getRadius() > 4f) {
+                    assets.shapes().setColor(1.0f, 1.0f, 1.0f, a * 0.95f);
+                    assets.shapes().circle(ring.getX(), ring.getY(), ring.getRadius() - 3.5f, 36);
+                }
+            }
+
+            assets.shapes().end();
+        }
+
+        Gdx.gl.glDisable(GL20.GL_BLEND);
     }
 
     private void drawTransitionOverlay() {
@@ -248,6 +344,11 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
     }
 
     private void drawShip() {
+        // Si el jugador se quedó sin vidas, la nave explotó y no debe dibujarse en pantalla
+        if (snapshot.getLives() <= 0) {
+            return;
+        }
+
         WorldSnapshot.EntityView ship = snapshot.getShip();
         TextureRegion region = resolveShipRegion(assets.getPlayerFrames());
         boolean visible = !snapshot.isShipInvulnerable()
@@ -261,7 +362,13 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
         for (WorldSnapshot.EntityView alien : snapshot.getAliens()) {
             TextureRegion region = assets.getAlienStaticRegion(alien.isFiring());
             if (region != null) {
+                if (alien.isHurt()) {
+                    assets.batch().setColor(1f, 0.25f, 0.25f, 0.85f);
+                }
                 assets.batch().draw(region, alien.getX(), alien.getY(), alien.getWidth(), alien.getHeight());
+                if (alien.isHurt()) {
+                    assets.batch().setColor(Color.WHITE);
+                }
             }
         }
     }
@@ -302,12 +409,22 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
         for (WorldSnapshot.EntityView meteorite : snapshot.getMeteorites()) {
             Texture texture = assets.getTexture(meteorite.getAssetPath());
             if (texture != null) {
+                if (meteorite.isHurt()) {
+                    assets.batch().setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE);
+                    assets.batch().setColor(1f, 1f, 1f, 0.90f);
+                }
+
                 assets.batch().draw(
                         texture,
                         meteorite.getX(),
                         meteorite.getY(),
                         meteorite.getWidth(),
                         meteorite.getHeight());
+
+                if (meteorite.isHurt()) {
+                    assets.batch().setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+                    assets.batch().setColor(Color.WHITE);
+                }
             }
         }
     }
@@ -373,7 +490,8 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
     }
 
     private void drawFallbackEntities() {
-        boolean shipNeedsFallback = resolveShipRegion(assets.getPlayerFrames()) == null
+        boolean shipNeedsFallback = snapshot.getLives() > 0
+                && resolveShipRegion(assets.getPlayerFrames()) == null
                 && (!snapshot.isShipInvulnerable()
                         || (((int) (elapsedSeconds * BLINK_STEPS_PER_SECOND)) % 2 == 0));
         boolean aliensNeedFallback = assets.getAlienStaticRegion() == null;
@@ -425,8 +543,9 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
     }
 
     @Override
-    public void onPlayerHurt() {
+    public void onPlayerHurt(float centerX, float centerY) {
         assets.playSound(GameAssets.PLAYER_DEATH_SOUND, 0.9f);
+        playerRings.add(new PlayerRing(centerX, centerY));
     }
 
     @Override
@@ -435,8 +554,9 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
     }
 
     @Override
-    public void onAlienDestroyed() {
+    public void onAlienDestroyed(float centerX, float centerY) {
         assets.playSound(GameAssets.ALIEN_DEATH_SOUND, 0.7f);
+        fireRings.add(new FireRing(centerX, centerY));
     }
 
     @Override
@@ -450,11 +570,20 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
     }
 
     @Override
-    public void onMeteoriteDestroyed() {
-        if (assets.getSound(GameAssets.METEORITE_DESTROYED_SOUND) != null) {
-            assets.playSound(GameAssets.METEORITE_DESTROYED_SOUND, 0.85f);
+    public void onMeteoriteDestroyed(float centerX, float centerY, boolean isMajor) {
+        if (isMajor) {
+            if (assets.getSound(GameAssets.METEORITE_DESTROYED_SOUND) != null) {
+                assets.playSound(GameAssets.METEORITE_DESTROYED_SOUND, 0.85f);
+            } else {
+                assets.playSound(GameAssets.METEORITE_HIT_SOUND, 0.85f);
+            }
         } else {
-            assets.playSound(GameAssets.METEORITE_HIT_SOUND, 0.85f);
+            assets.playSound(GameAssets.METEORITE_HIT_SOUND, 0.6f);
+        }
+
+        int particleCount = isMajor ? 16 : 8;
+        for (int i = 0; i < particleCount; i++) {
+            debrisParticles.add(new DebrisParticle(centerX, centerY));
         }
     }
 
@@ -462,5 +591,100 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
     public void onLevelCompleted() {
         assets.stopMusic();
         assets.playSound(GameAssets.LEVEL_CLEAR_SOUND, 0.85f);
+    }
+
+    // --- EFECTOS VISUALES PROCEDURALES (VFX) ---
+
+    private static final class PlayerRing {
+        private final float x;
+        private final float y;
+        private float radius;
+        private float timer;
+        private static final float DURATION = 0.45f;
+        private static final float MAX_RADIUS = 70f;
+
+        public PlayerRing(float x, float y) {
+            this.x = x;
+            this.y = y;
+            this.radius = 8f;
+            this.timer = DURATION;
+        }
+
+        public boolean update(float delta) {
+            timer = Math.max(0f, timer - delta);
+            float progress = 1f - (timer / DURATION);
+            radius = 8f + MAX_RADIUS * Interpolation.pow2Out.apply(progress);
+            return timer <= 0f;
+        }
+
+        public float getX() { return x; }
+        public float getY() { return y; }
+        public float getRadius() { return radius; }
+        public float getAlpha() { return Math.max(0f, timer / DURATION); }
+    }
+
+    private static final class FireRing {
+        private final float x;
+        private final float y;
+        private float radius;
+        private float timer;
+        private static final float DURATION = 0.35f;
+        private static final float MAX_RADIUS = 50f;
+
+        public FireRing(float x, float y) {
+            this.x = x;
+            this.y = y;
+            this.radius = 6f;
+            this.timer = DURATION;
+        }
+
+        public boolean update(float delta) {
+            timer = Math.max(0f, timer - delta);
+            float progress = 1f - (timer / DURATION);
+            radius = 6f + MAX_RADIUS * Interpolation.pow2Out.apply(progress);
+            return timer <= 0f;
+        }
+
+        public float getX() { return x; }
+        public float getY() { return y; }
+        public float getRadius() { return radius; }
+        public float getAlpha() { return Math.max(0f, timer / DURATION); }
+    }
+
+    private static final class DebrisParticle {
+        private float x;
+        private float y;
+        private final float vx;
+        private final float vy;
+        private final float size;
+        private final float shade;
+        private float timer;
+        private final float duration;
+
+        public DebrisParticle(float x, float y) {
+            this.x = x;
+            this.y = y;
+            float angle = MathUtils.random(0f, 360f);
+            float speed = MathUtils.random(60f, 210f);
+            this.vx = MathUtils.cosDeg(angle) * speed;
+            this.vy = MathUtils.sinDeg(angle) * speed;
+            this.size = MathUtils.random(3f, 6f);
+            this.shade = MathUtils.random(0.50f, 0.85f);
+            this.duration = MathUtils.random(0.30f, 0.50f);
+            this.timer = this.duration;
+        }
+
+        public boolean update(float delta) {
+            timer = Math.max(0f, timer - delta);
+            x += vx * delta;
+            y += vy * delta;
+            return timer <= 0f;
+        }
+
+        public float getX() { return x; }
+        public float getY() { return y; }
+        public float getSize() { return size; }
+        public float getShade() { return shade; }
+        public float getAlpha() { return Math.max(0f, timer / duration); }
     }
 }
