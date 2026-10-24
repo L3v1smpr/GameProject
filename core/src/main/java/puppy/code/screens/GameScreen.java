@@ -51,6 +51,7 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
     private float dashEffectTimer;
     private float dashSpawnCooldown;
     private boolean returnToMenuRequested;
+    private boolean paused;
 
     private TransitionType activeTransition = TransitionType.NONE;
     private float transitionTimer;
@@ -79,6 +80,7 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
         activeTransition = TransitionType.NONE;
         transitionTimer = 0f;
         transitionCompleted = false;
+        paused = false;
         playerRings.clear();
         fireRings.clear();
         debrisParticles.clear();
@@ -89,6 +91,7 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
     @Override
     public void hide() {
         assets.stopMusic();
+        paused = false;
         afterImages.clear();
         fireRings.clear();
         playerRings.clear();
@@ -98,6 +101,21 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
     @Override
     protected void handleInput(float delta) {
         returnToMenuRequested = navigationInput.backJustPressed();
+
+        // Alternar pausa únicamente durante la partida activa (sin transiciones activas)
+        if (playerInput.pauseJustPressed()
+                && activeTransition == TransitionType.NONE
+                && snapshot.getPhase() == GamePhase.ACTIVE) {
+            paused = !paused;
+            Music bgm = assets.getMusic(GameAssets.BACKGROUND_MUSIC);
+            if (bgm != null) {
+                if (paused && bgm.isPlaying()) {
+                    bgm.pause();
+                } else if (!paused && !bgm.isPlaying()) {
+                    bgm.play();
+                }
+            }
+        }
     }
 
     @Override
@@ -107,7 +125,11 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
             return;
         }
 
-        // Se actualizan siempre los efectos visuales para que se animen durante las transiciones
+        // Si está en pausa, congelar la simulación por completo
+        if (paused) {
+            return;
+        }
+
         updateVisualEffects(delta);
 
         if (activeTransition != TransitionType.NONE) {
@@ -235,6 +257,30 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
         drawVisualEffects();
         drawFallbackEntities();
         drawTransitionOverlay();
+
+        if (paused) {
+            drawPauseOverlay();
+        }
+    }
+
+    private void drawPauseOverlay() {
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+
+        assets.shapes().setProjectionMatrix(camera.combined);
+        assets.shapes().begin(ShapeType.Filled);
+        assets.shapes().setColor(0f, 0f, 0f, 0.60f);
+        assets.shapes().rect(0f, 0f, GameConfig.WORLD_WIDTH, GameConfig.WORLD_HEIGHT);
+        assets.shapes().end();
+
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+
+        assets.batch().setProjectionMatrix(camera.combined);
+        assets.batch().begin();
+        assets.font().setColor(Color.WHITE);
+        assets.font().draw(assets.batch(), "JUEGO PAUSADO", 540f, 430f);
+        assets.font().draw(assets.batch(), "Presiona P para continuar", 495f, 390f);
+        assets.batch().end();
     }
 
     private void drawVisualEffects() {
@@ -245,7 +291,6 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
         Gdx.gl.glEnable(GL20.GL_BLEND);
         assets.shapes().setProjectionMatrix(camera.combined);
 
-        // 1. Dibujar partículas grises de meteoritos
         if (!debrisParticles.isEmpty()) {
             Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
             assets.shapes().begin(ShapeType.Filled);
@@ -259,7 +304,6 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
             assets.shapes().end();
         }
 
-        // 2. Dibujar anillos de energía (aliens y jugador) con mezcla aditiva
         if (!fireRings.isEmpty() || !playerRings.isEmpty()) {
             Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE);
             assets.shapes().begin(ShapeType.Line);
@@ -277,11 +321,9 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
 
             for (PlayerRing ring : playerRings) {
                 float a = ring.getAlpha();
-                // Anillo exterior azul ultramar (#3f00ff)
                 assets.shapes().setColor(63f / 255f, 0f, 1f, a);
                 assets.shapes().circle(ring.getX(), ring.getY(), ring.getRadius(), 36);
 
-                // Anillo interior blanco brillante
                 if (ring.getRadius() > 4f) {
                     assets.shapes().setColor(1.0f, 1.0f, 1.0f, a * 0.95f);
                     assets.shapes().circle(ring.getX(), ring.getY(), ring.getRadius() - 3.5f, 36);
@@ -344,7 +386,6 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
     }
 
     private void drawShip() {
-        // Si el jugador se quedó sin vidas, la nave explotó y no debe dibujarse en pantalla
         if (snapshot.getLives() <= 0) {
             return;
         }
@@ -366,10 +407,8 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
                     assets.batch().setColor(1f, 0.25f, 0.25f, 0.85f);
                 } else if (alien.isStatic()) {
                     if (snapshot.getLevel() >= GameConfig.LAST_LEVEL) {
-                        // Tinte violeta/magenta para la torreta de perdigones del Nivel 3
                         assets.batch().setColor(0.85f, 0.35f, 1.0f, 1.0f);
                     } else {
-                        // Tinte ámbar/dorado para la torreta recta del Nivel 2
                         assets.batch().setColor(1.0f, 0.75f, 0.25f, 1.0f);
                     }
                 }
@@ -468,9 +507,11 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
                         + snapshot.getAliensDestroyedInLevel() + "/" + snapshot.getQuotaForLevel(),
                 quotaTextX,
                 690f);
+
+        // Guía de controles actualizada con la tecla P
         assets.font().draw(
                 assets.batch(),
-                "WASD: mover   I: disparar   O: dash   ESC: menu",
+                "WASD: mover   I: disparar   O: dash   P: pausa   ESC: menu",
                 24f,
                 662f);
     }

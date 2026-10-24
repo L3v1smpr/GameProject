@@ -46,7 +46,7 @@ public final class MenuScreen extends AbstractGameScreen {
         assets.batch().begin();
         assets.font().draw(assets.batch(), "SPACE NAVIGATION", 470f, 455f);
         assets.font().draw(assets.batch(), "Presiona ENTER para comenzar", 455f, 390f);
-        assets.font().draw(assets.batch(), "WASD: mover   I: disparar   O: dash", 420f, 345f);
+        assets.font().draw(assets.batch(), "WASD: mover   I: disparar   O: dash   P: pausa", 380f, 345f);
         drawTopScores();
         assets.batch().end();
     }
