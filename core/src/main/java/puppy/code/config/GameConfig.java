@@ -14,12 +14,12 @@ public final class GameConfig {
     public static final float SHIP_WIDTH = 48f;
     public static final float SHIP_HEIGHT = 48f;
 
-    // Dimensiones de la hitbox reducida y centrada de la nave (26x48 px)
+    // Hitbox reducida y centrada de la nave (26x48 px)
     public static final float SHIP_HITBOX_WIDTH = 26f;
     public static final float SHIP_HITBOX_HEIGHT = 48f;
-    public static final float SHIP_HITBOX_OFFSET_X = (SHIP_WIDTH - SHIP_HITBOX_WIDTH) / 2f; // 11 px
+    public static final float SHIP_HITBOX_OFFSET_X = (SHIP_WIDTH - SHIP_HITBOX_WIDTH) / 2f;
 
-    /** Velocidad aumentada de la nave a 1.5x (de 260 a 390 px/s). */
+    /** Velocidad aumentada de la nave a 1.5x (390 px/s). */
     public static final float SHIP_SPEED = 390f;
 
     /** Velocidad de los proyectiles del jugador, en px/s. */
@@ -28,21 +28,14 @@ public final class GameConfig {
     /** Tiempo entre disparos mientras se mantiene presionada la tecla de fuego. */
     public static final float PLAYER_FIRE_COOLDOWN_SECONDS = 0.25f;
 
-    /** Multiplicador provisional del movimiento mientras se ejecuta el dash. */
     public static final float DASH_SPEED_MULTIPLIER = 3f;
-
     public static final float DASH_DURATION_SECONDS = 0.15f;
-
     public static final float DASH_COOLDOWN_SECONDS = 3f;
 
-    /** Punto fijo donde aparece la nave al iniciar y al perder una vida. */
     public static final float SHIP_START_X = WORLD_WIDTH / 2f - SHIP_WIDTH / 2f;
-
     public static final float SHIP_START_Y = 55f;
 
     public static final int INITIAL_LIVES = 3;
-
-    /** Segundos de invulnerabilidad al reaparecer después de perder una vida. */
     public static final float RESPAWN_INVULNERABILITY_SECONDS = 1.5f;
 
     public static final int FIRST_LEVEL = 1;
@@ -55,10 +48,16 @@ public final class GameConfig {
 
     public static final int ALIEN_SCORE = 100;
 
-    public static final float METEORITE_SPAWN_COOLDOWN_SECONDS = 4f;
-    public static final float METEORITE_FALL_SPEED = 100f;
+    // Frecuencia progresiva de generación de meteoritos según nivel
+    public static final float LEVEL_ONE_METEORITE_COOLDOWN = 3.5f;
+    public static final float LEVEL_TWO_METEORITE_COOLDOWN = 2.4f;
+    public static final float LEVEL_THREE_METEORITE_COOLDOWN = 1.5f;
+    public static final float METEORITE_SPAWN_COOLDOWN_SECONDS = 3.5f;
 
-    // Escala calibrada de meteoritos
+    /** Velocidad de caída de meteoritos (más rápida que los aliens para ser obstáculo activo). */
+    public static final float METEORITE_FALL_SPEED = 160f;
+
+    // Escala y resistencia calibrada de meteoritos
     public static final float SMALL_METEORITE_WIDTH = 36f;
     public static final float SMALL_METEORITE_HEIGHT = 36f;
     public static final float MEDIUM_METEORITE_WIDTH = 68f;
@@ -78,36 +77,28 @@ public final class GameConfig {
     public static final float ALIEN_WIDTH = 48f;
     public static final float ALIEN_HEIGHT = 48f;
 
-    /** Velocidad del alien con descenso lineal, en px/s. */
     public static final float LINEAR_ALIEN_SPEED = 90f;
-
-    /** Velocidad total del alien con zigzag, en px/s. */
     public static final float ZIGZAG_ALIEN_SPEED = 110f;
-
-    /** Velocidad de los proyectiles de los aliens, en px/s. */
     public static final float ALIEN_PROJECTILE_SPEED = 220f;
 
-    /** Dimensiones de proyectiles (12x24 px). */
     public static final float PROJECTILE_WIDTH = 12f;
     public static final float PROJECTILE_HEIGHT = 24f;
 
-    /** Apertura angular a cada lado del eje de puntería para el disparo en V. */
     public static final float V_ATTACK_SPREAD_ANGLE_DEGREES = 45f;
-
-    /** Cadencia de disparo de los aliens, en segundos. */
     public static final float ALIEN_FIRE_COOLDOWN_SECONDS = 1.8f;
 
     public static final int LEVEL_ONE_ALIEN_HIT_POINTS = 1;
     public static final int LEVEL_TWO_ALIEN_HIT_POINTS = 2;
     public static final int LEVEL_THREE_ALIEN_HIT_POINTS = 3;
 
-    /** Provisional: segundos que dura cada tramo del zigzag antes de cambiar de lado. */
     public static final float ZIGZAG_HALF_PERIOD_SECONDS = 1.2f;
 
-    /** Cantidad de aliens que se generan a la vez dentro de una oleada. */
-    public static final int WAVE_SIZE = 3;
+    // Control de población alienígena en pantalla
+    public static final int MIN_ALIENS_ON_SCREEN = 1;
+    public static final int MAX_ALIENS_ON_SCREEN = 4;
+    public static final float ALIEN_REINFORCEMENT_COOLDOWN_SECONDS = 3.5f;
 
-    /** Separación entre el borde superior del mundo y los aliens recién creados. */
+    public static final int WAVE_SIZE = 3;
     public static final float ALIEN_SPAWN_MARGIN = 20f;
 
     private GameConfig() {

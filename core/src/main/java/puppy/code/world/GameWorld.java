@@ -3,6 +3,7 @@ package puppy.code.world;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import puppy.code.config.GameConfig;
 import puppy.code.entities.Alien;
@@ -18,7 +19,6 @@ import puppy.code.systems.PlayerWeapon;
 
 /**
  * Coordina las entidades y aplica las reglas de una partida (Controller de GRASP).
- * Mantiene las listas privadas y entrega a las pantallas un snapshot inmutable.
  */
 public final class GameWorld {
 
@@ -37,6 +37,7 @@ public final class GameWorld {
     private int aliensDestroyedInLevel;
     private GamePhase phase;
     private float meteoriteSpawnTimer;
+    private float alienReinforcementTimer;
     private WorldAudioListener audioListener;
 
     public GameWorld(LevelDirector levelDirector, CollisionSystem collisions) {
@@ -65,13 +66,13 @@ public final class GameWorld {
         }
     }
 
-    /** Inicia una partida desde el nivel uno con tres vidas y puntaje cero. */
     public void restart() {
         level = GameConfig.FIRST_LEVEL;
         lives = GameConfig.INITIAL_LIVES;
         score = 0;
         aliensDestroyedInLevel = 0;
         meteoriteSpawnTimer = 0f;
+        alienReinforcementTimer = 0f;
         phase = GamePhase.ACTIVE;
         ship.respawn(GameConfig.SHIP_START_X, GameConfig.SHIP_START_Y, 0f);
         aliens.clear();
@@ -114,7 +115,7 @@ public final class GameWorld {
         resolveProjectileCollisions();
         resolveShipCollisions();
         removeInactiveEntities();
-        updateQuotaProgression();
+        updateQuotaProgression(delta);
     }
 
     private void updatePlayerProjectiles(float delta) {
@@ -154,8 +155,9 @@ public final class GameWorld {
 
     private void updateMeteorites(float delta) {
         meteoriteSpawnTimer += delta;
-        if (meteoriteSpawnTimer >= GameConfig.METEORITE_SPAWN_COOLDOWN_SECONDS) {
-            meteoriteSpawnTimer -= GameConfig.METEORITE_SPAWN_COOLDOWN_SECONDS;
+        float currentCooldown = getMeteoriteCooldownForLevel(level);
+        if (meteoriteSpawnTimer >= currentCooldown) {
+            meteoriteSpawnTimer -= currentCooldown;
             meteorites.add(Meteorite.random(GameConfig.WORLD_WIDTH, GameConfig.WORLD_HEIGHT));
         }
         for (Meteorite meteorite : meteorites) {
@@ -163,6 +165,19 @@ public final class GameWorld {
         }
         meteorites.removeIf(meteorite ->
                 !meteorite.isActive() || meteorite.getY() + meteorite.getHeight() < 0f);
+    }
+
+    private float getMeteoriteCooldownForLevel(int currentLevel) {
+        switch (currentLevel) {
+            case GameConfig.FIRST_LEVEL:
+                return GameConfig.LEVEL_ONE_METEORITE_COOLDOWN;
+            case GameConfig.SECOND_LEVEL:
+                return GameConfig.LEVEL_TWO_METEORITE_COOLDOWN;
+            case GameConfig.LAST_LEVEL:
+                return GameConfig.LEVEL_THREE_METEORITE_COOLDOWN;
+            default:
+                return GameConfig.METEORITE_SPAWN_COOLDOWN_SECONDS;
+        }
     }
 
     private void resolveProjectileCollisions() {
@@ -276,11 +291,13 @@ public final class GameWorld {
         alienProjectiles.removeIf(projectile -> !projectile.isActive());
     }
 
-    private void updateQuotaProgression() {
+    private void updateQuotaProgression(float delta) {
         if (phase != GamePhase.ACTIVE) {
             return;
         }
-        if (aliensDestroyedInLevel >= getQuotaForLevel(level)) {
+        int remainingQuota = getQuotaForLevel(level) - aliensDestroyedInLevel;
+
+        if (remainingQuota <= 0) {
             aliens.forEach(Alien::deactivate);
             aliens.clear();
             playerProjectiles.clear();
@@ -291,8 +308,37 @@ public final class GameWorld {
             if (phase == GamePhase.LEVEL_COMPLETED) {
                 notifyAudio(WorldAudioListener::onLevelCompleted);
             }
-        } else if (aliens.isEmpty()) {
+            return;
+        }
+
+        // Conteo exclusivo de aliens dinámicos móviles
+        long dynamicAliensCount = 0;
+        for (Alien alien : aliens) {
+            if (!alien.isStatic()) {
+                dynamicAliensCount++;
+            }
+        }
+
+        // Si no quedan aliens móviles, spawnear nueva oleada de inmediato aunque haya torretas fijas
+        if (dynamicAliensCount == 0) {
+            alienReinforcementTimer = 0f;
             spawnWave();
+            return;
+        }
+
+        // Si solo queda 1 alien móvil, enviar refuerzos tras un breve temporizador
+        if (dynamicAliensCount < 2 && remainingQuota > aliens.size()) {
+            alienReinforcementTimer += delta;
+            if (alienReinforcementTimer >= GameConfig.ALIEN_REINFORCEMENT_COOLDOWN_SECONDS) {
+                alienReinforcementTimer = 0f;
+                int spaceAvailable = GameConfig.MAX_ALIENS_ON_SCREEN - aliens.size();
+                int toSpawn = Math.min(spaceAvailable, Math.min(2, remainingQuota - aliens.size()));
+                if (toSpawn > 0) {
+                    aliens.addAll(levelDirector.createWave(level, toSpawn));
+                }
+            }
+        } else {
+            alienReinforcementTimer = 0f;
         }
     }
 
@@ -303,6 +349,7 @@ public final class GameWorld {
         level++;
         aliensDestroyedInLevel = 0;
         meteoriteSpawnTimer = 0f;
+        alienReinforcementTimer = 0f;
         aliens.clear();
         meteorites.clear();
         playerProjectiles.clear();
@@ -325,7 +372,31 @@ public final class GameWorld {
     }
 
     private void spawnWave() {
-        aliens.addAll(levelDirector.createWave(level));
+        int remainingQuota = getQuotaForLevel(level) - aliensDestroyedInLevel;
+        if (remainingQuota <= 0) {
+            return;
+        }
+
+        // En niveles 2 y 3, si no existe una torreta estática viva y queda cuota, se despliega 1 arriba
+        boolean hasStatic = false;
+        for (Alien alien : aliens) {
+            if (alien.isStatic()) {
+                hasStatic = true;
+                break;
+            }
+        }
+
+        if (level >= GameConfig.SECOND_LEVEL && !hasStatic && remainingQuota > 1) {
+            float staticX = MathUtils.random(100f, GameConfig.WORLD_WIDTH - 150f);
+            float staticY = MathUtils.random(640f, 700f);
+            aliens.add(levelDirector.createStaticAlien(level, staticX, staticY));
+            remainingQuota--;
+        }
+
+        int targetCount = level == GameConfig.FIRST_LEVEL ? MathUtils.random(2, 3) : 3;
+        int capacity = GameConfig.MAX_ALIENS_ON_SCREEN - aliens.size();
+        int toSpawn = Math.max(1, Math.min(targetCount, Math.min(capacity, remainingQuota)));
+        aliens.addAll(levelDirector.createWave(level, toSpawn));
     }
 
     public WorldSnapshot snapshot() {

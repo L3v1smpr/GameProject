@@ -3,6 +3,7 @@ package puppy.code.entities;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import puppy.code.behaviors.AlienAttackStrategy;
 import puppy.code.behaviors.MovementStrategy;
@@ -17,7 +18,7 @@ public final class Alien extends GameEntity {
     private final MovementStrategy movement;
     private final AlienAttackStrategy attackStrategy;
     private float age;
-    private float fireCooldownRemaining = GameConfig.ALIEN_FIRE_COOLDOWN_SECONDS;
+    private float fireCooldownRemaining;
     private float firingTimer;
 
     public Alien(
@@ -35,8 +36,8 @@ public final class Alien extends GameEntity {
         if (movement == null) {
             throw new IllegalArgumentException("La estrategia de movimiento no puede ser null.");
         }
-        if (!Float.isFinite(movement.speed()) || movement.speed() <= 0f) {
-            throw new IllegalArgumentException("La velocidad del alien debe ser positiva y finita.");
+        if (!Float.isFinite(movement.speed()) || movement.speed() < 0f) {
+            throw new IllegalArgumentException("La velocidad del alien no puede ser negativa.");
         }
         if (attackStrategy == null) {
             throw new IllegalArgumentException("La estrategia de ataque no puede ser null.");
@@ -44,6 +45,8 @@ public final class Alien extends GameEntity {
         this.hitPoints = hitPoints;
         this.movement = movement;
         this.attackStrategy = attackStrategy;
+        // Tiempo de espera inicial aleatorio para que el primer tiro ocurra poco después de entrar
+        this.fireCooldownRemaining = MathUtils.random(0.35f, 0.70f);
     }
 
     public int getHitPoints() {
@@ -52,6 +55,10 @@ public final class Alien extends GameEntity {
 
     public boolean isFiring() {
         return firingTimer > 0f;
+    }
+
+    public boolean isStatic() {
+        return movement.speed() == 0f;
     }
 
     @Override
@@ -92,6 +99,12 @@ public final class Alien extends GameEntity {
         }
         if (target == null) {
             throw new IllegalArgumentException("El objetivo del alien no puede ser null.");
+        }
+
+        // Mientras entra desde fuera de pantalla, precarga sus cañones sin acumular disparos múltiples
+        if (getY() > GameConfig.WORLD_HEIGHT - getHeight()) {
+            fireCooldownRemaining = Math.max(0.15f, fireCooldownRemaining - delta);
+            return Collections.emptyList();
         }
 
         fireCooldownRemaining -= delta;

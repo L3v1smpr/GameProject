@@ -138,7 +138,7 @@ public final class GameAssets {
             }
         }
 
-        // Carga y procesamiento anti-sangrado para alien_static.png
+        // Carga nativa a 48x48 px con Nearest y corrección de medio texel anti-sangrado
         if (manager.isLoaded(ALIEN_STATIC_TEXTURE, Texture.class)) {
             Texture aStatic = manager.get(ALIEN_STATIC_TEXTURE, Texture.class);
             aStatic.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
@@ -155,26 +155,17 @@ public final class GameAssets {
                 this.alienStaticFiring = this.alienStaticNormal;
             }
 
-            // Recorte vertical de 2 px para eliminar cualquier pixel verde adyacente
-            recortarMargenSeguro(this.alienStaticNormal);
-            recortarMargenSeguro(this.alienStaticFiring);
-
             this.alienStaticNormal.flip(false, true);
             this.alienStaticFiring.flip(false, true);
+
+            // Desfase de medio texel en V para blindar la frontera sin recortar ni distorsionar los píxeles
+            float texelOffsetV = 0.5f / aStatic.getHeight();
+            this.alienStaticNormal.setV(this.alienStaticNormal.getV() - texelOffsetV);
+            this.alienStaticFiring.setV2(this.alienStaticFiring.getV2() + texelOffsetV);
         }
 
         if (manager.isLoaded(ALIEN_AMMO_TEXTURE, Texture.class)) {
             this.alienAmmoRegion = new TextureRegion(manager.get(ALIEN_AMMO_TEXTURE, Texture.class));
-        }
-    }
-
-    private void recortarMargenSeguro(TextureRegion region) {
-        if (region != null) {
-            region.setRegion(
-                    region.getRegionX() + 1,
-                    region.getRegionY() + 2,
-                    region.getRegionWidth() - 2,
-                    region.getRegionHeight() - 4);
         }
     }
 

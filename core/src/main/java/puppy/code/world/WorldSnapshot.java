@@ -114,7 +114,6 @@ public final class WorldSnapshot {
         return phase;
     }
 
-    /** Valor inmutable; el mundo no expone sus entidades ni colecciones mutables. */
     public static final class EntityView {
 
         private final float x;
@@ -125,6 +124,7 @@ public final class WorldSnapshot {
         private final float rotation;
         private final boolean firing;
         private final boolean hurt;
+        private final boolean isStatic;
 
         private EntityView(
                 float x,
@@ -134,7 +134,8 @@ public final class WorldSnapshot {
                 String assetPath,
                 float rotation,
                 boolean firing,
-                boolean hurt) {
+                boolean hurt,
+                boolean isStatic) {
             this.x = x;
             this.y = y;
             this.width = width;
@@ -143,6 +144,7 @@ public final class WorldSnapshot {
             this.rotation = rotation;
             this.firing = firing;
             this.hurt = hurt;
+            this.isStatic = isStatic;
         }
 
         private static EntityView from(GameEntity entity) {
@@ -155,6 +157,9 @@ public final class WorldSnapshot {
             boolean firing = entity instanceof Alien
                     ? ((Alien) entity).isFiring()
                     : false;
+            boolean isStatic = entity instanceof Alien
+                    ? ((Alien) entity).isStatic()
+                    : false;
             return new EntityView(
                     entity.getX(),
                     entity.getY(),
@@ -163,7 +168,8 @@ public final class WorldSnapshot {
                     assetPath,
                     rotation,
                     firing,
-                    entity.isHurt());
+                    entity.isHurt(),
+                    isStatic);
         }
 
         public float getX() {
@@ -196,6 +202,10 @@ public final class WorldSnapshot {
 
         public boolean isHurt() {
             return hurt;
+        }
+
+        public boolean isStatic() {
+            return isStatic;
         }
     }
 }

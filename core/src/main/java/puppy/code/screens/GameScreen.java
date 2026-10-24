@@ -364,9 +364,19 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
             if (region != null) {
                 if (alien.isHurt()) {
                     assets.batch().setColor(1f, 0.25f, 0.25f, 0.85f);
+                } else if (alien.isStatic()) {
+                    if (snapshot.getLevel() >= GameConfig.LAST_LEVEL) {
+                        // Tinte violeta/magenta para la torreta de perdigones del Nivel 3
+                        assets.batch().setColor(0.85f, 0.35f, 1.0f, 1.0f);
+                    } else {
+                        // Tinte ámbar/dorado para la torreta recta del Nivel 2
+                        assets.batch().setColor(1.0f, 0.75f, 0.25f, 1.0f);
+                    }
                 }
+
                 assets.batch().draw(region, alien.getX(), alien.getY(), alien.getWidth(), alien.getHeight());
-                if (alien.isHurt()) {
+
+                if (alien.isHurt() || alien.isStatic()) {
                     assets.batch().setColor(Color.WHITE);
                 }
             }

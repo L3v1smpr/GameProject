@@ -7,10 +7,6 @@ import puppy.code.entities.Alien;
 
 /**
  * Construye un {@link Alien} paso a paso y valida la configuración antes de crearlo (patrón Builder).
- *
- * <p>La posición, la vida, el movimiento y el ataque son obligatorios; el tamaño usa el valor de
- * {@link GameConfig} si no se indica otro. El Builder también comprueba la velocidad que informa la
- * estrategia. Cada llamada a {@link #build()} entrega un alien nuevo.
  */
 public final class AlienBuilder {
 
@@ -51,12 +47,6 @@ public final class AlienBuilder {
         return this;
     }
 
-    /**
-     * Crea el alien con la configuración acumulada.
-     *
-     * @throws IllegalStateException si falta alguna configuración obligatoria
-     * @throws IllegalArgumentException si la posición, el tamaño, la vida o la velocidad no son válidos
-     */
     public Alien build() {
         if (!positionDefined) {
             throw new IllegalStateException("Falta definir la posición del alien.");
@@ -64,8 +54,8 @@ public final class AlienBuilder {
         if (movement == null) {
             throw new IllegalStateException("Falta definir la estrategia de movimiento del alien.");
         }
-        if (!Float.isFinite(movement.speed()) || movement.speed() <= 0f) {
-            throw new IllegalArgumentException("La velocidad del movimiento debe ser positiva y finita.");
+        if (!Float.isFinite(movement.speed()) || movement.speed() < 0f) {
+            throw new IllegalArgumentException("La velocidad del movimiento no puede ser negativa.");
         }
         if (hitPoints <= 0) {
             throw new IllegalArgumentException("Los puntos de vida deben ser positivos.");

@@ -3,10 +3,13 @@ package puppy.code.factories;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import com.badlogic.gdx.math.MathUtils;
 import puppy.code.behaviors.AlienAttackStrategy;
 import puppy.code.behaviors.LinearAttackStrategy;
 import puppy.code.behaviors.LinearMovementStrategy;
 import puppy.code.behaviors.MovementStrategy;
+import puppy.code.behaviors.SpreadAttackStrategy;
+import puppy.code.behaviors.StaticMovementStrategy;
 import puppy.code.behaviors.VAttackStrategy;
 import puppy.code.behaviors.ZigZagMovementStrategy;
 import puppy.code.config.GameConfig;
@@ -14,36 +17,55 @@ import puppy.code.entities.Alien;
 
 /**
  * Dirige la construcción de las oleadas de cada nivel (Director del patrón Builder).
- *
- * <p>Decide la vida, el movimiento y el ataque de los aliens de cada nivel; delega la creación y la
- * validación de cada alien en {@link AlienBuilder}. La transición entre niveles pertenece al mundo.
  */
 public final class LevelDirector {
 
-    private final MovementStrategy linearMovement;
-    private final MovementStrategy zigZagMovement;
     private final AlienAttackStrategy linearAttack;
     private final AlienAttackStrategy vAttack;
+    private final AlienAttackStrategy spreadAttack;
 
     public LevelDirector() {
-        linearMovement = new LinearMovementStrategy(GameConfig.LINEAR_ALIEN_SPEED);
-        zigZagMovement = new ZigZagMovementStrategy(
-                GameConfig.ZIGZAG_ALIEN_SPEED, GameConfig.ZIGZAG_HALF_PERIOD_SECONDS);
         linearAttack = new LinearAttackStrategy();
         vAttack = new VAttackStrategy();
+        spreadAttack = new SpreadAttackStrategy();
     }
 
-    /** Crea una oleada nueva, de solo lectura, con los aliens repartidos a lo ancho del mundo. */
     public List<Alien> createWave(int level) {
-        MovementStrategy movement = movementFor(level);
+        return createWave(level, GameConfig.WAVE_SIZE);
+    }
+
+    public List<Alien> createWave(int level, int count) {
+        if (count <= 0) {
+            return Collections.emptyList();
+        }
+
         AlienAttackStrategy attack = attackFor(level);
         int hitPoints = hitPointsFor(level);
-        float spacing = GameConfig.WORLD_WIDTH / (GameConfig.WAVE_SIZE + 1);
-        float spawnY = GameConfig.WORLD_HEIGHT - GameConfig.ALIEN_HEIGHT - GameConfig.ALIEN_SPAWN_MARGIN;
 
-        List<Alien> wave = new ArrayList<>(GameConfig.WAVE_SIZE);
-        for (int index = 1; index <= GameConfig.WAVE_SIZE; index++) {
-            float spawnX = spacing * index - GameConfig.ALIEN_WIDTH / 2f;
+        float margin = GameConfig.ALIEN_SPAWN_MARGIN * 2f;
+        float usableWidth = GameConfig.WORLD_WIDTH - margin * 2f - GameConfig.ALIEN_WIDTH;
+        int numZones = Math.max(count, 5);
+        float zoneWidth = usableWidth / numZones;
+
+        List<Integer> zoneIndices = new ArrayList<>(numZones);
+        for (int i = 0; i < numZones; i++) {
+            zoneIndices.add(i);
+        }
+        Collections.shuffle(zoneIndices);
+
+        List<Alien> wave = new ArrayList<>(count);
+        for (int i = 0; i < count; i++) {
+            int zone = zoneIndices.get(i);
+            float zoneStart = margin + zone * zoneWidth;
+            float jitter = MathUtils.random(0f, Math.max(0f, zoneWidth - GameConfig.ALIEN_WIDTH));
+            float spawnX = zoneStart + jitter;
+
+            // Nacimiento completamente fuera de pantalla (por encima de WORLD_HEIGHT = 800)
+            float staggerY = MathUtils.random(15f, 75f);
+            float spawnY = GameConfig.WORLD_HEIGHT + staggerY;
+
+            MovementStrategy movement = createVariedMovement(level);
+
             wave.add(new AlienBuilder()
                     .position(spawnX, spawnY)
                     .hitPoints(hitPoints)
@@ -54,12 +76,31 @@ public final class LevelDirector {
         return Collections.unmodifiableList(wave);
     }
 
-    private MovementStrategy movementFor(int level) {
+    /**
+     * Construye un alien estático que entra descendiendo desde fuera de pantalla 
+     * hasta su altitud objetivo.
+     */
+    public Alien createStaticAlien(int level, float x, float targetY) {
+        AlienAttackStrategy attack = (level >= GameConfig.LAST_LEVEL) ? spreadAttack : linearAttack;
+        // Nace por encima de la pantalla y desciende a 120 px/s hasta targetY
+        float spawnY = GameConfig.WORLD_HEIGHT + 15f;
+        return new AlienBuilder()
+                .position(x, spawnY)
+                .hitPoints(hitPointsFor(level))
+                .movement(new StaticMovementStrategy(targetY, 120f))
+                .attack(attack)
+                .build();
+    }
+
+    private MovementStrategy createVariedMovement(int level) {
+        float speedMultiplier = MathUtils.random(0.85f, 1.20f);
         if (level == GameConfig.FIRST_LEVEL) {
-            return linearMovement;
+            return new LinearMovementStrategy(GameConfig.LINEAR_ALIEN_SPEED * speedMultiplier);
         }
         if (level == GameConfig.SECOND_LEVEL || level == GameConfig.LAST_LEVEL) {
-            return zigZagMovement;
+            return new ZigZagMovementStrategy(
+                    GameConfig.ZIGZAG_ALIEN_SPEED * speedMultiplier,
+                    GameConfig.ZIGZAG_HALF_PERIOD_SECONDS * MathUtils.random(0.9f, 1.15f));
         }
         throw new IllegalArgumentException("Solo se admiten los niveles 1, 2 y 3.");
     }
