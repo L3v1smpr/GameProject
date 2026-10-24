@@ -6,6 +6,8 @@ import java.util.List;
 import com.badlogic.gdx.math.MathUtils;
 import puppy.code.behaviors.AlienAttackStrategy;
 import puppy.code.behaviors.AlternatingAttackStrategy;
+import puppy.code.behaviors.BurstAttackStrategy;
+import puppy.code.behaviors.HorizontalMovementStrategy;
 import puppy.code.behaviors.LinearAttackStrategy;
 import puppy.code.behaviors.LinearMovementStrategy;
 import puppy.code.behaviors.MovementStrategy;
@@ -91,6 +93,21 @@ public final class LevelDirector {
                 .hitPoints(hitPointsFor(level))
                 .movement(new StaticMovementStrategy(targetY, 120f))
                 .attack(attack)
+                .build();
+    }
+
+    /**
+     * Construye un alien bombardero que desciende desde fuera de pantalla y
+     * patrulla horizontalmente disparando ráfagas continuas hacia el jugador.
+     */
+    public Alien createBomberAlien(int level, float x, float cruiseY) {
+        float speed = level >= GameConfig.LAST_LEVEL ? 140f : 115f;
+        float spawnY = GameConfig.WORLD_HEIGHT + 15f;
+        return new AlienBuilder()
+                .position(x, spawnY)
+                .hitPoints(hitPointsFor(level))
+                .movement(new HorizontalMovementStrategy(cruiseY, speed))
+                .attack(new BurstAttackStrategy())
                 .build();
     }
 

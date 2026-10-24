@@ -291,6 +291,19 @@ public final class GameWorld {
         alienProjectiles.removeIf(projectile -> !projectile.isActive());
     }
 
+    private boolean shouldSpawnBomber() {
+        if (level < GameConfig.SECOND_LEVEL) {
+            return false;
+        }
+        for (Alien alien : aliens) {
+            if (alien.isBomber()) {
+                return false;
+            }
+        }
+        float chance = level == GameConfig.SECOND_LEVEL ? 0.25f : 0.70f;
+        return MathUtils.randomBoolean(chance);
+    }
+
     private void updateQuotaProgression(float delta) {
         if (phase != GamePhase.ACTIVE) {
             return;
@@ -311,7 +324,6 @@ public final class GameWorld {
             return;
         }
 
-        // Conteo exclusivo de aliens dinámicos móviles
         long dynamicAliensCount = 0;
         for (Alien alien : aliens) {
             if (!alien.isStatic()) {
@@ -319,22 +331,29 @@ public final class GameWorld {
             }
         }
 
-        // Si no quedan aliens móviles, spawnear nueva oleada de inmediato aunque haya torretas fijas
         if (dynamicAliensCount == 0) {
             alienReinforcementTimer = 0f;
             spawnWave();
             return;
         }
 
-        // Si solo queda 1 alien móvil, enviar refuerzos tras un breve temporizador
         if (dynamicAliensCount < 2 && remainingQuota > aliens.size()) {
             alienReinforcementTimer += delta;
             if (alienReinforcementTimer >= GameConfig.ALIEN_REINFORCEMENT_COOLDOWN_SECONDS) {
                 alienReinforcementTimer = 0f;
                 int spaceAvailable = GameConfig.MAX_ALIENS_ON_SCREEN - aliens.size();
                 int toSpawn = Math.min(spaceAvailable, Math.min(2, remainingQuota - aliens.size()));
+
                 if (toSpawn > 0) {
-                    aliens.addAll(levelDirector.createWave(level, toSpawn));
+                    if (shouldSpawnBomber()) {
+                        float spawnX = MathUtils.random(60f, GameConfig.WORLD_WIDTH - 120f);
+                        float cruiseY = MathUtils.random(600f, 660f);
+                        aliens.add(levelDirector.createBomberAlien(level, spawnX, cruiseY));
+                        toSpawn--;
+                    }
+                    if (toSpawn > 0) {
+                        aliens.addAll(levelDirector.createWave(level, toSpawn));
+                    }
                 }
             }
         } else {
@@ -377,7 +396,6 @@ public final class GameWorld {
             return;
         }
 
-        // En niveles 2 y 3, si no existe una torreta estática viva y queda cuota, se despliega 1 arriba
         boolean hasStatic = false;
         for (Alien alien : aliens) {
             if (alien.isStatic()) {
@@ -390,6 +408,13 @@ public final class GameWorld {
             float staticX = MathUtils.random(100f, GameConfig.WORLD_WIDTH - 150f);
             float staticY = MathUtils.random(640f, 700f);
             aliens.add(levelDirector.createStaticAlien(level, staticX, staticY));
+            remainingQuota--;
+        }
+
+        if (shouldSpawnBomber() && remainingQuota > 1 && aliens.size() < GameConfig.MAX_ALIENS_ON_SCREEN) {
+            float spawnX = MathUtils.random(60f, GameConfig.WORLD_WIDTH - 120f);
+            float cruiseY = MathUtils.random(600f, 660f);
+            aliens.add(levelDirector.createBomberAlien(level, spawnX, cruiseY));
             remainingQuota--;
         }
 

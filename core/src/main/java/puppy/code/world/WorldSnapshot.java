@@ -125,6 +125,7 @@ public final class WorldSnapshot {
         private final boolean firing;
         private final boolean hurt;
         private final boolean isStatic;
+        private final boolean isBomber;
 
         private EntityView(
                 float x,
@@ -135,8 +136,9 @@ public final class WorldSnapshot {
                 float rotation,
                 boolean firing,
                 boolean hurt,
-                boolean isStatic) {
-            this.x = x;
+                boolean isStatic,
+                boolean isBomber) {
+        	this.x = x;
             this.y = y;
             this.width = width;
             this.height = height;
@@ -145,6 +147,7 @@ public final class WorldSnapshot {
             this.firing = firing;
             this.hurt = hurt;
             this.isStatic = isStatic;
+            this.isBomber = isBomber;
         }
 
         private static EntityView from(GameEntity entity) {
@@ -160,6 +163,9 @@ public final class WorldSnapshot {
             boolean isStatic = entity instanceof Alien
                     ? ((Alien) entity).isStatic()
                     : false;
+            boolean isBomber = entity instanceof Alien
+                    ? ((Alien) entity).isBomber()
+                    : false;
             return new EntityView(
                     entity.getX(),
                     entity.getY(),
@@ -169,7 +175,8 @@ public final class WorldSnapshot {
                     rotation,
                     firing,
                     entity.isHurt(),
-                    isStatic);
+                    isStatic,
+                    isBomber);
         }
 
         public float getX() {
@@ -206,6 +213,10 @@ public final class WorldSnapshot {
 
         public boolean isStatic() {
             return isStatic;
+        }
+        
+        public boolean isBomber() {
+            return isBomber;
         }
     }
 }

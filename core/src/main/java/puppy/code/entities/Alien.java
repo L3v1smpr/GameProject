@@ -60,6 +60,10 @@ public final class Alien extends GameEntity {
     public boolean isStatic() {
         return movement.speed() == 0f;
     }
+    
+    public boolean isBomber() {
+        return movement instanceof puppy.code.behaviors.HorizontalMovementStrategy;
+    }
 
     @Override
     public boolean takeDamage() {
@@ -115,7 +119,8 @@ public final class Alien extends GameEntity {
                 projectiles.addAll(volley);
                 firingTimer = FIRING_FRAME_DURATION_SECONDS;
             }
-            fireCooldownRemaining += GameConfig.ALIEN_FIRE_COOLDOWN_SECONDS;
+            // Consulta polimórfica a la estrategia del alien
+            fireCooldownRemaining += attackStrategy.nextCooldownSeconds();
         }
         return Collections.unmodifiableList(projectiles);
     }

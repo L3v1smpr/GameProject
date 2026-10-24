@@ -442,13 +442,14 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
                 if (alien.isHurt()) {
                     assets.batch().setColor(1f, 0.25f, 0.25f, 0.85f);
                 } else if (alien.isStatic()) {
-                    // Tinte ámbar/dorado unificado para todas las torretas estáticas
-                    assets.batch().setColor(1.0f, 0.75f, 0.25f, 1.0f);
+                    assets.batch().setColor(1.0f, 0.75f, 0.25f, 1.0f); // Ámbar (Torreta)
+                } else if (alien.isBomber()) {
+                    assets.batch().setColor(0.25f, 0.95f, 0.85f, 1.0f); // Cian eléctrico (Bombardero)
                 }
 
                 assets.batch().draw(region, alien.getX(), alien.getY(), alien.getWidth(), alien.getHeight());
 
-                if (alien.isHurt() || alien.isStatic()) {
+                if (alien.isHurt() || alien.isStatic() || alien.isBomber()) {
                     assets.batch().setColor(Color.WHITE);
                 }
             }
