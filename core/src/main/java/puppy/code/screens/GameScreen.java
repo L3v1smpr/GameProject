@@ -30,6 +30,7 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
     private static final float DASH_IMAGE_INTERVAL_SECONDS = 0.04f;
     private static final float TRANSITION_DURATION_SECONDS = 1.8f;
     private static final float BASE_MUSIC_VOLUME = 0.45f;
+    private static final float SECTOR_COMPLETED_COOLDOWN_SECONDS = 3.0f;
 
     private enum TransitionType {
         NONE,
@@ -57,6 +58,9 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
     private float shakeTimer;
     private float shakeDuration;
     private float shakeIntensity;
+
+    // Enfriamiento de 3s para apreciar la pantalla de sector asegurado
+    private float sectorCompletedTimer;
 
     private TransitionType activeTransition = TransitionType.NONE;
     private float transitionTimer;
@@ -87,6 +91,7 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
         transitionCompleted = false;
         paused = false;
         shakeTimer = 0f;
+        sectorCompletedTimer = 0f;
         playerRings.clear();
         fireRings.clear();
         debrisParticles.clear();
@@ -100,6 +105,7 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
         assets.stopMusic();
         paused = false;
         shakeTimer = 0f;
+        sectorCompletedTimer = 0f;
         resetCameraPosition();
         afterImages.clear();
         fireRings.clear();
@@ -200,8 +206,11 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
             return;
         }
         if (snapshot.getPhase() == GamePhase.LEVEL_COMPLETED) {
-            if (navigationInput.anyActionJustPressed()) {
+            elapsedSeconds += delta;
+            sectorCompletedTimer += delta;
+            if (sectorCompletedTimer >= SECTOR_COMPLETED_COOLDOWN_SECONDS && navigationInput.anyActionJustPressed()) {
                 world.advanceToNextLevel();
+                sectorCompletedTimer = 0f;
                 snapshot = world.snapshot();
                 assets.playMusic(GameAssets.BACKGROUND_MUSIC, true, BASE_MUSIC_VOLUME);
             }
@@ -286,10 +295,10 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
         drawProjectiles();
         drawMeteorites();
         drawHud();
-        drawPhaseMessage();
 
         assets.batch().end();
 
+        drawDashBar();
         drawVisualEffects();
         drawFallbackEntities();
         drawTransitionOverlay();
@@ -297,6 +306,120 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
         if (paused) {
             drawPauseOverlay();
         }
+
+        if (snapshot.getPhase() == GamePhase.LEVEL_COMPLETED) {
+            drawLevelCompletedOverlay();
+        }
+    }
+
+    private void drawDashBar() {
+        float barX = 180f;
+        float barY = 755f;
+        float barWidth = 90f;
+        float barHeight = 14f;
+        float progress = snapshot.getDashCooldownProgress();
+
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+
+        assets.shapes().setProjectionMatrix(camera.combined);
+
+        assets.shapes().begin(ShapeType.Filled);
+        assets.shapes().setColor(0.12f, 0.15f, 0.20f, 0.85f);
+        assets.shapes().rect(barX, barY, barWidth, barHeight);
+
+        if (progress > 0f) {
+            if (snapshot.isShipDashReady()) {
+                assets.shapes().setColor(0.20f, 0.95f, 0.90f, 1.0f);
+            } else {
+                assets.shapes().setColor(0.15f, 0.55f, 0.80f, 0.90f);
+            }
+            assets.shapes().rect(barX, barY, barWidth * progress, barHeight);
+        }
+        assets.shapes().end();
+
+        assets.shapes().begin(ShapeType.Line);
+        if (snapshot.isShipDashReady()) {
+            assets.shapes().setColor(0.40f, 1.0f, 0.95f, 1.0f);
+        } else {
+            assets.shapes().setColor(0.60f, 0.65f, 0.70f, 0.75f);
+        }
+        assets.shapes().rect(barX, barY, barWidth, barHeight);
+        assets.shapes().end();
+
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+    }
+
+    private void drawLevelCompletedOverlay() {
+        float modalWidth = 560f;
+        float modalHeight = 250f;
+        float modalX = (GameConfig.WORLD_WIDTH - modalWidth) / 2f;
+        float modalY = (GameConfig.WORLD_HEIGHT - modalHeight) / 2f;
+
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+
+        assets.shapes().setProjectionMatrix(camera.combined);
+
+        assets.shapes().begin(ShapeType.Filled);
+        assets.shapes().setColor(0f, 0f, 0f, 0.65f);
+        assets.shapes().rect(0f, 0f, GameConfig.WORLD_WIDTH, GameConfig.WORLD_HEIGHT);
+
+        assets.shapes().setColor(0.06f, 0.08f, 0.13f, 0.92f);
+        assets.shapes().rect(modalX, modalY, modalWidth, modalHeight);
+        assets.shapes().end();
+
+        assets.shapes().begin(ShapeType.Line);
+        assets.shapes().setColor(0.20f, 0.85f, 0.95f, 0.90f);
+        assets.shapes().rect(modalX, modalY, modalWidth, modalHeight);
+        assets.shapes().line(modalX + 30f, modalY + modalHeight - 55f, modalX + modalWidth - 30f, modalY + modalHeight - 55f);
+        assets.shapes().end();
+
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+
+        assets.batch().setProjectionMatrix(camera.combined);
+        assets.batch().begin();
+
+        assets.font().setColor(0.30f, 1.0f, 0.90f, 1.0f);
+        assets.font().draw(
+                assets.batch(),
+                "SECTOR " + snapshot.getLevel() + " ASEGURADO",
+                modalX + 175f,
+                modalY + modalHeight - 25f);
+
+        assets.font().setColor(Color.WHITE);
+        assets.font().draw(
+                assets.batch(),
+                "Amenazas eliminadas: " + snapshot.getQuotaForLevel() + " naves",
+                modalX + 130f,
+                modalY + modalHeight - 85f);
+
+        assets.font().draw(
+                assets.batch(),
+                "Puntaje acumulado:   " + snapshot.getScore() + " pts",
+                modalX + 130f,
+                modalY + modalHeight - 125f);
+
+        if (sectorCompletedTimer < SECTOR_COMPLETED_COOLDOWN_SECONDS) {
+            int remaining = (int) Math.ceil(SECTOR_COMPLETED_COOLDOWN_SECONDS - sectorCompletedTimer);
+            assets.font().setColor(0.70f, 0.75f, 0.85f, 1.0f);
+            assets.font().draw(
+                    assets.batch(),
+                    "Sincronizando salto hiperespacial... " + remaining + "s",
+                    modalX + 105f,
+                    modalY + 45f);
+        } else {
+            float blinkAlpha = 0.55f + 0.45f * MathUtils.sin(elapsedSeconds * 4f);
+            assets.font().setColor(1.0f, 0.85f, 0.35f, blinkAlpha);
+            assets.font().draw(
+                    assets.batch(),
+                    "Presiona cualquier tecla para iniciar el salto",
+                    modalX + 85f,
+                    modalY + 45f);
+        }
+
+        assets.font().setColor(Color.WHITE);
+        assets.batch().end();
     }
 
     private void drawPauseOverlay() {
@@ -442,9 +565,9 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
                 if (alien.isHurt()) {
                     assets.batch().setColor(1f, 0.25f, 0.25f, 0.85f);
                 } else if (alien.isStatic()) {
-                    assets.batch().setColor(1.0f, 0.75f, 0.25f, 1.0f); // Ámbar (Torreta)
+                    assets.batch().setColor(1.0f, 0.75f, 0.25f, 1.0f);
                 } else if (alien.isBomber()) {
-                    assets.batch().setColor(0.25f, 0.95f, 0.85f, 1.0f); // Cian eléctrico (Bombardero)
+                    assets.batch().setColor(0.25f, 0.95f, 0.85f, 1.0f);
                 }
 
                 assets.batch().draw(region, alien.getX(), alien.getY(), alien.getWidth(), alien.getHeight());
@@ -522,6 +645,13 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
             assets.font().draw(assets.batch(), "Vidas: " + snapshot.getLives(), 24f, 770f);
         }
 
+        assets.font().draw(assets.batch(), "DASH", 130f, 768f);
+        if (snapshot.isShipDashReady()) {
+            assets.font().setColor(0.3f, 1.0f, 0.9f, 1.0f);
+            assets.font().draw(assets.batch(), "LISTO", 280f, 768f);
+            assets.font().setColor(Color.WHITE);
+        }
+
         assets.font().draw(
                 assets.batch(),
                 "Puntaje: " + snapshot.getScore(),
@@ -537,7 +667,7 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
 
         assets.font().draw(
                 assets.batch(),
-                "Nivel " + snapshot.getLevel() + "  Aliens: "
+                "Sector " + snapshot.getLevel() + "  Aliens: "
                         + snapshot.getAliensDestroyedInLevel() + "/" + snapshot.getQuotaForLevel(),
                 quotaTextX,
                 690f);
@@ -547,17 +677,6 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
                 "WASD: mover   I: disparar   O: dash   P: pausa   ESC: menu",
                 24f,
                 662f);
-    }
-
-    private void drawPhaseMessage() {
-        if (snapshot.getPhase() == GamePhase.LEVEL_COMPLETED) {
-            assets.font().draw(assets.batch(), "Nivel superado", 515f, 430f);
-            assets.font().draw(
-                    assets.batch(),
-                    "Presiona cualquier tecla o haz clic para continuar",
-                    365f,
-                    390f);
-        }
     }
 
     private TextureRegion resolveShipRegion(TextureRegion[][] frames) {
@@ -630,7 +749,6 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
     public void onPlayerHurt(float centerX, float centerY) {
         assets.playSound(GameAssets.PLAYER_DEATH_SOUND, 0.9f);
         playerRings.add(new PlayerRing(centerX, centerY));
-        // Sacudida enérgica de cámara al perder vida (5 px, 220 ms)
         triggerScreenShake(0.22f, 5f);
     }
 
@@ -663,7 +781,6 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
             } else {
                 assets.playSound(GameAssets.METEORITE_HIT_SOUND, 0.85f);
             }
-            // Micro-sacudida de impacto al detonar meteoritos pesados (3 px, 140 ms)
             triggerScreenShake(0.14f, 3f);
         } else {
             assets.playSound(GameAssets.METEORITE_HIT_SOUND, 0.6f);

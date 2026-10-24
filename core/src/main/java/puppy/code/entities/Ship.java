@@ -73,14 +73,14 @@ public final class Ship extends GameEntity {
         dashDurationTimer = GameConfig.DASH_DURATION_SECONDS;
         dashCooldownTimer = GameConfig.DASH_COOLDOWN_SECONDS;
 
-        // Se extiende la invulnerabilidad durante el dash y 1 segundo más después de completarlo
+        // Se extiende la invulnerabilidad durante el dash y el búfer de gracia calibrado
         float totalInvulnerability = GameConfig.DASH_DURATION_SECONDS + GameConfig.DASH_INVULNERABILITY_POST_SECONDS;
         invulnerabilityTimer = Math.max(invulnerabilityTimer, totalInvulnerability);
 
         if (inputDirection.len2() > 0f) {
             dashDirection.set(inputDirection).nor();
         } else {
-            dashDirection.set(0f, 1f); // Por defecto hacia arriba si no hay dirección
+            dashDirection.set(0f, 1f);
         }
     }
 
@@ -100,5 +100,16 @@ public final class Ship extends GameEntity {
 
     public boolean canDash() {
         return dashCooldownTimer <= 0f && dashDurationTimer <= 0f;
+    }
+
+    /** Devuelve el porcentaje de recarga del dash en un rango normalizado de 0.0 a 1.0. */
+    public float getDashCooldownProgress() {
+        if (canDash()) {
+            return 1.0f;
+        }
+        if (dashCooldownTimer <= 0f) {
+            return 1.0f;
+        }
+        return Math.max(0f, Math.min(1f, 1f - (dashCooldownTimer / GameConfig.DASH_COOLDOWN_SECONDS)));
     }
 }

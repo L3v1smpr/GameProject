@@ -16,6 +16,7 @@ public final class WorldSnapshot {
     private final EntityView ship;
     private final boolean shipInvulnerable;
     private final boolean shipDashReady;
+    private final float dashCooldownProgress;
     private final List<EntityView> aliens;
     private final List<EntityView> playerProjectiles;
     private final List<EntityView> alienProjectiles;
@@ -42,6 +43,7 @@ public final class WorldSnapshot {
         this.ship = EntityView.from(ship);
         this.shipInvulnerable = ship.isInvulnerable();
         this.shipDashReady = ship.canDash();
+        this.dashCooldownProgress = ship.getDashCooldownProgress();
         this.aliens = viewsOf(aliens);
         this.playerProjectiles = viewsOf(playerProjectiles);
         this.alienProjectiles = viewsOf(alienProjectiles);
@@ -72,6 +74,10 @@ public final class WorldSnapshot {
 
     public boolean isShipDashReady() {
         return shipDashReady;
+    }
+
+    public float getDashCooldownProgress() {
+        return dashCooldownProgress;
     }
 
     public List<EntityView> getAliens() {
@@ -138,7 +144,7 @@ public final class WorldSnapshot {
                 boolean hurt,
                 boolean isStatic,
                 boolean isBomber) {
-        	this.x = x;
+            this.x = x;
             this.y = y;
             this.width = width;
             this.height = height;
@@ -214,7 +220,7 @@ public final class WorldSnapshot {
         public boolean isStatic() {
             return isStatic;
         }
-        
+
         public boolean isBomber() {
             return isBomber;
         }
