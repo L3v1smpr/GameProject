@@ -105,8 +105,9 @@ public final class LevelDirector {
         float spawnY = GameConfig.WORLD_HEIGHT + 15f;
         return new AlienBuilder()
                 .position(x, spawnY)
+                .size(GameConfig.BOMBER_ALIEN_WIDTH, GameConfig.BOMBER_ALIEN_HEIGHT)
                 .hitPoints(hitPointsFor(level))
-                .movement(new HorizontalMovementStrategy(cruiseY, speed))
+                .movement(new HorizontalMovementStrategy(cruiseY, speed, GameConfig.BOMBER_ALIEN_WIDTH))
                 .attack(new BurstAttackStrategy())
                 .build();
     }

@@ -1,7 +1,6 @@
 package puppy.code.assets;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Texture;
@@ -9,312 +8,232 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * Gestor centralizado de recursos del juego.
- * Implementa el patrón creacional Singleton para garantizar una
- * única instancia global encargada del ciclo de vida de texturas, fuentes y audio.
+ * Gestor centralizado de activos del juego (Aplica el patrón Singleton).
  */
 public final class GameAssets {
 
-    public static final String BACKGROUND_TEXTURE = "background.png";
-
-    // CONSTANTES DE METEORITOS (Requeridas por MeteoriteSize)
-    public static final String SMALL_METEORITE_TEXTURE = "aGreySmall.png";
-    public static final String MEDIUM_METEORITE_TEXTURE = "aGreyMedium4.png";
-    public static final String LARGE_METEORITE_TEXTURE = "aGreyLarge.png";
-
-    // CONSTANTES DE ENTIDADES, HUD Y BANNERS
-    public static final String PLAYER_SHEET_TEXTURE = "player_sheet.png";
-    public static final String ALIEN_SHEET_TEXTURE = "alien_sheet.png";
-    public static final String ALIEN_STATIC_TEXTURE = "alien_static.png";
-    public static final String PLAYER_AMMO_TEXTURE = "player_ammo.png";
-    public static final String ALIEN_AMMO_TEXTURE = "alien_ammo.png";
-    public static final String PLAYER_LIFE_TEXTURE = "player_life.png";
-    public static final String ICON_CUOTA_TEXTURE = "icon_cuota.png";
-    public static final String BANNER_GAMEOVER_TEXTURE = "banner_gameover.png";
-    public static final String BANNER_VICTORIA_TEXTURE = "banner_victoria.png";
-
-    // CONSTANTES DE AUDIO
-    public static final String PLAYER_SHOOT_SOUND = "player_ammo.wav";
-    public static final String PLAYER_DASH_SOUND = "player_dash.wav";
-    public static final String PLAYER_DEATH_SOUND = "player_death.wav";
-
-    public static final String ALIEN_SHOOT_SOUND = "alien_ammo.wav";
-    public static final String ALIEN_HURT_SOUND = "alien_hurt.wav";
-    public static final String ALIEN_DEATH_SOUND = "alien_death.wav";
-
-    public static final String METEORITE_HIT_SOUND = "meteorite_hit.wav";
-    public static final String METEORITE_DESTROYED_SOUND = "meteorite_destroyed.mp3";
-    public static final String LEVEL_CLEAR_SOUND = "nivel_superado.MP3";
-    public static final String VICTORY_MUSIC = "pantalla_victoria.mp3";
-    public static final String GAMEOVER_MUSIC = "gameover.mp3";
-    public static final String BACKGROUND_MUSIC = "background_music.MP3";
-
     private static GameAssets instance;
 
-    private final AssetManager manager;
-    private final SpriteBatch batch;
-    private final BitmapFont font;
-    private final ShapeRenderer shapes;
-    private boolean disposed;
+    // Fondo (en la raíz de assets/)
+    public static final String BACKGROUND_TEXTURE = "background.png";
+
+    // Jugador (assets/player/)
+    public static final String PLAYER_SHEET_TEXTURE = "player/player_sheet.png";
+    public static final String PLAYER_AMMO_TEXTURE = "player/player_ammo.png";
+    public static final String PLAYER_LIFE_TEXTURE = "player/player_life.png";
+
+    // Aliens (assets/aliens/)
+    public static final String ALIEN_STATIC_TEXTURE = "aliens/alien_static.png";
+    public static final String ALIEN_SENTRY_TEXTURE = "aliens/alien_sentry.png";
+    public static final String ALIEN_BOMBER_TEXTURE = "aliens/alien_bomber.png";
+    public static final String ALIEN_AMMO_TEXTURE = "aliens/alien_ammo.png";
+
+    // Obstáculos / Meteoritos (assets/obstacles/)
+    public static final String METEORITE_LARGE = "obstacles/aGreyLarge.png";
+    public static final String METEORITE_MEDIUM = "obstacles/aGreyMedium4.png";
+    public static final String METEORITE_SMALL = "obstacles/aGreySmall.png";
+
+    // Interfaz (assets/ui/)
+    public static final String ICON_CUOTA_TEXTURE = "ui/icon_cuota.png";
+    public static final String BANNER_GAMEOVER_TEXTURE = "ui/banner_gameover.png";
+    public static final String BANNER_VICTORIA_TEXTURE = "ui/banner_victoria.png";
+
+    // Música (assets/audio/music/)
+    public static final String BACKGROUND_MUSIC = "audio/music/background_music.MP3";
+    public static final String GAMEOVER_MUSIC = "audio/music/gameover.MP3";
+    public static final String VICTORY_MUSIC = "audio/music/pantalla_victoria.mp3";
+
+    // Efectos de sonido (assets/audio/sfx/)
+    public static final String PLAYER_SHOOT_SOUND = "audio/sfx/player_ammo.wav";
+    public static final String PLAYER_DASH_SOUND = "audio/sfx/player_dash.wav";
+    public static final String PLAYER_DEATH_SOUND = "audio/sfx/player_death.wav";
+    public static final String ALIEN_SHOOT_SOUND = "audio/sfx/alien_ammo.wav";
+    public static final String ALIEN_HURT_SOUND = "audio/sfx/alien_hurt.wav";
+    public static final String ALIEN_DEATH_SOUND = "audio/sfx/alien_death.wav";
+    public static final String METEORITE_HIT_SOUND = "audio/sfx/meteorite_hit.wav";
+    public static final String METEORITE_DESTROYED_SOUND = "audio/sfx/meteorite_destroyed.MP3";
+    public static final String LEVEL_CLEAR_SOUND = "audio/sfx/nivel_superado.MP3";
+
+    private final SpriteBatch batch = new SpriteBatch();
+    private final ShapeRenderer shapes = new ShapeRenderer();
+    private final BitmapFont font = new BitmapFont();
+
+    private final Map<String, Texture> textures = new HashMap<>();
+    private final Map<String, Sound> sounds = new HashMap<>();
+    private final Map<String, Music> music = new HashMap<>();
 
     private TextureRegion[][] playerFrames;
-    private TextureRegion[][] alienFrames;
-    private TextureRegion alienStaticNormal;
-    private TextureRegion alienStaticFiring;
+    private TextureRegion[][] alienStaticFrames;
+    private TextureRegion[][] alienSentryFrames;
+    private TextureRegion[][] alienBomberFrames;
     private TextureRegion alienAmmoRegion;
 
-    private Music currentMusic;
-
-    private GameAssets() {
-        this.manager = new AssetManager();
-        this.batch = new SpriteBatch();
-        this.font = new BitmapFont();
-        this.shapes = new ShapeRenderer();
-
-        cargarRecursosBase();
+    public GameAssets() {
+        instance = this;
+        loadAll(); // Carga inmediata al instanciar
     }
 
     public static synchronized GameAssets getInstance() {
-        if (instance == null || instance.disposed) {
+        if (instance == null) {
             instance = new GameAssets();
         }
         return instance;
     }
 
-    private void cargarRecursosBase() {
-        cargarTexturaSiExiste(BACKGROUND_TEXTURE);
+    public void loadAll() {
+        // Texturas
+        loadTexture(BACKGROUND_TEXTURE);
+        loadTexture(PLAYER_SHEET_TEXTURE);
+        loadTexture(PLAYER_AMMO_TEXTURE);
+        loadTexture(PLAYER_LIFE_TEXTURE);
+        loadTexture(ALIEN_STATIC_TEXTURE);
+        loadTexture(ALIEN_SENTRY_TEXTURE);
+        loadTexture(ALIEN_BOMBER_TEXTURE);
+        loadTexture(ALIEN_AMMO_TEXTURE);
+        loadTexture(METEORITE_LARGE);
+        loadTexture(METEORITE_MEDIUM);
+        loadTexture(METEORITE_SMALL);
+        loadTexture(ICON_CUOTA_TEXTURE);
+        loadTexture(BANNER_GAMEOVER_TEXTURE);
+        loadTexture(BANNER_VICTORIA_TEXTURE);
 
-        cargarTexturaSiExiste(SMALL_METEORITE_TEXTURE);
-        cargarTexturaSiExiste(MEDIUM_METEORITE_TEXTURE);
-        cargarTexturaSiExiste(LARGE_METEORITE_TEXTURE);
-
-        cargarTexturaSiExiste(PLAYER_SHEET_TEXTURE);
-        cargarTexturaSiExiste(ALIEN_SHEET_TEXTURE);
-        cargarTexturaSiExiste(ALIEN_STATIC_TEXTURE);
-        cargarTexturaSiExiste(PLAYER_AMMO_TEXTURE);
-        cargarTexturaSiExiste(ALIEN_AMMO_TEXTURE);
-
-        cargarTexturaSiExiste(PLAYER_LIFE_TEXTURE);
-        cargarTexturaSiExiste(ICON_CUOTA_TEXTURE);
-        cargarTexturaSiExiste(BANNER_GAMEOVER_TEXTURE);
-        cargarTexturaSiExiste(BANNER_VICTORIA_TEXTURE);
-
-        cargarAudioSiExiste(PLAYER_SHOOT_SOUND, Sound.class);
-        cargarAudioSiExiste(PLAYER_DASH_SOUND, Sound.class);
-        cargarAudioSiExiste(PLAYER_DEATH_SOUND, Sound.class);
-
-        cargarAudioSiExiste(ALIEN_SHOOT_SOUND, Sound.class);
-        cargarAudioSiExiste(ALIEN_HURT_SOUND, Sound.class);
-        cargarAudioSiExiste(ALIEN_DEATH_SOUND, Sound.class);
-
-        cargarAudioSiExiste(METEORITE_HIT_SOUND, Sound.class);
-        cargarAudioSiExiste(METEORITE_DESTROYED_SOUND, Sound.class);
-        cargarAudioSiExiste(LEVEL_CLEAR_SOUND, Sound.class);
-        cargarAudioSiExiste(VICTORY_MUSIC, Music.class);
-        cargarAudioSiExiste(GAMEOVER_MUSIC, Music.class);
-        cargarAudioSiExiste(BACKGROUND_MUSIC, Music.class);
-
-        manager.finishLoading();
-
-        if (manager.isLoaded(PLAYER_SHEET_TEXTURE, Texture.class)) {
-            Texture pSheet = manager.get(PLAYER_SHEET_TEXTURE, Texture.class);
-            this.playerFrames = TextureRegion.split(pSheet, 48, 48);
+        // Subdivisión de Spritesheets (2 filas: reposo arriba, disparo abajo)
+        Texture pSheet = textures.get(PLAYER_SHEET_TEXTURE);
+        if (pSheet != null) {
+            playerFrames = TextureRegion.split(pSheet, pSheet.getWidth() / 3, pSheet.getHeight() / 2);
         }
 
-        if (manager.isLoaded(ALIEN_SHEET_TEXTURE, Texture.class)) {
-            Texture aSheet = manager.get(ALIEN_SHEET_TEXTURE, Texture.class);
-            this.alienFrames = TextureRegion.split(aSheet, 48, 48);
-            for (TextureRegion[] fila : this.alienFrames) {
-                for (TextureRegion cuadro : fila) {
-                    cuadro.setRegion(
-                            cuadro.getRegionX() + 1,
-                            cuadro.getRegionY() + 1,
-                            cuadro.getRegionWidth() - 2,
-                            cuadro.getRegionHeight() - 2);
-                    cuadro.flip(false, true);
-                }
-            }
+     // Subdivisión y orientación de Spritesheets alienígenas (apuntando al Sur)
+        Texture aStatic = textures.get(ALIEN_STATIC_TEXTURE);
+        if (aStatic != null) {
+            alienStaticFrames = TextureRegion.split(aStatic, aStatic.getWidth(), aStatic.getHeight() / 2);
+            flipFrames(alienStaticFrames);
         }
 
-        // Carga nativa a 48x48 px con Nearest y corrección de medio texel anti-sangrado
-        if (manager.isLoaded(ALIEN_STATIC_TEXTURE, Texture.class)) {
-            Texture aStatic = manager.get(ALIEN_STATIC_TEXTURE, Texture.class);
-            aStatic.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
-
-            TextureRegion[][] splits = TextureRegion.split(aStatic, 48, 48);
-            if (splits.length >= 2) {
-                this.alienStaticNormal = new TextureRegion(splits[0][0]);
-                this.alienStaticFiring = new TextureRegion(splits[1][0]);
-            } else if (splits[0].length >= 2) {
-                this.alienStaticNormal = new TextureRegion(splits[0][0]);
-                this.alienStaticFiring = new TextureRegion(splits[0][1]);
-            } else {
-                this.alienStaticNormal = new TextureRegion(splits[0][0]);
-                this.alienStaticFiring = this.alienStaticNormal;
-            }
-
-            this.alienStaticNormal.flip(false, true);
-            this.alienStaticFiring.flip(false, true);
-
-            // Desfase de medio texel en V para blindar la frontera sin recortar ni distorsionar los píxeles
-            float texelOffsetV = 0.5f / aStatic.getHeight();
-            this.alienStaticNormal.setV(this.alienStaticNormal.getV() - texelOffsetV);
-            this.alienStaticFiring.setV2(this.alienStaticFiring.getV2() + texelOffsetV);
+        Texture aSentry = textures.get(ALIEN_SENTRY_TEXTURE);
+        if (aSentry != null) {
+            alienSentryFrames = TextureRegion.split(aSentry, aSentry.getWidth(), aSentry.getHeight() / 2);
+            flipFrames(alienSentryFrames);
         }
 
-        if (manager.isLoaded(ALIEN_AMMO_TEXTURE, Texture.class)) {
-            this.alienAmmoRegion = new TextureRegion(manager.get(ALIEN_AMMO_TEXTURE, Texture.class));
+        Texture aBomber = textures.get(ALIEN_BOMBER_TEXTURE);
+        if (aBomber != null) {
+            alienBomberFrames = TextureRegion.split(aBomber, aBomber.getWidth(), aBomber.getHeight() / 2);
+            flipFrames(alienBomberFrames);
+        }
+
+        Texture aAmmo = textures.get(ALIEN_AMMO_TEXTURE);
+        if (aAmmo != null) {
+            alienAmmoRegion = new TextureRegion(aAmmo);
+        }
+
+        // Audio
+        loadMusic(BACKGROUND_MUSIC);
+        loadMusic(GAMEOVER_MUSIC);
+        loadMusic(VICTORY_MUSIC);
+
+        loadSound(PLAYER_SHOOT_SOUND);
+        loadSound(PLAYER_DASH_SOUND);
+        loadSound(PLAYER_DEATH_SOUND);
+        loadSound(ALIEN_SHOOT_SOUND);
+        loadSound(ALIEN_HURT_SOUND);
+        loadSound(ALIEN_DEATH_SOUND);
+        loadSound(METEORITE_HIT_SOUND);
+        loadSound(METEORITE_DESTROYED_SOUND);
+        loadSound(LEVEL_CLEAR_SOUND);
+    }
+
+    private void loadTexture(String path) {
+        if (Gdx.files.internal(path).exists()) {
+            textures.put(path, new Texture(Gdx.files.internal(path)));
+        } else {
+            Gdx.app.error("GameAssets", "No se encontro la textura en: " + path);
         }
     }
 
-    private void cargarTexturaSiExiste(String ruta) {
-        if (Gdx.files != null && Gdx.files.internal(ruta).exists()) {
-            manager.load(ruta, Texture.class);
+    private void loadSound(String path) {
+        if (Gdx.files.internal(path).exists()) {
+            sounds.put(path, Gdx.audio.newSound(Gdx.files.internal(path)));
+        } else {
+            Gdx.app.error("GameAssets", "No se encontro el sonido en: " + path);
         }
     }
 
-    private <T> void cargarAudioSiExiste(String ruta, Class<T> tipo) {
-        if (Gdx.files != null && Gdx.files.internal(ruta).exists()) {
-            manager.load(ruta, tipo);
+    private void loadMusic(String path) {
+        if (Gdx.files.internal(path).exists()) {
+            music.put(path, Gdx.audio.newMusic(Gdx.files.internal(path)));
+        } else {
+            Gdx.app.error("GameAssets", "No se encontro la musica en: " + path);
         }
-    }
-
-    public SpriteBatch batch() {
-        ensureOpen();
-        return batch;
-    }
-
-    public ShapeRenderer shapes() {
-        ensureOpen();
-        return shapes;
-    }
-
-    public BitmapFont font() {
-        ensureOpen();
-        return font;
-    }
-
-    public TextureRegion[][] getPlayerFrames() {
-        ensureOpen();
-        return playerFrames;
-    }
-
-    public TextureRegion[][] getAlienFrames() {
-        ensureOpen();
-        return alienFrames;
-    }
-
-    public TextureRegion getAlienStaticNormal() {
-        ensureOpen();
-        return alienStaticNormal;
-    }
-
-    public TextureRegion getAlienStaticFiring() {
-        ensureOpen();
-        return alienStaticFiring;
     }
 
     public TextureRegion getAlienStaticRegion(boolean firing) {
-        ensureOpen();
-        return firing && alienStaticFiring != null ? alienStaticFiring : alienStaticNormal;
+        return (alienStaticFrames != null) ? alienStaticFrames[firing ? 1 : 0][0] : null;
     }
 
     public TextureRegion getAlienStaticRegion() {
         return getAlienStaticRegion(false);
     }
 
-    public TextureRegion getAlienAmmoRegion() {
-        ensureOpen();
-        return alienAmmoRegion;
+    public TextureRegion getAlienSentryRegion(boolean firing) {
+        return (alienSentryFrames != null) ? alienSentryFrames[firing ? 1 : 0][0] : null;
     }
 
-    public synchronized Texture texture(String path) {
-        return load(path, Texture.class);
+    public TextureRegion getAlienBomberRegion(boolean firing) {
+        return (alienBomberFrames != null) ? alienBomberFrames[firing ? 1 : 0][0] : null;
     }
 
-    public synchronized Texture getTexture(String path) {
-        return texture(path);
+    public TextureRegion[][] getPlayerFrames() { return playerFrames; }
+    public TextureRegion getAlienAmmoRegion() { return alienAmmoRegion; }
+    public Texture getTexture(String path) { return textures.get(path); }
+    public Sound getSound(String path) { return sounds.get(path); }
+    public Music getMusic(String path) { return music.get(path); }
+    public SpriteBatch batch() { return batch; }
+    public ShapeRenderer shapes() { return shapes; }
+    public BitmapFont font() { return font; }
+
+    public void playSound(String path, float volume) {
+        Sound s = sounds.get(path);
+        if (s != null) s.play(volume);
     }
 
-    public synchronized Sound sound(String path) {
-        return load(path, Sound.class);
-    }
-
-    public synchronized Sound getSound(String path) {
-        return sound(path);
-    }
-
-    public synchronized Music music(String path) {
-        return load(path, Music.class);
-    }
-
-    public synchronized Music getMusic(String path) {
-        return music(path);
-    }
-
-    private <T> T load(String path, Class<T> type) {
-        ensureOpen();
-        if (path == null || path.trim().isEmpty()) {
-            throw new IllegalArgumentException("La ruta del recurso no puede estar vacía.");
-        }
-        if (!manager.isLoaded(path, type)) {
-            if (Gdx.files == null || !Gdx.files.internal(path).exists()) {
-                return null;
-            }
-            manager.load(path, type);
-            manager.finishLoadingAsset(path);
-        }
-        return manager.get(path, type);
-    }
-
-    public synchronized void playSound(String fileName, float volume) {
-        ensureOpen();
-        Sound s = sound(fileName);
-        if (s != null) {
-            s.play(volume);
+    public void playMusic(String path, boolean loop, float volume) {
+        Music m = music.get(path);
+        if (m != null) {
+            m.setLooping(loop);
+            m.setVolume(volume);
+            m.play();
         }
     }
 
-    public synchronized void playMusic(String fileName, boolean loop, float volume) {
-        ensureOpen();
-        stopMusic();
-        currentMusic = music(fileName);
-        if (currentMusic != null) {
-            currentMusic.setLooping(loop);
-            currentMusic.setVolume(volume);
-            currentMusic.play();
+    public void stopMusic() {
+        for (Music m : music.values()) {
+            if (m.isPlaying()) m.stop();
         }
     }
 
-    public synchronized void stopMusic() {
-        if (currentMusic != null && currentMusic.isPlaying()) {
-            currentMusic.stop();
-            currentMusic = null;
-        }
-    }
-
-    public synchronized void dispose() {
-        if (disposed) {
-            return;
-        }
-
-        stopMusic();
+    public void dispose() {
+        batch.dispose();
         shapes.dispose();
         font.dispose();
-        batch.dispose();
-        manager.dispose();
-        disposed = true;
-
-        if (instance == this) {
-            instance = null;
-        }
+        for (Texture t : textures.values()) t.dispose();
+        for (Sound s : sounds.values()) s.dispose();
+        for (Music m : music.values()) m.dispose();
+        instance = null;
     }
-
-    private void ensureOpen() {
-        if (disposed) {
-            throw new IllegalStateException("GameAssets ya fue liberado.");
+    
+    private void flipFrames(TextureRegion[][] frames) {
+        if (frames == null) {
+            return;
+        }
+        for (TextureRegion[] row : frames) {
+            for (TextureRegion frame : row) {
+                frame.flip(false, true); // Invierte la orientación para que apunten hacia la nave del jugador
+            }
         }
     }
 }

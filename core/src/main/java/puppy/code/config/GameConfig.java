@@ -78,6 +78,9 @@ public final class GameConfig {
 
     public static final float ALIEN_WIDTH = 48f;
     public static final float ALIEN_HEIGHT = 48f;
+    
+    public static final float BOMBER_ALIEN_WIDTH = 96f;
+    public static final float BOMBER_ALIEN_HEIGHT = 48f;
 
     public static final float LINEAR_ALIEN_SPEED = 90f;
     public static final float ZIGZAG_ALIEN_SPEED = 110f;

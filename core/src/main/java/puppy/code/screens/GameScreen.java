@@ -560,19 +560,31 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
 
     private void drawAliens() {
         for (WorldSnapshot.EntityView alien : snapshot.getAliens()) {
-            TextureRegion region = assets.getAlienStaticRegion(alien.isFiring());
+            TextureRegion region;
+
+            // Asignación de sprite dedicado según el tipo de nave
+            if (alien.isStatic()) {
+                region = assets.getAlienSentryRegion(alien.isFiring());
+            } else if (alien.isBomber()) {
+                region = assets.getAlienBomberRegion(alien.isFiring());
+            } else {
+                region = assets.getAlienStaticRegion(alien.isFiring());
+            }
+
             if (region != null) {
+                // Tinte rojo únicamente al recibir daño
                 if (alien.isHurt()) {
                     assets.batch().setColor(1f, 0.25f, 0.25f, 0.85f);
-                } else if (alien.isStatic()) {
-                    assets.batch().setColor(1.0f, 0.75f, 0.25f, 1.0f);
-                } else if (alien.isBomber()) {
-                    assets.batch().setColor(0.25f, 0.95f, 0.85f, 1.0f);
                 }
 
-                assets.batch().draw(region, alien.getX(), alien.getY(), alien.getWidth(), alien.getHeight());
+                assets.batch().draw(
+                        region,
+                        alien.getX(),
+                        alien.getY(),
+                        alien.getWidth(),
+                        alien.getHeight());
 
-                if (alien.isHurt() || alien.isStatic() || alien.isBomber()) {
+                if (alien.isHurt()) {
                     assets.batch().setColor(Color.WHITE);
                 }
             }

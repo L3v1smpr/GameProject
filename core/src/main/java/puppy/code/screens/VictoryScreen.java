@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.Texture;
 import java.util.List;
 import puppy.code.app.ScreenNavigator;
 import puppy.code.assets.GameAssets;
+import puppy.code.config.GameConfig;
 import puppy.code.input.InitialsInput;
 import puppy.code.input.NavigationInput;
 import puppy.code.systems.ScoreRepository;
@@ -82,7 +83,6 @@ public final class VictoryScreen extends AbstractGameScreen {
 
     @Override
     protected void update(float delta) {
-        // La pantalla final no actualiza el mundo de la partida.
     }
 
     @Override
@@ -92,11 +92,11 @@ public final class VictoryScreen extends AbstractGameScreen {
 
         Texture banner = assets.getTexture(GameAssets.BANNER_VICTORIA_TEXTURE);
         if (banner != null) {
-            float bannerWidth = 400f;
-            float bannerHeight = 200f;
-            float x = (camera.viewportWidth - bannerWidth) / 2f;
-            float y = (camera.viewportHeight - bannerHeight) / 2f + 60f;
-            assets.batch().draw(banner, x, y, bannerWidth, bannerHeight);
+            float width = 460f;
+            float height = 230f;
+            float x = (GameConfig.WORLD_WIDTH - width) / 2f;
+            float y = 470f;
+            assets.batch().draw(banner, x, y, width, height);
         } else {
             assets.font().draw(assets.batch(), "¡VICTORIA!", 540f, 480f);
         }

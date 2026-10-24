@@ -54,7 +54,7 @@ public abstract class AbstractGameScreen extends ScreenAdapter {
      * textura de fondo en cinta continua antes de dibujar las estrellas y las entidades.
      */
     protected void renderBackground(float delta) {
-        Texture bg = assets.getTexture(GameAssets.BACKGROUND_TEXTURE);
+    	Texture bg = assets.getTexture(GameAssets.BACKGROUND_TEXTURE);
         if (bg != null) {
             // Desplazar hacia abajo a velocidad constante independiente del framerate
             backgroundY -= BACKGROUND_SCROLL_SPEED * delta;
