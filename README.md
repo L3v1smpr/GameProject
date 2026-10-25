@@ -93,7 +93,7 @@ Al completar el primer y segundo nivel aparece el estado Nivel superado. Una tec
 
 ## Recursos y estructura
 
-`GameAssets` centraliza la carga y liberación de texturas, fuentes, música y efectos. Los recursos gráficos opcionales que faltan pueden usar alternativas geométricas en la partida o texto en las pantallas finales. No se cambian los archivos de `assets/` ni el código histórico de `puppy.code.prototype`.
+`GameAssets` centraliza la carga y liberación de texturas, fuentes, música y efectos. Reactivamos los sprites ya incluidos en `assets/`: jugador, alienígenas, proyectiles, vidas, meteoritos y banners de Game Over y Victoria. La partida usa `background_music.MP3` y Game Over usa `gameover.mp3`; si algún recurso opcional falta, se mantienen alternativas geométricas o texto. No se modifican los archivos de `assets/` ni el código histórico de `puppy.code.prototype`. La fuente y licencia originales de los recursos no están identificadas en el repositorio.
 
 El módulo `core` separa aplicación, recursos, comportamientos, configuración, entidades, fábricas, entrada, pantallas, sistemas y mundo. `GameWorld` coordina las reglas; `WorldSnapshot` entrega datos de presentación; `MovementStrategy` y `AlienAttackStrategy` permiten variar comportamientos; `AlienBuilder` y `LevelDirector` componen aliens por nivel. `AbstractGameScreen` fija el ciclo de las pantallas.
 

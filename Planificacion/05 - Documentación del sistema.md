@@ -51,7 +51,7 @@ Nosotros separamos la aplicación en core y lwjgl3. El paquete app conecta la ap
 | LevelDirector y AlienBuilder | Construyen las oleadas con la configuración de cada nivel. |
 | GameScreen | Lee controles de juego, actualiza GameWorld y dibuja el snapshot. |
 | ScreenNavigator | Expone las transiciones a menú, juego, Game Over y Victoria. |
-| GameAssets | Administra los recursos permitidos mediante AssetManager y Singleton. |
+| GameAssets | Administra los recursos compartidos mediante AssetManager y Singleton. |
 | ScoreRepository | Persiste el Top 3 local con Preferences. |
 | InitialsInput | Aísla las teclas usadas para ingresar y borrar iniciales. |
 
@@ -65,7 +65,7 @@ Al recibir daño perdemos una vida. Si quedan vidas, reaparecemos en el punto in
 
 ## 7. Manejo de recursos
 
-Nosotros centralizamos en GameAssets solo los cinco gráficos y cuatro audios permitidos y dejamos su ciclo de vida en AssetManager. Dibujamos aliens y proyectiles enemigos con formas geométricas. No modificamos assets ni el paquete histórico puppy.code.prototype. No conocemos la fuente original ni la licencia de los recursos gráficos y de audio, y el repositorio no contiene un registro verificable de esa atribución.
+Nosotros volvimos a activar en GameAssets los recursos gráficos ya incluidos en assets/: sprites de jugador y alienígenas, proyectiles, meteoritos, vidas y banners de Game Over y Victoria. La partida reproduce background_music.MP3 y Game Over reproduce gameover.mp3; mantenemos los efectos explosion.ogg, hurt.ogg y pop-sound.mp3. AssetManager conserva su ciclo de vida y GameAssets sigue siendo Singleton. No modificamos los archivos de assets/ ni el paquete histórico puppy.code.prototype. No conocemos la fuente original ni la licencia de los recursos, y el repositorio no contiene un registro verificable de esa atribución.
 
 ## 8. Puntajes locales
 
