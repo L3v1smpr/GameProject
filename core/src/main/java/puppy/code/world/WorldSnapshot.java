@@ -26,6 +26,9 @@ public final class WorldSnapshot {
     private final int aliensDestroyedInLevel;
     private final int quotaForLevel;
     private final GamePhase phase;
+    private final boolean playerFiredThisFrame;
+    private final boolean entityExplodedThisFrame;
+    private final boolean shipHurtThisFrame;
 
     WorldSnapshot(
             Ship ship,
@@ -38,7 +41,10 @@ public final class WorldSnapshot {
             int level,
             int aliensDestroyedInLevel,
             int quotaForLevel,
-            GamePhase phase) {
+            GamePhase phase,
+            boolean playerFiredThisFrame,
+            boolean entityExplodedThisFrame,
+            boolean shipHurtThisFrame) {
         this.ship = EntityView.from(ship);
         this.shipInvulnerable = ship.isInvulnerable();
         this.shipDashReady = ship.canDash();
@@ -52,6 +58,9 @@ public final class WorldSnapshot {
         this.aliensDestroyedInLevel = aliensDestroyedInLevel;
         this.quotaForLevel = quotaForLevel;
         this.phase = phase;
+        this.playerFiredThisFrame = playerFiredThisFrame;
+        this.entityExplodedThisFrame = entityExplodedThisFrame;
+        this.shipHurtThisFrame = shipHurtThisFrame;
     }
 
     private static <T extends GameEntity> List<EntityView> viewsOf(List<T> entities) {
@@ -112,6 +121,18 @@ public final class WorldSnapshot {
 
     public GamePhase getPhase() {
         return phase;
+    }
+
+    public boolean didPlayerFireThisFrame() {
+        return playerFiredThisFrame;
+    }
+
+    public boolean didEntityExplodeThisFrame() {
+        return entityExplodedThisFrame;
+    }
+
+    public boolean didShipGetHurtThisFrame() {
+        return shipHurtThisFrame;
     }
 
     /** Valor inmutable; el mundo no expone sus entidades ni colecciones mutables. */

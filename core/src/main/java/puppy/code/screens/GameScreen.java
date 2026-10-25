@@ -100,6 +100,15 @@ public final class GameScreen extends AbstractGameScreen {
 
         world.update(delta, playerInput);
         snapshot = world.snapshot();
+        if (snapshot.didPlayerFireThisFrame()) {
+            getAssets().playSound(GameAssets.POP_SOUND, 0.5f);
+        }
+        if (snapshot.didEntityExplodeThisFrame()) {
+            getAssets().playSound(GameAssets.EXPLOSION_SOUND, 0.5f);
+        }
+        if (snapshot.didShipGetHurtThisFrame()) {
+            getAssets().playSound(GameAssets.HURT_SOUND, 0.7f);
+        }
     }
 
     private void updateDashEffects(float delta) {
@@ -211,11 +220,17 @@ public final class GameScreen extends AbstractGameScreen {
                 "Puntaje: " + snapshot.getScore(),
                 24f,
                 718f);
+        Texture quotaIcon = getAssets().getTexture(GameAssets.ICON_CUOTA_TEXTURE);
+        float quotaTextX = 24f;
+        if (quotaIcon != null) {
+            getAssets().batch().draw(quotaIcon, 24f, 675f, 20f, 20f);
+            quotaTextX = 50f;
+        }
         getAssets().font().draw(
                 getAssets().batch(),
                 "Nivel " + snapshot.getLevel() + "  Aliens: "
                         + snapshot.getAliensDestroyedInLevel() + "/" + snapshot.getQuotaForLevel(),
-                24f,
+                quotaTextX,
                 690f);
         getAssets().font().draw(
                 getAssets().batch(),

@@ -36,6 +36,9 @@ public final class GameWorld {
     private int aliensDestroyedInLevel;
     private GamePhase phase;
     private float meteoriteSpawnTimer;
+    private boolean playerFiredThisFrame;
+    private boolean entityExplodedThisFrame;
+    private boolean shipHurtThisFrame;
 
     public GameWorld(LevelDirector levelDirector, CollisionSystem collisions) {
         if (levelDirector == null || collisions == null) {
@@ -76,6 +79,9 @@ public final class GameWorld {
         if (input == null) {
             throw new IllegalArgumentException("PlayerInput no puede ser null.");
         }
+        playerFiredThisFrame = false;
+        entityExplodedThisFrame = false;
+        shipHurtThisFrame = false;
         if (phase != GamePhase.ACTIVE) {
             return;
         }
@@ -88,7 +94,10 @@ public final class GameWorld {
 
         Optional<PlayerProjectile> newProjectile =
                 playerWeapon.update(delta, input.firePressed(), ship);
-        newProjectile.ifPresent(playerProjectiles::add);
+        newProjectile.ifPresent(projectile -> {
+            playerProjectiles.add(projectile);
+            playerFiredThisFrame = true;
+        });
 
         updatePlayerProjectiles(delta);
         updateAliens(delta);
@@ -154,6 +163,7 @@ public final class GameWorld {
                 if (alien.isActive() && collisions.collides(projectile, alien)) {
                     projectile.deactivate();
                     if (alien.takeDamage()) {
+                        entityExplodedThisFrame = true;
                         score += GameConfig.ALIEN_SCORE;
                         aliensDestroyedInLevel++;
                     }
@@ -167,6 +177,7 @@ public final class GameWorld {
                 if (meteorite.isActive() && collisions.collides(projectile, meteorite)) {
                     projectile.deactivate();
                     meteorite.deactivate();
+                    entityExplodedThisFrame = true;
                     score += meteorite.getScoreValue();
                     break;
                 }
@@ -197,8 +208,6 @@ public final class GameWorld {
         for (Alien alien : aliens) {
             if (alien.isActive() && collisions.collides(ship, alien)) {
                 alien.deactivate();
-                score += GameConfig.ALIEN_SCORE;
-                aliensDestroyedInLevel++;
                 loseLife();
                 return;
             }
@@ -219,6 +228,7 @@ public final class GameWorld {
         if (phase != GamePhase.ACTIVE) {
             return;
         }
+        shipHurtThisFrame = true;
         lives = Math.max(0, lives - 1);
         if (lives == 0) {
             phase = GamePhase.GAME_OVER;
@@ -302,6 +312,9 @@ public final class GameWorld {
                 level,
                 aliensDestroyedInLevel,
                 getQuotaForLevel(level),
-                phase);
+                phase,
+                playerFiredThisFrame,
+                entityExplodedThisFrame,
+                shipHurtThisFrame);
     }
 }
