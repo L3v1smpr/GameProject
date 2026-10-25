@@ -1,3 +1,4 @@
+```mermaid
 classDiagram
     direction LR
 
@@ -591,7 +592,7 @@ classDiagram
         }
     }
 
-    %% ---------- Herencia e implementación ----------
+    %% ---------- Herencia e implementacion ----------
     Game <|-- SpaceNavigation
     ScreenNavigator <|.. SpaceNavigation
     ScreenAdapter <|-- AbstractGameScreen
@@ -622,7 +623,7 @@ classDiagram
     InitialsInput <|.. KeyboardInitialsInput
     ScoreStore <|.. ScoreRepository
 
-    %% ---------- Arranque y aplicación ----------
+    %% ---------- Arranque y aplicacion ----------
     Lwjgl3Launcher ..> StartupHelper : usa
     Lwjgl3Launcher ..> Lwjgl3Application : crea
     Lwjgl3Launcher ..> SpaceNavigation : crea
@@ -712,7 +713,7 @@ classDiagram
     Alien ..> AlienProjectile : dispara
     Alien ..> Ship : apunta a
 
-    %% ---------- Estrategias, fábrica y builder ----------
+    %% ---------- Estrategias, fabrica y builder ----------
     MovementStrategy ..> Vector2
     AlienAttackStrategy ..> AlienProjectile
     VAttackStrategy ..> LinearAttackStrategy : usa utilidades
@@ -735,8 +736,9 @@ classDiagram
     %% ---------- Notas de patrones ----------
     note for GameAssets "GM-6 Singleton: instancia unica, constructor privado y getInstance estatico y sincronizado"
     note for MovementStrategy "GM-7 Strategy: 4 variantes de movimiento. Alien las recibe sin conocer la clase concreta"
-    note for AlienAttackStrategy "GM-7 Strategy: 5 variantes de ataque. nextCooldownSeconds tiene valor por defecto y BurstAttackStrategy lo redefine"
+    note for AlienAttackStrategy "GM-7 Strategy: 5 variantes de ataque."
     note for AbstractGameScreen "GM-8 Template Method: render es final y ejecuta clearScreen, renderBackground, handleInput, update y draw"
     note for AlienBuilder "GM-9 Builder: valida posicion, estrategias, velocidad y vida en build. LevelDirector es el Director"
-    note for GameConfig "Constantes usadas por entidades, mundo, fabricas, sistemas y pantallas. Sus dependencias no se dibujan"
+    note for GameConfig "Constantes usadas por entidades, mundo, fabricas, sistemas y pantallas."
     note for GameWorld "Controller: coordina simulacion, vidas, puntaje, cuotas y fases"
+```
