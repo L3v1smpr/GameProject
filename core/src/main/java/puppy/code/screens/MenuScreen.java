@@ -42,22 +42,22 @@ public final class MenuScreen extends AbstractGameScreen {
 
     @Override
     protected void draw(float delta) {
-        assets.batch().setProjectionMatrix(camera.combined);
-        assets.batch().begin();
-        assets.font().draw(assets.batch(), "SPACE NAVIGATION", 470f, 455f);
-        assets.font().draw(assets.batch(), "Presiona ENTER para comenzar", 455f, 390f);
-        assets.font().draw(assets.batch(), "WASD: mover   I: disparar   O: dash", 420f, 345f);
+        getAssets().batch().setProjectionMatrix(getCamera().combined);
+        getAssets().batch().begin();
+        getAssets().font().draw(getAssets().batch(), "SPACE NAVIGATION", 470f, 455f);
+        getAssets().font().draw(getAssets().batch(), "Presiona ENTER para comenzar", 455f, 390f);
+        getAssets().font().draw(getAssets().batch(), "WASD: mover   I: disparar   O: dash", 420f, 345f);
         drawTopScores();
-        assets.batch().end();
+        getAssets().batch().end();
     }
 
     private void drawTopScores() {
-        assets.font().draw(assets.batch(), "TOP 3 LOCAL", 530f, 275f);
+        getAssets().font().draw(getAssets().batch(), "TOP 3 LOCAL", 530f, 275f);
         List<ScoreRepository.HighScore> scores = scoreRepository.getTopScores();
         for (int i = 0; i < scores.size(); i++) {
             ScoreRepository.HighScore score = scores.get(i);
-            assets.font().draw(
-                    assets.batch(),
+            getAssets().font().draw(
+                    getAssets().batch(),
                     (i + 1) + ". " + score.getName() + "   " + score.getScore(),
                     520f,
                     245f - i * 28f);

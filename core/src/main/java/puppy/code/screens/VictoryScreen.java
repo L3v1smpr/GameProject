@@ -1,5 +1,6 @@
 package puppy.code.screens;
 
+import com.badlogic.gdx.graphics.Texture;
 import java.util.List;
 import puppy.code.app.ScreenNavigator;
 import puppy.code.assets.GameAssets;
@@ -40,12 +41,12 @@ public final class VictoryScreen extends AbstractGameScreen {
 
     @Override
     public void show() {
-        assets.stopMusic();
+        getAssets().stopMusic();
     }
 
     @Override
     public void hide() {
-        assets.stopMusic();
+        getAssets().stopMusic();
     }
 
     @Override
@@ -85,32 +86,41 @@ public final class VictoryScreen extends AbstractGameScreen {
 
     @Override
     protected void draw(float delta) {
-        assets.batch().setProjectionMatrix(camera.combined);
-        assets.batch().begin();
+        getAssets().batch().setProjectionMatrix(getCamera().combined);
+        getAssets().batch().begin();
 
-        assets.font().draw(assets.batch(), "¡VICTORIA!", 540f, 480f);
+        Texture banner = getAssets().getTexture(GameAssets.BANNER_VICTORIA_TEXTURE);
+        if (banner != null) {
+            float bannerWidth = 400f;
+            float bannerHeight = 200f;
+            float x = (getCamera().viewportWidth - bannerWidth) / 2f;
+            float y = (getCamera().viewportHeight - bannerHeight) / 2f + 60f;
+            getAssets().batch().draw(banner, x, y, bannerWidth, bannerHeight);
+        } else {
+            getAssets().font().draw(getAssets().batch(), "¡VICTORIA!", 540f, 480f);
+        }
 
-        assets.font().draw(assets.batch(), "Puntaje final: " + finalScore, 520f, 330f);
+        getAssets().font().draw(getAssets().batch(), "Puntaje final: " + finalScore, 520f, 330f);
         drawScoreEntry();
         drawTopScores();
         if (eligibleForTop3 && !scoreSaved) {
-            assets.font().draw(assets.batch(), "ESC: volver al menu", 505f, 58f);
+            getAssets().font().draw(getAssets().batch(), "ESC: volver al menu", 505f, 58f);
         } else {
-            assets.font().draw(assets.batch(), "ENTER: jugar de nuevo   ESC: menu", 445f, 58f);
+            getAssets().font().draw(getAssets().batch(), "ENTER: jugar de nuevo   ESC: menu", 445f, 58f);
         }
 
-        assets.batch().end();
+        getAssets().batch().end();
     }
 
     private void drawScoreEntry() {
         if (eligibleForTop3 && !scoreSaved) {
-            assets.font().draw(assets.batch(), "Nuevo record: ingresa 3 letras A-Z", 440f, 295f);
-            assets.font().draw(assets.batch(), initialsLine(), 570f, 265f);
-            assets.font().draw(assets.batch(), "Letras: escribir   Retroceso: borrar   ENTER: guardar", 390f, 235f);
+            getAssets().font().draw(getAssets().batch(), "Nuevo record: ingresa 3 letras A-Z", 440f, 295f);
+            getAssets().font().draw(getAssets().batch(), initialsLine(), 570f, 265f);
+            getAssets().font().draw(getAssets().batch(), "Letras: escribir   Retroceso: borrar   ENTER: guardar", 390f, 235f);
         } else if (scoreSaved) {
-            assets.font().draw(assets.batch(), "Puntaje guardado como " + initials, 475f, 295f);
+            getAssets().font().draw(getAssets().batch(), "Puntaje guardado como " + initials, 475f, 295f);
         } else {
-            assets.font().draw(assets.batch(), "Este puntaje no entra al Top 3", 470f, 295f);
+            getAssets().font().draw(getAssets().batch(), "Este puntaje no entra al Top 3", 470f, 295f);
         }
     }
 
@@ -126,12 +136,12 @@ public final class VictoryScreen extends AbstractGameScreen {
     }
 
     private void drawTopScores() {
-        assets.font().draw(assets.batch(), "TOP 3 LOCAL", 535f, 195f);
+        getAssets().font().draw(getAssets().batch(), "TOP 3 LOCAL", 535f, 195f);
         List<ScoreRepository.HighScore> scores = scoreRepository.getTopScores();
         for (int i = 0; i < scores.size(); i++) {
             ScoreRepository.HighScore score = scores.get(i);
-            assets.font().draw(
-                    assets.batch(),
+            getAssets().font().draw(
+                    getAssets().batch(),
                     (i + 1) + ". " + score.getName() + "   " + score.getScore(),
                     535f,
                     170f - i * 23f);

@@ -54,12 +54,12 @@ public final class GameScreen extends AbstractGameScreen {
 
     @Override
     public void show() {
-        assets.playMusic(GameAssets.BACKGROUND_MUSIC, true, 0.45f);
+        getAssets().playMusic(GameAssets.BACKGROUND_MUSIC, true, 0.45f);
     }
 
     @Override
     public void hide() {
-        assets.stopMusic();
+        getAssets().stopMusic();
         afterImages.clear();
     }
 
@@ -107,7 +107,7 @@ public final class GameScreen extends AbstractGameScreen {
             dashEffectTimer = Math.max(0f, dashEffectTimer - delta);
             dashSpawnCooldown -= delta;
             if (dashSpawnCooldown <= 0f) {
-                TextureRegion region = resolveShipRegion(assets.getPlayerFrames());
+                TextureRegion region = resolveShipRegion(getAssets().getPlayerFrames());
                 if (region != null) {
                     WorldSnapshot.EntityView ship = snapshot.getShip();
                     afterImages.add(new AfterImage(
@@ -127,14 +127,14 @@ public final class GameScreen extends AbstractGameScreen {
 
     @Override
     protected void draw(float delta) {
-        assets.batch().setProjectionMatrix(camera.combined);
-        assets.batch().begin();
+        getAssets().batch().setProjectionMatrix(getCamera().combined);
+        getAssets().batch().begin();
 
         for (AfterImage image : afterImages) {
-            assets.batch().setColor(0.3f, 0.85f, 1f, image.getAlpha());
-            assets.batch().draw(image.getRegion(), image.getX(), image.getY(), image.getWidth(), image.getHeight());
+            getAssets().batch().setColor(0.3f, 0.85f, 1f, image.getAlpha());
+            getAssets().batch().draw(image.getRegion(), image.getX(), image.getY(), image.getWidth(), image.getHeight());
         }
-        assets.batch().setColor(Color.WHITE);
+        getAssets().batch().setColor(Color.WHITE);
 
         drawShip();
         drawAliens();
@@ -143,17 +143,17 @@ public final class GameScreen extends AbstractGameScreen {
         drawHud();
         drawPhaseMessage();
 
-        assets.batch().end();
+        getAssets().batch().end();
         drawFallbackEntities();
     }
 
     private void drawShip() {
         WorldSnapshot.EntityView ship = snapshot.getShip();
-        TextureRegion region = resolveShipRegion(assets.getPlayerFrames());
+        TextureRegion region = resolveShipRegion(getAssets().getPlayerFrames());
         boolean visible = !snapshot.isShipInvulnerable()
                 || (((int) (elapsedSeconds * BLINK_STEPS_PER_SECOND)) % 2 == 0);
         if (region != null && visible) {
-            assets.batch().draw(region, ship.getX(), ship.getY(), ship.getWidth(), ship.getHeight());
+            getAssets().batch().draw(region, ship.getX(), ship.getY(), ship.getWidth(), ship.getHeight());
         }
     }
 
@@ -161,17 +161,25 @@ public final class GameScreen extends AbstractGameScreen {
         TextureRegion region = resolveAlienRegion();
         for (WorldSnapshot.EntityView alien : snapshot.getAliens()) {
             if (region != null) {
-                assets.batch().draw(region, alien.getX(), alien.getY(), alien.getWidth(), alien.getHeight());
+                getAssets().batch().draw(region, alien.getX(), alien.getY(), alien.getWidth(), alien.getHeight());
             }
         }
     }
 
     private void drawProjectiles() {
-        Texture playerAmmo = assets.getTexture(GameAssets.PLAYER_AMMO_TEXTURE);
+        Texture playerAmmo = getAssets().getTexture(GameAssets.PLAYER_AMMO_TEXTURE);
+        Texture alienAmmo = getAssets().getTexture(GameAssets.ALIEN_AMMO_TEXTURE);
         for (WorldSnapshot.EntityView projectile : snapshot.getPlayerProjectiles()) {
             if (playerAmmo != null) {
-                assets.batch().draw(
+                getAssets().batch().draw(
                         playerAmmo, projectile.getX(), projectile.getY(),
+                        projectile.getWidth(), projectile.getHeight());
+            }
+        }
+        for (WorldSnapshot.EntityView projectile : snapshot.getAlienProjectiles()) {
+            if (alienAmmo != null) {
+                getAssets().batch().draw(
+                        alienAmmo, projectile.getX(), projectile.getY(),
                         projectile.getWidth(), projectile.getHeight());
             }
         }
@@ -179,9 +187,9 @@ public final class GameScreen extends AbstractGameScreen {
 
     private void drawMeteorites() {
         for (WorldSnapshot.EntityView meteorite : snapshot.getMeteorites()) {
-            Texture texture = assets.getTexture(meteorite.getAssetPath());
+            Texture texture = getAssets().getTexture(meteorite.getAssetPath());
             if (texture != null) {
-                assets.batch().draw(
+                getAssets().batch().draw(
                         texture, meteorite.getX(), meteorite.getY(),
                         meteorite.getWidth(), meteorite.getHeight());
             }
@@ -189,21 +197,28 @@ public final class GameScreen extends AbstractGameScreen {
     }
 
     private void drawHud() {
-        assets.font().draw(assets.batch(), "Vidas: " + snapshot.getLives(), 24f, 770f);
+        Texture lifeTexture = getAssets().getTexture(GameAssets.PLAYER_LIFE_TEXTURE);
+        if (lifeTexture != null) {
+            for (int index = 0; index < snapshot.getLives(); index++) {
+                getAssets().batch().draw(lifeTexture, 24f + index * 28f, 750f, 24f, 24f);
+            }
+        } else {
+            getAssets().font().draw(getAssets().batch(), "Vidas: " + snapshot.getLives(), 24f, 770f);
+        }
 
-        assets.font().draw(
-                assets.batch(),
+        getAssets().font().draw(
+                getAssets().batch(),
                 "Puntaje: " + snapshot.getScore(),
                 24f,
                 718f);
-        assets.font().draw(
-                assets.batch(),
+        getAssets().font().draw(
+                getAssets().batch(),
                 "Nivel " + snapshot.getLevel() + "  Aliens: "
                         + snapshot.getAliensDestroyedInLevel() + "/" + snapshot.getQuotaForLevel(),
                 24f,
                 690f);
-        assets.font().draw(
-                assets.batch(),
+        getAssets().font().draw(
+                getAssets().batch(),
                 "WASD: mover   I: disparar   O: dash   ESC: menu",
                 24f,
                 662f);
@@ -211,9 +226,9 @@ public final class GameScreen extends AbstractGameScreen {
 
     private void drawPhaseMessage() {
         if (snapshot.getPhase() == GamePhase.LEVEL_COMPLETED) {
-            assets.font().draw(assets.batch(), "Nivel superado", 515f, 430f);
-            assets.font().draw(
-                    assets.batch(),
+            getAssets().font().draw(getAssets().batch(), "Nivel superado", 515f, 430f);
+            getAssets().font().draw(
+                    getAssets().batch(),
                     "Presiona cualquier tecla o haz clic para continuar",
                     365f,
                     390f);
@@ -221,11 +236,11 @@ public final class GameScreen extends AbstractGameScreen {
     }
 
     private TextureRegion resolveAlienRegion() {
-        TextureRegion[][] frames = assets.getAlienFrames();
+        TextureRegion[][] frames = getAssets().getAlienFrames();
         if (frames != null && frames.length > 0 && frames[0].length > 1) {
             return frames[0][1];
         }
-        return assets.getAlienStaticRegion();
+        return getAssets().getAlienStaticRegion();
     }
 
     private TextureRegion resolveShipRegion(TextureRegion[][] frames) {
@@ -242,20 +257,21 @@ public final class GameScreen extends AbstractGameScreen {
     }
 
     private void drawFallbackEntities() {
-        boolean shipNeedsFallback = resolveShipRegion(assets.getPlayerFrames()) == null
+        boolean shipNeedsFallback = resolveShipRegion(getAssets().getPlayerFrames()) == null
                 && (!snapshot.isShipInvulnerable()
                         || (((int) (elapsedSeconds * BLINK_STEPS_PER_SECOND)) % 2 == 0));
         boolean aliensNeedFallback = resolveAlienRegion() == null;
-        boolean playerProjectilesNeedFallback = assets.getTexture(GameAssets.PLAYER_AMMO_TEXTURE) == null
+        boolean playerProjectilesNeedFallback = getAssets().getTexture(GameAssets.PLAYER_AMMO_TEXTURE) == null
                 && !snapshot.getPlayerProjectiles().isEmpty();
-        boolean alienProjectilesNeedFallback = !snapshot.getAlienProjectiles().isEmpty();
+        boolean alienProjectilesNeedFallback = getAssets().getTexture(GameAssets.ALIEN_AMMO_TEXTURE) == null
+                && !snapshot.getAlienProjectiles().isEmpty();
         if (!shipNeedsFallback && !aliensNeedFallback
                 && !playerProjectilesNeedFallback && !alienProjectilesNeedFallback) {
             return;
         }
 
-        assets.shapes().setProjectionMatrix(camera.combined);
-        assets.shapes().begin(ShapeType.Filled);
+        getAssets().shapes().setProjectionMatrix(getCamera().combined);
+        getAssets().shapes().begin(ShapeType.Filled);
         if (shipNeedsFallback) {
             drawFallbackRect(snapshot.getShip(), Color.CYAN);
         }
@@ -274,11 +290,11 @@ public final class GameScreen extends AbstractGameScreen {
                 drawFallbackRect(projectile, Color.RED);
             }
         }
-        assets.shapes().end();
+        getAssets().shapes().end();
     }
 
     private void drawFallbackRect(WorldSnapshot.EntityView entity, Color color) {
-        assets.shapes().setColor(color);
-        assets.shapes().rect(entity.getX(), entity.getY(), entity.getWidth(), entity.getHeight());
+        getAssets().shapes().setColor(color);
+        getAssets().shapes().rect(entity.getX(), entity.getY(), entity.getWidth(), entity.getHeight());
     }
 }

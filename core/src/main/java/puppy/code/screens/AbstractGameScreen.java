@@ -11,9 +11,9 @@ import puppy.code.config.GameConfig;
 /** Fija el ciclo de pantalla común (Template Method). */
 public abstract class AbstractGameScreen extends ScreenAdapter {
 
-    protected final GameAssets assets;
-    protected final OrthographicCamera camera;
-    protected final Viewport viewport;
+    private final GameAssets assets;
+    private final OrthographicCamera camera;
+    private final Viewport viewport;
 
     protected AbstractGameScreen(GameAssets assets) {
         if (assets == null) {
@@ -22,6 +22,18 @@ public abstract class AbstractGameScreen extends ScreenAdapter {
         this.assets = assets;
         camera = new OrthographicCamera();
         viewport = new FitViewport(GameConfig.WORLD_WIDTH, GameConfig.WORLD_HEIGHT, camera);
+    }
+
+    protected final GameAssets getAssets() {
+        return assets;
+    }
+
+    protected final OrthographicCamera getCamera() {
+        return camera;
+    }
+
+    protected final Viewport getViewport() {
+        return viewport;
     }
 
     @Override
