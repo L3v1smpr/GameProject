@@ -1,12 +1,8 @@
 # UML del proyecto: Space Navigation
 
-**Rama de referencia:** `feature/overhaul-assets`
-
 **Lenguaje:** Java 11 · **Motor:** LibGDX
 
-Este diagrama describe el código de la rama indicada. El paquete `puppy.code.prototype` conserva el esqueleto anterior para contrastar su organización con el flujo activo, pero no participa en la creación de la partida actual.
-
-## Clases de aplicación, pantallas y recursos
+## Clases de aplicacion, pantallas y recursos
 
 ```mermaid
 classDiagram
@@ -118,7 +114,7 @@ classDiagram
     GameScreen ..> AfterImage
 ```
 
-## Dominio y coordinación de la partida
+## Dominio y coordinacion de la partida
 
 ```mermaid
 classDiagram
@@ -339,10 +335,10 @@ classDiagram
 
 ## GM-6 Singleton
 
-**Problema:** las pantallas comparten texturas, audio y objetos de dibujo; varias instancias podrían duplicar recursos o liberar recursos que todavía se usan.
+**Problema:** las pantallas comparten texturas, audio y objetos de dibujo; varias instancias podrian duplicar recursos o liberar recursos que todavia se usan.
 
-**Contexto:** `SpaceNavigation` crea la aplicación y conecta las dependencias.
-**Solución:** `GameAssets` mantiene una instancia, tiene constructor privado y libera sus recursos en `dispose()`. El punto de composición obtiene esa instancia y la entrega a las pantallas.
+**Contexto:** `SpaceNavigation` crea la aplicacion y conecta las dependencias.
+**Solucion:** `GameAssets` mantiene una instancia, tiene constructor privado y libera sus recursos en `dispose()`. El punto de composicion obtiene esa instancia y la entrega a las pantallas.
 
 ```mermaid
 classDiagram
@@ -359,10 +355,10 @@ classDiagram
 
 ## GM-7 Strategy
 
-**Problema:** las trayectorias y descargas varían por tipo de alien y sector.
+**Problema:** las trayectorias y descargas varian por tipo de alien y sector.
 
 **Contexto:** `Alien` participa en el mundo sin necesitar conocer cada algoritmo de movimiento o ataque.
-**Solución:** recibe los contratos `MovementStrategy` y `AlienAttackStrategy`; `LevelDirector` selecciona las variantes al construir la oleada.
+**Solucion:** recibe los contratos `MovementStrategy` y `AlienAttackStrategy`; `LevelDirector` selecciona las variantes al construir la oleada.
 
 ```mermaid
 classDiagram
@@ -407,10 +403,10 @@ classDiagram
 
 ## GM-8 Template Method
 
-**Problema:** las pantallas necesitan mantener el mismo orden de limpieza, entrada, actualización y dibujo.
+**Problema:** las pantallas necesitan mantener el mismo orden de limpieza, entrada, actualizacion y dibujo.
 
-**Contexto:** menú, partida, Game Over y Victoria comparten el ciclo, pero cada una presenta y actualiza contenido distinto.
-**Solución:** `AbstractGameScreen.render(delta)` fija el algoritmo y delega los pasos variables en métodos protegidos.
+**Contexto:** menu, partida, Game Over y Victoria comparten el ciclo, pero cada una presenta y actualiza contenido distinto.
+**Solucion:** `AbstractGameScreen.render(delta)` fija el algoritmo y delega los pasos variables en metodos protegidos.
 
 ```mermaid
 classDiagram
@@ -439,10 +435,10 @@ classDiagram
 
 ## GM-9 Builder
 
-**Problema:** un alien requiere varios valores que deben formar una configuración válida.
+**Problema:** un alien requiere varios valores que deben formar una configuracion valida.
 
-**Contexto:** los sectores y arquetipos combinan posición, tamaño, vida, movimiento y ataque.
-**Solución:** `AlienBuilder` permite definir esos valores por pasos y los valida en `build()`. `LevelDirector` decide las combinaciones para cada oleada y arquetipo.
+**Contexto:** los sectores y arquetipos combinan posicion, tamano, vida, movimiento y ataque.
+**Solucion:** `AlienBuilder` permite definir esos valores por pasos y los valida en `build()`. `LevelDirector` decide las combinaciones para cada oleada y arquetipo.
 
 ```mermaid
 classDiagram
@@ -473,8 +469,8 @@ classDiagram
 
 ## Notas de lectura
 
-- Los atributos de las instancias se muestran como privados cuando forman parte del estado encapsulado. Las constantes públicas de `GameConfig` se muestran aparte.
+- Los atributos de las instancias se muestran como privados cuando forman parte del estado encapsulado. Las constantes publicas de `GameConfig` se muestran aparte.
 - `GameAssets` carga recursos con mapas propios de `Texture`, `Music` y `Sound`; no usa `AssetManager`.
 - `ScoreRepository` implementa `ScoreStore` y guarda en LibGDX `Preferences`.
 - Los datos que se dibujan durante la partida llegan a las pantallas mediante `WorldSnapshot`; las colecciones expuestas son de solo lectura.
-- `puppy.code.prototype` queda como referencia del código base y no como parte del flujo activo.
+- `puppy.code.prototype` queda como referencia del codigo base y no como parte del flujo activo.
