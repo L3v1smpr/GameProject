@@ -1,48 +1,100 @@
-# Space Navigation
+# Space Navigation - INF2236 Programación Avanzada PUCV
 
-Demo jugable de escritorio en Java 11 y LibGDX para recibir feedback sobre el combate base.
+Demo arcade 2D para escritorio desarrollada en Java 11 con LibGDX 1.12.1. Esta guía explica cómo importar, ejecutar y probar la entrega.
 
-## Ejecutar
+## Requisitos
 
-- Requisito: JDK 11.
-- Windows: gradlew.bat :lwjgl3:run
-- Linux/macOS: ./gradlew :lwjgl3:run
-- Compilar y ejecutar las pruebas disponibles: gradlew.bat test compileJava o ./gradlew test compileJava
+- Oracle JDK 11 u OpenJDK 11 instalado y configurado en `JAVA_HOME`.
+- Gradle Wrapper incluido en el repositorio. No es necesario instalar Gradle por separado.
+- Eclipse o NetBeans con soporte para proyectos Gradle, si se desea trabajar desde un IDE.
 
-Importamos la carpeta raíz como proyecto Gradle existente en Eclipse o NetBeans. Usamos el Gradle Wrapper incluido.
+Comprueba la versión activa desde la raíz del proyecto:
 
-## Partida
+```text
+java -version
+```
 
-Comenzamos con tres vidas. El objetivo es destruir aliens, esquivar sus ataques y completar las cuotas:
+## Ejecutar desde la terminal
 
-| Nivel | Cuota | Vida del alien | Movimiento y ataque |
-| --- | ---: | ---: | --- |
-| 1 | 15 aliens | 1 impacto | Movimiento lineal y un disparo dirigido |
-| 2 | 30 aliens | 2 impactos | Zigzag y dos disparos en V |
-| 3 | 45 aliens | 3 impactos | Zigzag y dos disparos en V |
+Abre una terminal en la carpeta raíz del repositorio.
 
-Al completar los niveles 1 o 2, esperamos una tecla o un clic para continuar. Completar el nivel 3 muestra Victoria. Si perdemos las tres vidas, aparece Game Over. Enter reinicia desde el nivel 1 y Escape vuelve al menú desde las pantallas finales.
+### Windows
+
+```powershell
+.\gradlew.bat :lwjgl3:run
+```
+
+### Linux o macOS
+
+```bash
+./gradlew :lwjgl3:run
+```
+
+Gradle compila los módulos necesarios y abre la ventana del juego. El punto de entrada de escritorio está en el módulo `lwjgl3`.
+
+## Compilar, ejecutar pruebas y crear el JAR
+
+Con Java 11 activo, ejecuta desde la raíz:
+
+```powershell
+.\gradlew.bat test compileJava
+.\gradlew.bat test build
+.\gradlew.bat :lwjgl3:jar
+java -jar .\lwjgl3\build\libs\SpaceNav2024-1.0.0.jar
+```
+
+En Linux o macOS, ejecuta `./gradlew test compileJava`, `./gradlew test build` y `./gradlew :lwjgl3:jar`; luego inicia el archivo con `java -jar ./lwjgl3/build/libs/SpaceNav2024-1.0.0.jar`. El JAR incluye las dependencias de ejecución y usa `puppy.code.lwjgl3.Lwjgl3Launcher` como punto de entrada. Para ejecutar la aplicación durante el desarrollo también se puede usar `:lwjgl3:run`.
+
+## Importar en Eclipse
+
+1. Selecciona **File > Import > Gradle > Existing Gradle Project**.
+2. Indica la carpeta raíz del repositorio, donde están `settings.gradle` y `gradlew.bat`.
+3. Mantén el Gradle Wrapper como distribución de Gradle y selecciona un JDK 11 para el proyecto.
+4. Finaliza la importación y espera la sincronización de los módulos `core` y `lwjgl3`.
+5. Ejecuta la tarea Gradle `:lwjgl3:run` desde la vista de tareas Gradle.
+
+## Importar en NetBeans
+
+1. Selecciona **File > Open Project** y abre la carpeta raíz del repositorio.
+2. Acepta la detección del proyecto Gradle y espera a que termine la sincronización.
+3. Configura JDK 11 como plataforma del proyecto si NetBeans seleccionó otra versión.
+4. En las tareas Gradle del proyecto, ejecuta `:lwjgl3:run`.
 
 ## Controles
 
 | Tecla | Acción |
 | --- | --- |
-| W/A/S/D | Mover la nave en cuatro direcciones y en diagonal |
-| I mantenida | Disparar cada 0,25 segundos |
-| O | Hacer dash e ignorar daño durante 0,15 segundos; recarga de 3 segundos |
-| A-Z | Ingresar iniciales si el puntaje clasifica al Top 3 |
-| Retroceso | Borrar una inicial |
-| Enter | Iniciar, continuar, guardar iniciales o reiniciar |
-| Escape | Volver al menú durante la partida o desde una pantalla final |
+| `W`, `A`, `S`, `D` | Mover la nave en ocho direcciones. El movimiento diagonal se normaliza. |
+| `I` mantenida | Disparar continuamente, con una cadencia de 0,25 s y proyectiles a 450 px/s. |
+| `O` | Activar dash en la dirección de movimiento: 0,15 s, velocidad multiplicada por 3 e invulnerabilidad durante el impulso. Enfriamiento de 3,0 s. |
+| `ENTER` | Iniciar o continuar la partida, confirmar iniciales o reiniciar tras el final. |
+| `ESC` | Volver al menú principal desde la partida o las pantallas finales. |
+| `A` a `Z` | Ingresar iniciales cuando el puntaje puede entrar al Top 3. |
+| `Retroceso` | Borrar la última inicial ingresada. |
 
-El movimiento usa delta y normaliza las diagonales. El dash usa provisionalmente un multiplicador de velocidad de 3; todavía debemos validar ese balance al jugar.
+La nave se mueve a 260 px/s. Al perder una vida reaparece en la posición inicial y obtiene 1,5 s de invulnerabilidad. El respawn limpia los proyectiles del jugador y de los aliens, y conserva aliens, meteoritos, puntaje y progreso del nivel. La partida comienza con tres vidas.
 
-Los aliens disparan cada 1,8 segundos. Perder una vida devuelve la nave a su posición inicial y la protege durante 1,5 segundos. En el respawn limpiamos los proyectiles activos y conservamos aliens, meteoritos, puntaje y progreso del nivel. Destruir un alien suma 100 puntos; los meteoritos destructibles suman 25, 50 o 75 según su tamaño.
+## Niveles y puntuación
 
-## Estructura y estado de esta entrega
+| Nivel | Cuota de aliens | HP por alien | Movimiento | Ataque alienígena |
+| --- | ---: | ---: | --- | --- |
+| 1 | 15 | 1 | Lineal, 90 px/s | Un proyectil dirigido, 220 px/s, cada 1,8 s |
+| 2 | 30 | 2 | Zigzag, 110 px/s | Dos proyectiles en V a 45 grados, 220 px/s, cada 1,8 s |
+| 3 | 45 | 3 | Zigzag, 110 px/s | Dos proyectiles en V a 45 grados, 220 px/s, cada 1,8 s |
 
-GameWorld coordina la partida y expone un WorldSnapshot de solo lectura. PlayerWeapon regula el disparo; CollisionSystem detecta impactos; Alien delega movimiento y ataque en estrategias; AlienBuilder y LevelDirector crean aliens para cada nivel. GameAssets administra recursos compartidos con Singleton y AbstractGameScreen fija el ciclo de renderizado mediante Template Method.
+| Objetivo destruido | Puntaje |
+| --- | ---: |
+| Alien | 100 |
+| Meteorito pequeño | 25 |
+| Meteorito mediano | 50 |
+| Meteorito grande | 75 |
 
-ScoreRepository conserva el Top 3 con LibGDX Preferences. Cuando un resultado supera el tercer puntaje, ingresamos tres letras A-Z en Game Over o Victoria y pulsamos Enter para guardarlo. El menú y las pantallas finales muestran los resultados persistidos en el equipo local.
+Al completar el primer y segundo nivel aparece el estado Nivel superado. Una tecla o clic continúa al siguiente nivel. Completar la cuota del tercero lleva a Victoria; perder las tres vidas lleva a Game Over. Si el resultado califica para el Top 3, ingresamos tres iniciales de `A` a `Z` y pulsamos `ENTER` para guardarlas. La tabla se conserva localmente con LibGDX Preferences bajo `space_navigation_scores`.
 
-GameAssets solo carga MainShip3.png, Rocket2.png, aGreySmall.png, aGreyMedium4.png, aGreyLarge.png, explosion.ogg, hurt.ogg, pop-sound.mp3 y piano-loops.wav. Dibujamos aliens y proyectiles enemigos con formas geométricas. Dejamos intactos assets/ y el código histórico de puppy.code.prototype. No conocemos la fuente original ni la licencia de los recursos permitidos, y el repositorio no contiene un registro verificable de esa información. El UML está en UML_INICIAL.md; la explicación de los requisitos GM y los patrones está en REPORTE_PROYECTO.md.
+## Recursos y estructura
+
+`GameAssets` centraliza la carga y liberación de texturas, fuentes, música y efectos. Los recursos gráficos opcionales que faltan pueden usar alternativas geométricas en la partida o texto en las pantallas finales. No se cambian los archivos de `assets/` ni el código histórico de `puppy.code.prototype`.
+
+El módulo `core` separa aplicación, recursos, comportamientos, configuración, entidades, fábricas, entrada, pantallas, sistemas y mundo. `GameWorld` coordina las reglas; `WorldSnapshot` entrega datos de presentación; `MovementStrategy` y `AlienAttackStrategy` permiten variar comportamientos; `AlienBuilder` y `LevelDirector` componen aliens por nivel. `AbstractGameScreen` fija el ciclo de las pantallas.
+
+El diagrama de clases está en [UML_INICIAL.md](UML_INICIAL.md). La explicación de los requisitos GM-1 a GM-10 está en [REPORTE_PROYECTO.md](REPORTE_PROYECTO.md).

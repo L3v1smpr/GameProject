@@ -1,4 +1,4 @@
-# Space Navigation — UML de la demo jugable
+# Space Navigation - UML de la demo jugable
 
 Nosotros actualizamos este diagrama para reflejar el código integrado en la demo jugable. El menú queda fuera de GamePhase. El Top 3 local se consulta desde el menú y las pantallas finales; cuando el resultado califica, pedimos tres iniciales antes de guardarlo.
 
@@ -14,6 +14,15 @@ classDiagram
     class SpriteBatch {
         <<LibGDX>>
     }
+    class BitmapFont {
+        <<LibGDX>>
+    }
+    class Sound {
+        <<LibGDX>>
+    }
+    class Music {
+        <<LibGDX>>
+    }
     class AssetManager {
         <<LibGDX>>
         +load(path: String, type: Class)
@@ -21,6 +30,12 @@ classDiagram
         +dispose()
     }
     class Rectangle {
+        <<LibGDX>>
+    }
+    class OrthographicCamera {
+        <<LibGDX>>
+    }
+    class Viewport {
         <<LibGDX>>
     }
     class Preferences {
@@ -68,8 +83,18 @@ classDiagram
         -instance: GameAssets
         -manager: AssetManager
         -batch: SpriteBatch
+        -font: BitmapFont
+        -shapes: ShapeRenderer
+        -disposed: boolean
+        -playerFrames: TextureRegion[][]
+        -alienFrames: TextureRegion[][]
+        -alienStaticRegion: TextureRegion
+        -currentMusic: Music
         +getInstance() GameAssets
         +getTexture(path) Texture
+        +getSound(path) Sound
+        +getMusic(path) Music
+        +playSound(path, volume)
         +playMusic(path, loop, volume)
         +dispose()
     }
@@ -86,8 +111,14 @@ classDiagram
 
     class AbstractGameScreen {
         <<abstract>>
-        #assets: GameAssets
+        -assets: GameAssets
+        -camera: OrthographicCamera
+        -viewport: Viewport
+        #getAssets() GameAssets
+        #getCamera() OrthographicCamera
+        #getViewport() Viewport
         +render(delta) final
+        #resize(width, height) final
         #clearScreen()
         #handleInput(delta) abstract
         #update(delta) abstract
@@ -96,7 +127,16 @@ classDiagram
     class MenuScreen {
         -scoreRepository: ScoreRepository
     }
-    class GameScreen
+    class GameScreen {
+        -navigator: ScreenNavigator
+        -world: GameWorld
+        -playerInput: PlayerInput
+        -navigationInput: NavigationInput
+        -afterImages: List~AfterImage~
+        -snapshot: WorldSnapshot
+        +update(delta)
+        +draw(delta)
+    }
     class GameOverScreen {
         -initialsInput: InitialsInput
         -scoreRepository: ScoreRepository
@@ -142,6 +182,9 @@ classDiagram
         -level: int
         -aliensDestroyedInLevel: int
         -phase: GamePhase
+        -playerFiredThisFrame: boolean
+        -entityExplodedThisFrame: boolean
+        -shipHurtThisFrame: boolean
         +update(delta, input)
         +advanceToNextLevel()
         +snapshot() WorldSnapshot
@@ -149,6 +192,8 @@ classDiagram
     }
     class WorldSnapshot {
         -ship: EntityView
+        -shipInvulnerable: boolean
+        -shipDashReady: boolean
         -aliens: List~EntityView~
         -meteorites: List~EntityView~
         -playerProjectiles: List~EntityView~
@@ -156,7 +201,27 @@ classDiagram
         -lives: int
         -score: int
         -level: int
+        -aliensDestroyedInLevel: int
+        -quotaForLevel: int
         -phase: GamePhase
+        -playerFiredThisFrame: boolean
+        -entityExplodedThisFrame: boolean
+        -shipHurtThisFrame: boolean
+        +didPlayerFireThisFrame() boolean
+        +didEntityExplodeThisFrame() boolean
+        +didShipGetHurtThisFrame() boolean
+    }
+    class EntityView {
+        -x: float
+        -y: float
+        -width: float
+        -height: float
+        -assetPath: String
+        +getX() float
+        +getY() float
+        +getWidth() float
+        +getHeight() float
+        +getAssetPath() String
     }
     class GamePhase {
         <<enumeration>>
@@ -257,6 +322,14 @@ classDiagram
         +isEligibleForTop3(score) boolean
         +addScore(name, score) boolean
     }
+    class HighScore {
+        <<nested value object>>
+        -name: String
+        -score: int
+        +getName() String
+        +getScore() int
+        +compareTo(other) int
+    }
 
     Game <|-- SpaceNavigation
     Lwjgl3Launcher --> SpaceNavigation
@@ -267,12 +340,18 @@ classDiagram
     AbstractGameScreen <|-- GameScreen
     AbstractGameScreen <|-- GameOverScreen
     AbstractGameScreen <|-- VictoryScreen
+    AbstractGameScreen *-- OrthographicCamera
+    AbstractGameScreen *-- Viewport
     GameAssets *-- AssetManager
     GameAssets *-- SpriteBatch
+    GameAssets *-- BitmapFont
     GameAssets *-- ShapeRenderer
     GameAssets ..> Texture
     GameAssets ..> TextureRegion
+    GameAssets ..> Sound
+    GameAssets ..> Music
     SpaceNavigation --> GameAssets
+    SpaceNavigation --> GameConfig
     SpaceNavigation --> ScreenNavigator
     SpaceNavigation --> ScoreRepository
     SpaceNavigation --> InitialsInput
@@ -299,13 +378,14 @@ classDiagram
     GameWorld --> LevelDirector
     GameWorld --> WorldSnapshot
     GameWorld --> GamePhase
-    GameEntity ..|> Collidable
+    Collidable <|.. GameEntity
     GameEntity <|-- Ship
     GameEntity <|-- Alien
     GameEntity <|-- Meteorite
     GameEntity <|-- PlayerProjectile
     GameEntity <|-- AlienProjectile
     Collidable ..> Rectangle
+    WorldSnapshot *-- EntityView
     Alien --> MovementStrategy
     Alien --> AlienAttackStrategy
     MovementStrategy <|.. LinearMovementStrategy
@@ -321,6 +401,7 @@ classDiagram
     VictoryScreen --> InitialsInput
     InitialsInput <|.. KeyboardInitialsInput
     ScoreRepository --> Preferences
+    ScoreRepository *-- HighScore
 ```
 
 ## Estado y límites conocidos
