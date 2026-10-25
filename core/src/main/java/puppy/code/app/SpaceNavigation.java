@@ -15,6 +15,7 @@ import puppy.code.screens.MenuScreen;
 import puppy.code.screens.VictoryScreen;
 import puppy.code.systems.CollisionSystem;
 import puppy.code.systems.ScoreRepository;
+import puppy.code.systems.ScoreStore;
 import puppy.code.world.GameWorld;
 import puppy.code.world.WorldSnapshot;
 
@@ -27,7 +28,7 @@ public final class SpaceNavigation extends Game implements ScreenNavigator {
     private PlayerInput playerInput;
     private LevelDirector levelDirector;
     private CollisionSystem collisionSystem;
-    private ScoreRepository scoreRepository;
+    private ScoreStore scoreRepository;
     private GameWorld currentWorld;
 
     @Override

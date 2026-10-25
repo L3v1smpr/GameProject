@@ -81,8 +81,7 @@ public final class GameAssets {
     private TextureRegion[][] alienBomberFrames;
     private TextureRegion alienAmmoRegion;
 
-    public GameAssets() {
-        instance = this;
+    private GameAssets() {
         loadAll();
     }
 
@@ -93,7 +92,7 @@ public final class GameAssets {
         return instance;
     }
 
-    public void loadAll() {
+    private void loadAll() {
         loadTexture(BACKGROUND_TEXTURE);
         loadTexture(PLAYER_SHEET_TEXTURE);
         loadTexture(PLAYER_AMMO_TEXTURE);
@@ -194,7 +193,19 @@ public final class GameAssets {
         return (alienBomberFrames != null) ? alienBomberFrames[firing ? 1 : 0][0] : null;
     }
 
-    public TextureRegion[][] getPlayerFrames() { return playerFrames; }
+    /**
+     * Devuelve el frame solicitado sin exponer la matriz interna del spritesheet.
+     * Las pantallas usan la región solo para dibujarla y no deben modificarla.
+     */
+    public TextureRegion getPlayerFrame(int row, int column) {
+        if (playerFrames == null
+                || row < 0 || row >= playerFrames.length
+                || playerFrames[row] == null
+                || column < 0 || column >= playerFrames[row].length) {
+            return null;
+        }
+        return playerFrames[row][column];
+    }
     public TextureRegion getAlienAmmoRegion() { return alienAmmoRegion; }
     public Texture getTexture(String path) { return textures.get(path); }
     public Sound getSound(String path) { return sounds.get(path); }

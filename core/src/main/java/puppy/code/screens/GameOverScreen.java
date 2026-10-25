@@ -8,7 +8,8 @@ import puppy.code.assets.GameAssets;
 import puppy.code.config.GameConfig;
 import puppy.code.input.InitialsInput;
 import puppy.code.input.NavigationInput;
-import puppy.code.systems.ScoreRepository;
+import puppy.code.systems.HighScore;
+import puppy.code.systems.ScoreStore;
 
 /** Presenta la derrota y permite guardar iniciales si el resultado entra al Top 3. */
 public final class GameOverScreen extends AbstractGameScreen {
@@ -20,7 +21,7 @@ public final class GameOverScreen extends AbstractGameScreen {
     private final ScreenNavigator navigator;
     private final NavigationInput input;
     private final InitialsInput initialsInput;
-    private final ScoreRepository scoreRepository;
+    private final ScoreStore scoreRepository;
     private final int finalScore;
     private final int levelReached;
     private final boolean eligibleForTop3;
@@ -32,7 +33,7 @@ public final class GameOverScreen extends AbstractGameScreen {
             ScreenNavigator navigator,
             NavigationInput input,
             InitialsInput initialsInput,
-            ScoreRepository scoreRepository,
+            ScoreStore scoreRepository,
             int finalScore,
             int levelReached) {
         super(assets);
@@ -125,7 +126,7 @@ public final class GameOverScreen extends AbstractGameScreen {
         }
 
         assets.font().draw(assets.batch(), "Puntaje final: " + finalScore, 520f, 330f);
-        assets.font().draw(assets.batch(), "Nivel alcanzado: " + levelReached, 520f, 300f);
+        assets.font().draw(assets.batch(), "Sector alcanzado: " + levelReached, 520f, 300f);
         drawScoreEntry();
         drawTopScores();
         if (eligibleForTop3 && !scoreSaved) {
@@ -162,9 +163,9 @@ public final class GameOverScreen extends AbstractGameScreen {
 
     private void drawTopScores() {
         assets.font().draw(assets.batch(), "TOP 3 LOCAL", 535f, 165f);
-        List<ScoreRepository.HighScore> scores = scoreRepository.getTopScores();
+        List<HighScore> scores = scoreRepository.getTopScores();
         for (int i = 0; i < scores.size(); i++) {
-            ScoreRepository.HighScore score = scores.get(i);
+            HighScore score = scores.get(i);
             assets.font().draw(
                     assets.batch(),
                     (i + 1) + ". " + score.getName() + "   " + score.getScore(),

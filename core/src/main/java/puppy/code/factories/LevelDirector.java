@@ -21,7 +21,7 @@ import puppy.code.entities.Alien;
 /**
  * Dirige la construcción de las oleadas de cada nivel (Director del patrón Builder).
  */
-public final class LevelDirector {
+public final class LevelDirector implements AlienFactory {
 
     private final AlienAttackStrategy linearAttack;
     private final AlienAttackStrategy vAttack;
@@ -39,6 +39,7 @@ public final class LevelDirector {
         return createWave(level, GameConfig.WAVE_SIZE);
     }
 
+    @Override
     public List<Alien> createWave(int level, int count) {
         if (count <= 0) {
             return Collections.emptyList();
@@ -85,6 +86,7 @@ public final class LevelDirector {
      * - Nivel 2: Ataque alternado aleatorio (recto hacia abajo o apuntando a la nave).
      * - Nivel 3: Disparo en abanico de 3 perdigones dirigido al jugador.
      */
+    @Override
     public Alien createStaticAlien(int level, float x, float targetY) {
         AlienAttackStrategy attack = (level >= GameConfig.LAST_LEVEL) ? spreadAttack : alternatingAttack;
         float spawnY = GameConfig.WORLD_HEIGHT + 15f;
@@ -100,6 +102,7 @@ public final class LevelDirector {
      * Construye un alien bombardero que desciende desde fuera de pantalla y
      * patrulla horizontalmente disparando ráfagas continuas hacia el jugador.
      */
+    @Override
     public Alien createBomberAlien(int level, float x, float cruiseY) {
         float speed = level >= GameConfig.LAST_LEVEL ? 140f : 115f;
         float spawnY = GameConfig.WORLD_HEIGHT + 15f;

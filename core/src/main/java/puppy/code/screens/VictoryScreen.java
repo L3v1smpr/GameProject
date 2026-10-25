@@ -7,7 +7,8 @@ import puppy.code.assets.GameAssets;
 import puppy.code.config.GameConfig;
 import puppy.code.input.InitialsInput;
 import puppy.code.input.NavigationInput;
-import puppy.code.systems.ScoreRepository;
+import puppy.code.systems.HighScore;
+import puppy.code.systems.ScoreStore;
 
 /** Presenta la victoria y permite guardar iniciales si el resultado entra al Top 3. */
 public final class VictoryScreen extends AbstractGameScreen {
@@ -15,7 +16,7 @@ public final class VictoryScreen extends AbstractGameScreen {
     private final ScreenNavigator navigator;
     private final NavigationInput input;
     private final InitialsInput initialsInput;
-    private final ScoreRepository scoreRepository;
+    private final ScoreStore scoreRepository;
     private final int finalScore;
     private final boolean eligibleForTop3;
     private final StringBuilder initials = new StringBuilder(3);
@@ -26,7 +27,7 @@ public final class VictoryScreen extends AbstractGameScreen {
             ScreenNavigator navigator,
             NavigationInput input,
             InitialsInput initialsInput,
-            ScoreRepository scoreRepository,
+            ScoreStore scoreRepository,
             int finalScore) {
         super(assets);
         if (navigator == null || input == null || initialsInput == null || scoreRepository == null) {
@@ -138,9 +139,9 @@ public final class VictoryScreen extends AbstractGameScreen {
 
     private void drawTopScores() {
         assets.font().draw(assets.batch(), "TOP 3 LOCAL", 535f, 195f);
-        List<ScoreRepository.HighScore> scores = scoreRepository.getTopScores();
+        List<HighScore> scores = scoreRepository.getTopScores();
         for (int i = 0; i < scores.size(); i++) {
-            ScoreRepository.HighScore score = scores.get(i);
+            HighScore score = scores.get(i);
             assets.font().draw(
                     assets.batch(),
                     (i + 1) + ". " + score.getName() + "   " + score.getScore(),

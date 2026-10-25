@@ -12,9 +12,9 @@ import puppy.code.entities.Meteorite;
 import puppy.code.entities.MeteoriteSize;
 import puppy.code.entities.PlayerProjectile;
 import puppy.code.entities.Ship;
-import puppy.code.factories.LevelDirector;
+import puppy.code.factories.AlienFactory;
 import puppy.code.input.PlayerInput;
-import puppy.code.systems.CollisionSystem;
+import puppy.code.systems.CollisionDetector;
 import puppy.code.systems.PlayerWeapon;
 
 /**
@@ -22,8 +22,8 @@ import puppy.code.systems.PlayerWeapon;
  */
 public final class GameWorld {
 
-    private final CollisionSystem collisions;
-    private final LevelDirector levelDirector;
+    private final CollisionDetector collisions;
+    private final AlienFactory levelDirector;
     private final PlayerWeapon playerWeapon;
     private final Ship ship;
     private final List<Alien> aliens = new ArrayList<>();
@@ -40,7 +40,7 @@ public final class GameWorld {
     private float alienReinforcementTimer;
     private WorldAudioListener audioListener;
 
-    public GameWorld(LevelDirector levelDirector, CollisionSystem collisions) {
+    public GameWorld(AlienFactory levelDirector, CollisionDetector collisions) {
         if (levelDirector == null || collisions == null) {
             throw new IllegalArgumentException("Los colaboradores de GameWorld no pueden ser null.");
         }

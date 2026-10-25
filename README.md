@@ -1,48 +1,78 @@
 # Space Navigation
 
-Demo jugable de escritorio en Java 11 y LibGDX para recibir feedback sobre el combate base.
+Juego arcade 2D de escritorio hecho con Java 11 y LibGDX. Pilotamos una nave por tres sectores, combatimos aliens y meteoritos y tratamos de completar las cuotas sin perder las tres vidas.
 
-## Ejecutar
+## Requisitos
 
-- Requisito: JDK 11.
-- Windows: gradlew.bat :lwjgl3:run
-- Linux/macOS: ./gradlew :lwjgl3:run
-- Compilar y ejecutar las pruebas disponibles: gradlew.bat test compileJava o ./gradlew test compileJava
+- Oracle JDK 11.
+- Gradle Wrapper incluido en el proyecto.
+- Windows, Linux o macOS con soporte para escritorio.
 
-Importamos la carpeta raíz como proyecto Gradle existente en Eclipse o NetBeans. Usamos el Gradle Wrapper incluido.
+## Abrir y ejecutar
+
+En Windows, desde la carpeta raíz del proyecto:
+
+```powershell
+.\gradlew.bat :lwjgl3:run
+```
+
+En Linux o macOS:
+
+```sh
+./gradlew :lwjgl3:run
+```
+
+Para compilar los módulos y ejecutar las tareas de prueba disponibles:
+
+```powershell
+.\gradlew.bat test compileJava
+```
+
+En Eclipse, importamos la carpeta raíz como un proyecto Gradle existente, esperamos la sincronización y ejecutamos la tarea `lwjgl3:run` desde el panel de tareas Gradle. El lanzador de escritorio es `puppy.code.lwjgl3.Lwjgl3Launcher`.
 
 ## Partida
 
-Comenzamos con tres vidas. El objetivo es destruir aliens, esquivar sus ataques y completar las cuotas:
+Empezamos con tres vidas. Para ganar, destruimos la cuota de aliens de cada sector:
 
-| Nivel | Cuota | Vida del alien | Movimiento y ataque |
-| --- | ---: | ---: | --- |
-| 1 | 15 aliens | 1 impacto | Movimiento lineal y un disparo dirigido |
-| 2 | 30 aliens | 2 impactos | Zigzag y dos disparos en V |
-| 3 | 45 aliens | 3 impactos | Zigzag y dos disparos en V |
+| Sector | Cuota | Resistencia del alien de oleada |
+| --- | ---: | ---: |
+| 1 | 15 | 1 impacto |
+| 2 | 30 | 2 impactos |
+| 3 | 45 | 3 impactos |
 
-Al completar los niveles 1 o 2, esperamos una tecla o un clic para continuar. Completar el nivel 3 muestra Victoria. Si perdemos las tres vidas, aparece Game Over. Enter reinicia desde el nivel 1 y Escape vuelve al menú desde las pantallas finales.
+Los aliens de oleada cambian su movimiento y patrón de disparo por sector. En los sectores dos y tres también aparecen centinelas y bombarderos. Los meteoritos descienden con tamaños y resistencias distintos; no cuentan para la cuota. Destruir un alien suma 100 puntos. Los meteoritos chicos, medianos y grandes suman 25, 50 y 100 puntos.
+
+Al perder una vida, reaparecemos en la posición inicial con 1,5 segundos de invulnerabilidad. El dash dura 0,15 segundos, se recarga en 3 segundos y concede 0,5 segundos adicionales de invulnerabilidad al terminar. El factor de velocidad actual del dash es 3.
+
+Al completar los dos primeros sectores aparece «Nivel Superado» y esperamos una tecla o un clic para continuar. El tercero lleva a Victoria. Si perdemos las tres vidas, aparece Game Over. El Top 3 se guarda localmente con las preferencias de LibGDX; si nuestra puntuación califica, ingresamos tres iniciales.
 
 ## Controles
 
 | Tecla | Acción |
 | --- | --- |
 | W/A/S/D | Mover la nave en cuatro direcciones y en diagonal |
-| I mantenida | Disparar cada 0,25 segundos |
-| O | Hacer dash e ignorar daño durante 0,15 segundos; recarga de 3 segundos |
-| A-Z | Ingresar iniciales si el puntaje clasifica al Top 3 |
-| Retroceso | Borrar una inicial |
-| Enter | Iniciar, continuar, guardar iniciales o reiniciar |
-| Escape | Volver al menú durante la partida o desde una pantalla final |
+| I | Disparar mientras la mantenemos presionada |
+| O | Hacer dash |
+| Escape | Abrir la pausa durante la partida; volver al menú desde las pantallas finales |
+| Flechas o W/A/S/D | Recorrer las opciones de pausa |
+| Enter | Confirmar una opción; iniciar desde el menú; guardar iniciales o reiniciar desde una pantalla final |
+| A-Z | Ingresar iniciales cuando la puntuación califica |
+| Retroceso | Borrar la última inicial |
 
-El movimiento usa delta y normaliza las diagonales. El dash usa provisionalmente un multiplicador de velocidad de 3; todavía debemos validar ese balance al jugar.
+Desde la pausa podemos reanudar, ajustar volúmenes o volver al menú. Para pruebas, la secuencia ↑ ↑ ↓ ↓ ← → ← → I O durante la pausa habilita el menú secreto de depuración, donde podemos alternar el modo dios (invulnerabilidad).
 
-Los aliens disparan cada 1,8 segundos. Perder una vida devuelve la nave a su posición inicial y la protege durante 1,5 segundos. En el respawn limpiamos los proyectiles activos y conservamos aliens, meteoritos, puntaje y progreso del nivel. Destruir un alien suma 100 puntos; los meteoritos destructibles suman 25, 50 o 75 según su tamaño.
+## Código y diseño
 
-## Estructura y estado de esta entrega
+El módulo `core` contiene las reglas, entidades, entradas, pantallas y sistemas; `lwjgl3` contiene el lanzador de escritorio. `GameWorld` coordina la simulación y entrega un `WorldSnapshot`; las pantallas presentan ese estado.
 
-GameWorld coordina la partida y expone un WorldSnapshot de solo lectura. PlayerWeapon regula el disparo; CollisionSystem detecta impactos; Alien delega movimiento y ataque en estrategias; AlienBuilder y LevelDirector crean aliens para cada nivel. GameAssets administra recursos compartidos con Singleton y AbstractGameScreen fija el ciclo de renderizado mediante Template Method.
+- **Singleton:** `GameAssets` comparte y libera los recursos gráficos y de audio.
+- **Strategy:** `Alien` usa estrategias intercambiables de movimiento y ataque.
+- **Template Method:** `AbstractGameScreen` fija el ciclo de renderizado de las pantallas.
+- **Builder:** `AlienBuilder` valida la configuración y `LevelDirector` prepara las oleadas.
+- **SOLID y GRASP:** separamos las reglas del dibujo, usamos contratos para entradas, colisiones, creación de aliens y puntajes, y dejamos la composición de dependencias en `SpaceNavigation`.
 
-ScoreRepository conserva el Top 3 con LibGDX Preferences. Cuando un resultado supera el tercer puntaje, ingresamos tres letras A-Z en Game Over o Victoria y pulsamos Enter para guardarlo. El menú y las pantallas finales muestran los resultados persistidos en el equipo local.
+El diagrama de clases está en [UML_INICIAL.md](UML_INICIAL.md). La explicación punto por punto de los requisitos GM está en [REPORTE_PROYECTO.md](REPORTE_PROYECTO.md). Los bocetos de menú, partida y pantallas finales están en `Planificacion/Bocetos/`.
 
-Volvimos a activar los recursos gráficos y de audio que ya estaban en assets/: player_sheet.png, alien_sheet.png, alien_static.png, player_ammo.png, alien_ammo.png, player_life.png, los tres tamaños de meteorito y los banners de Game Over y Victoria. La partida usa background_music.MP3 y Game Over usa gameover.mp3; mantenemos explosion.ogg, hurt.ogg y pop-sound.mp3 como efectos disponibles. No modificamos los archivos de assets/ ni el código histórico de puppy.code.prototype. No conocemos la fuente original ni la licencia de esos recursos, y el repositorio no contiene un registro verificable de esa atribución. El UML está en UML_INICIAL.md; la explicación de los requisitos GM y los patrones está en REPORTE_PROYECTO.md.
+## Recursos
+
+Las imágenes y los sonidos usados por el juego están organizados bajo `assets/player`, `assets/aliens`, `assets/obstacles`, `assets/ui` y `assets/audio`. Aún no tenemos información verificable sobre la fuente y la licencia de algunos recursos; dejamos ese antecedente señalado en el reporte. El código legado del primer prototipo sigue en `core/src/main/java/puppy/code/prototype`; no forma parte del flujo activo de pantallas.

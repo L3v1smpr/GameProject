@@ -388,7 +388,7 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
             dashEffectTimer = Math.max(0f, dashEffectTimer - delta);
             dashSpawnCooldown -= delta;
             if (dashSpawnCooldown <= 0f) {
-                TextureRegion region = resolveShipRegion(assets.getPlayerFrames());
+                TextureRegion region = resolveShipRegion();
                 if (region != null) {
                     WorldSnapshot.EntityView ship = snapshot.getShip();
                     afterImages.add(new AfterImage(
@@ -845,7 +845,7 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
         }
 
         WorldSnapshot.EntityView ship = snapshot.getShip();
-        TextureRegion region = resolveShipRegion(assets.getPlayerFrames());
+        TextureRegion region = resolveShipRegion();
         boolean visible = !snapshot.isShipInvulnerable()
                 || (((int) (elapsedSeconds * BLINK_STEPS_PER_SECOND)) % 2 == 0);
         if (region != null && visible) {
@@ -990,22 +990,17 @@ public final class GameScreen extends AbstractGameScreen implements WorldAudioLi
                 662f);
     }
 
-    private TextureRegion resolveShipRegion(TextureRegion[][] frames) {
-        if (frames == null || frames.length == 0 || frames[0].length == 0) {
-            return null;
-        }
-
-        int row = playerInput.firePressed() && frames.length > 1 ? 1 : 0;
+    private TextureRegion resolveShipRegion() {
+        int row = playerInput.firePressed() ? 1 : 0;
         float dirX = playerInput.movementDirection().x;
         int column = dirX < -0.1f ? 0 : dirX > 0.1f ? 2 : 1;
-        int safeRow = Math.min(row, frames.length - 1);
-        int safeColumn = Math.max(0, Math.min(column, frames[safeRow].length - 1));
-        return frames[safeRow][safeColumn];
+        TextureRegion region = assets.getPlayerFrame(row, column);
+        return region != null || row == 0 ? region : assets.getPlayerFrame(0, column);
     }
 
     private void drawFallbackEntities() {
         boolean shipNeedsFallback = snapshot.getLives() > 0
-                && resolveShipRegion(assets.getPlayerFrames()) == null
+                && resolveShipRegion() == null
                 && (!snapshot.isShipInvulnerable()
                         || (((int) (elapsedSeconds * BLINK_STEPS_PER_SECOND)) % 2 == 0));
         boolean aliensNeedFallback = assets.getAlienStaticRegion() == null;
