@@ -16,6 +16,7 @@ public final class WorldSnapshot {
     private final EntityView ship;
     private final boolean shipInvulnerable;
     private final boolean shipDashReady;
+    private final float dashCooldownProgress;
     private final List<EntityView> aliens;
     private final List<EntityView> playerProjectiles;
     private final List<EntityView> alienProjectiles;
@@ -26,9 +27,7 @@ public final class WorldSnapshot {
     private final int aliensDestroyedInLevel;
     private final int quotaForLevel;
     private final GamePhase phase;
-    private final boolean playerFiredThisFrame;
-    private final boolean entityExplodedThisFrame;
-    private final boolean shipHurtThisFrame;
+    private final boolean godMode;
 
     WorldSnapshot(
             Ship ship,
@@ -41,13 +40,12 @@ public final class WorldSnapshot {
             int level,
             int aliensDestroyedInLevel,
             int quotaForLevel,
-            GamePhase phase,
-            boolean playerFiredThisFrame,
-            boolean entityExplodedThisFrame,
-            boolean shipHurtThisFrame) {
+            GamePhase phase, 
+            boolean godMode) {
         this.ship = EntityView.from(ship);
         this.shipInvulnerable = ship.isInvulnerable();
         this.shipDashReady = ship.canDash();
+        this.dashCooldownProgress = ship.getDashCooldownProgress();
         this.aliens = viewsOf(aliens);
         this.playerProjectiles = viewsOf(playerProjectiles);
         this.alienProjectiles = viewsOf(alienProjectiles);
@@ -58,9 +56,7 @@ public final class WorldSnapshot {
         this.aliensDestroyedInLevel = aliensDestroyedInLevel;
         this.quotaForLevel = quotaForLevel;
         this.phase = phase;
-        this.playerFiredThisFrame = playerFiredThisFrame;
-        this.entityExplodedThisFrame = entityExplodedThisFrame;
-        this.shipHurtThisFrame = shipHurtThisFrame;
+        this.godMode = godMode;
     }
 
     private static <T extends GameEntity> List<EntityView> viewsOf(List<T> entities) {
@@ -81,6 +77,10 @@ public final class WorldSnapshot {
 
     public boolean isShipDashReady() {
         return shipDashReady;
+    }
+
+    public float getDashCooldownProgress() {
+        return dashCooldownProgress;
     }
 
     public List<EntityView> getAliens() {
@@ -122,20 +122,11 @@ public final class WorldSnapshot {
     public GamePhase getPhase() {
         return phase;
     }
-
-    public boolean didPlayerFireThisFrame() {
-        return playerFiredThisFrame;
+    
+    public boolean isGodMode() {
+        return godMode;
     }
 
-    public boolean didEntityExplodeThisFrame() {
-        return entityExplodedThisFrame;
-    }
-
-    public boolean didShipGetHurtThisFrame() {
-        return shipHurtThisFrame;
-    }
-
-    /** Valor inmutable; el mundo no expone sus entidades ni colecciones mutables. */
     public static final class EntityView {
 
         private final float x;
@@ -143,21 +134,62 @@ public final class WorldSnapshot {
         private final float width;
         private final float height;
         private final String assetPath;
+        private final float rotation;
+        private final boolean firing;
+        private final boolean hurt;
+        private final boolean isStatic;
+        private final boolean isBomber;
 
-        private EntityView(float x, float y, float width, float height, String assetPath) {
+        private EntityView(
+                float x,
+                float y,
+                float width,
+                float height,
+                String assetPath,
+                float rotation,
+                boolean firing,
+                boolean hurt,
+                boolean isStatic,
+                boolean isBomber) {
             this.x = x;
             this.y = y;
             this.width = width;
             this.height = height;
             this.assetPath = assetPath;
+            this.rotation = rotation;
+            this.firing = firing;
+            this.hurt = hurt;
+            this.isStatic = isStatic;
+            this.isBomber = isBomber;
         }
 
         private static EntityView from(GameEntity entity) {
             String assetPath = entity instanceof Meteorite
                     ? ((Meteorite) entity).getAssetPath()
                     : null;
+            float rotation = entity instanceof AlienProjectile
+                    ? ((AlienProjectile) entity).getRotation()
+                    : 0f;
+            boolean firing = entity instanceof Alien
+                    ? ((Alien) entity).isFiring()
+                    : false;
+            boolean isStatic = entity instanceof Alien
+                    ? ((Alien) entity).isStatic()
+                    : false;
+            boolean isBomber = entity instanceof Alien
+                    ? ((Alien) entity).isBomber()
+                    : false;
             return new EntityView(
-                    entity.getX(), entity.getY(), entity.getWidth(), entity.getHeight(), assetPath);
+                    entity.getX(),
+                    entity.getY(),
+                    entity.getWidth(),
+                    entity.getHeight(),
+                    assetPath,
+                    rotation,
+                    firing,
+                    entity.isHurt(),
+                    isStatic,
+                    isBomber);
         }
 
         public float getX() {
@@ -178,6 +210,26 @@ public final class WorldSnapshot {
 
         public String getAssetPath() {
             return assetPath;
+        }
+
+        public float getRotation() {
+            return rotation;
+        }
+
+        public boolean isFiring() {
+            return firing;
+        }
+
+        public boolean isHurt() {
+            return hurt;
+        }
+
+        public boolean isStatic() {
+            return isStatic;
+        }
+
+        public boolean isBomber() {
+            return isBomber;
         }
     }
 }

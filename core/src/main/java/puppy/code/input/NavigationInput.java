@@ -11,4 +11,12 @@ public interface NavigationInput {
 
     /** Indica si se presionó una tecla o un botón del mouse en este cuadro. */
     boolean anyActionJustPressed();
+
+    boolean upJustPressed();
+
+    boolean downJustPressed();
+
+    boolean leftJustPressed();
+
+    boolean rightJustPressed();
 }

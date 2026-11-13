@@ -29,10 +29,7 @@ allprojects {
 
 configure(subprojects) {
   apply plugin: 'java-library'
-  java {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
-  }
+  sourceCompatibility = 11
 
   compileJava {
     options.incremental = true

@@ -4,8 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 import puppy.code.entities.Collidable;
 
-public final class CollisionSystem {
+public final class CollisionSystem implements CollisionDetector {
 
+    @Override
     public boolean collides(Collidable first, Collidable second) {
         if (first == null || second == null) {
             throw new IllegalArgumentException("Los objetos a comparar no pueden ser null.");

@@ -4,21 +4,22 @@ import java.util.List;
 import puppy.code.app.ScreenNavigator;
 import puppy.code.assets.GameAssets;
 import puppy.code.input.NavigationInput;
-import puppy.code.systems.ScoreRepository;
+import puppy.code.systems.HighScore;
+import puppy.code.systems.ScoreStore;
 
 /** Presenta el menú, el Top 3 persistente y delega las transiciones a la aplicación. */
 public final class MenuScreen extends AbstractGameScreen {
 
     private final ScreenNavigator navigator;
     private final NavigationInput navigationInput;
-    private final ScoreRepository scoreRepository;
+    private final ScoreStore scoreRepository;
     private boolean startRequested;
 
     public MenuScreen(
             GameAssets assets,
             ScreenNavigator navigator,
             NavigationInput navigationInput,
-            ScoreRepository scoreRepository) {
+            ScoreStore scoreRepository) {
         super(assets);
         if (navigator == null || navigationInput == null || scoreRepository == null) {
             throw new IllegalArgumentException("Los servicios de MenuScreen no pueden ser null.");
@@ -42,22 +43,22 @@ public final class MenuScreen extends AbstractGameScreen {
 
     @Override
     protected void draw(float delta) {
-        getAssets().batch().setProjectionMatrix(getCamera().combined);
-        getAssets().batch().begin();
-        getAssets().font().draw(getAssets().batch(), "SPACE NAVIGATION", 470f, 455f);
-        getAssets().font().draw(getAssets().batch(), "Presiona ENTER para comenzar", 455f, 390f);
-        getAssets().font().draw(getAssets().batch(), "WASD: mover   I: disparar   O: dash", 420f, 345f);
+        assets.batch().setProjectionMatrix(camera.combined);
+        assets.batch().begin();
+        assets.font().draw(assets.batch(), "SPACE NAVIGATION", 470f, 455f);
+        assets.font().draw(assets.batch(), "Presiona ENTER para comenzar", 455f, 390f);
+        assets.font().draw(assets.batch(), "WASD: mover   I: disparar   O: dash   ESC: pausa/menu", 360f, 345f);
         drawTopScores();
-        getAssets().batch().end();
+        assets.batch().end();
     }
 
     private void drawTopScores() {
-        getAssets().font().draw(getAssets().batch(), "TOP 3 LOCAL", 530f, 275f);
-        List<ScoreRepository.HighScore> scores = scoreRepository.getTopScores();
+        assets.font().draw(assets.batch(), "TOP 3 LOCAL", 530f, 275f);
+        List<HighScore> scores = scoreRepository.getTopScores();
         for (int i = 0; i < scores.size(); i++) {
-            ScoreRepository.HighScore score = scores.get(i);
-            getAssets().font().draw(
-                    getAssets().batch(),
+            HighScore score = scores.get(i);
+            assets.font().draw(
+                    assets.batch(),
                     (i + 1) + ". " + score.getName() + "   " + score.getScore(),
                     520f,
                     245f - i * 28f);

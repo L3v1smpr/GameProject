@@ -4,7 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.math.Vector2;
 
-/** Traduce las teclas WASD, I (disparo) y O (dash) a comandos del jugador. */
+/** Traduce las teclas WASD, I (disparo) y O (dash) a comandos de combate del jugador. */
 public final class KeyboardPlayerInput implements PlayerInput {
 
     @Override
@@ -35,6 +35,11 @@ public final class KeyboardPlayerInput implements PlayerInput {
     @Override
     public boolean firePressed() {
         return Gdx.input.isKeyPressed(Input.Keys.I);
+    }
+
+    @Override
+    public boolean fireJustPressed() {
+        return Gdx.input.isKeyJustPressed(Input.Keys.I);
     }
 
     @Override

@@ -9,5 +9,7 @@ public interface PlayerInput {
 
     boolean firePressed();
 
+    boolean fireJustPressed();
+
     boolean dashJustPressed();
 }

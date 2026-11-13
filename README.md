@@ -1,100 +1,141 @@
-# Space Navigation - INF2236 Programación Avanzada PUCV
+# Space Navigation — INF2236 Programación Avanzada PUCV
 
-Demo arcade 2D para escritorio desarrollada en Java 11 con LibGDX 1.12.1. Esta guía explica cómo importar, ejecutar y probar la entrega.
+**Pontificia Universidad Católica de Valparaíso**  
+**Escuela de Ingeniería Informática**  
+**Asignatura:** INF2236 - Programación Avanzada  
+**Docente:** Claudio Cubillos  
+**Semestre:** 2026-2  
+**Repositorio Oficial:** [https://github.com/L3v1smpr/GameProject.git](https://github.com/L3v1smpr/GameProject.git) (Rama: `main`)
 
-## Requisitos
+**Integrantes:**
+* Elvis Peñaloza (L3v1smpr)
+* Cristian Ávalos (NotChinoski)
+* Alex Reyes (MrLynel)
 
-- Oracle JDK 11 u OpenJDK 11 instalado y configurado en `JAVA_HOME`.
-- Gradle Wrapper incluido en el repositorio. No es necesario instalar Gradle por separado.
-- Eclipse o NetBeans con soporte para proyectos Gradle, si se desea trabajar desde un IDE.
+---
 
-Comprueba la versión activa desde la raíz del proyecto:
+Demo arcade 2D para escritorio desarrollada en Java 11 con LibGDX 1.12.1. Esta guía detalla los requisitos, pasos de importación, compilación y controles del juego.
 
-```text
+> **Nota sobre el código base (`puppy.code.prototype`):**  
+> El paquete `puppy.code.prototype` se conserva intacto en el repositorio exclusivamente como respaldo empírico para el análisis comparativo de ingeniería de software requerido en **GM-2**. El flujo de ejecución del videojuego inicia en `puppy.code.app.SpaceNavigation`.
+
+---
+
+## Requisitos del Sistema
+
+* **Java:** Oracle JDK 11 u OpenJDK 11 instalado y configurado en la variable de entorno `JAVA_HOME`.
+* **Gradle:** Wrapper incluido en el repositorio (`gradlew` y `gradlew.bat`). No requiere instalación externa de Gradle.
+* **IDE compatible:** Eclipse o NetBeans con soporte para proyectos Gradle (opcional si se ejecuta desde consola).
+
+Verificación de la versión activa de Java:
+
+```
 java -version
 ```
+## Compilar y Ejecutar desde la Terminal
 
-## Ejecutar desde la terminal
+Abre una terminal en la carpeta raíz del repositorio y ejecuta los comandos según tu sistema operativo.
 
-Abre una terminal en la carpeta raíz del repositorio.
-
-### Windows
-
-```powershell
-.\gradlew.bat :lwjgl3:run
+### En Windows (CMD o PowerShell)
 ```
-
-### Linux o macOS
-
-```bash
-./gradlew :lwjgl3:run
-```
-
-Gradle compila los módulos necesarios y abre la ventana del juego. El punto de entrada de escritorio está en el módulo `lwjgl3`.
-
-## Compilar, ejecutar pruebas y crear el JAR
-
-Con Java 11 activo, ejecuta desde la raíz:
-
-```powershell
-.\gradlew.bat test compileJava
 .\gradlew.bat test build
-.\gradlew.bat :lwjgl3:jar
-java -jar .\lwjgl3\build\libs\SpaceNav2024-1.0.0.jar
+.\gradlew.bat lwjgl3:run
 ```
 
-En Linux o macOS, ejecuta `./gradlew test compileJava`, `./gradlew test build` y `./gradlew :lwjgl3:jar`; luego inicia el archivo con `java -jar ./lwjgl3/build/libs/SpaceNav2024-1.0.0.jar`. El JAR incluye las dependencias de ejecución y usa `puppy.code.lwjgl3.Lwjgl3Launcher` como punto de entrada. Para ejecutar la aplicación durante el desarrollo también se puede usar `:lwjgl3:run`.
+### En Linux o macOS
+```
+./gradlew test build
+./gradlew lwjgl3:run
+```
 
-## Importar en Eclipse
+### Generar y ejecutar el archivo JAR independiente
 
-1. Selecciona **File > Import > Gradle > Existing Gradle Project**.
-2. Indica la carpeta raíz del repositorio, donde están `settings.gradle` y `gradlew.bat`.
-3. Mantén el Gradle Wrapper como distribución de Gradle y selecciona un JDK 11 para el proyecto.
-4. Finaliza la importación y espera la sincronización de los módulos `core` y `lwjgl3`.
-5. Ejecuta la tarea Gradle `:lwjgl3:run` desde la vista de tareas Gradle.
+En Linux o macOS:
 
-## Importar en NetBeans
+```
+./gradlew lwjgl3:jar
+java -jar lwjgl3/build/libs/SpaceNav2024-1.0.0.jar
+```
 
-1. Selecciona **File > Open Project** y abre la carpeta raíz del repositorio.
-2. Acepta la detección del proyecto Gradle y espera a que termine la sincronización.
-3. Configura JDK 11 como plataforma del proyecto si NetBeans seleccionó otra versión.
-4. En las tareas Gradle del proyecto, ejecuta `:lwjgl3:run`.
+En Windows:
 
-## Controles
+```
+.\gradlew.bat lwjgl3:jar
+java -jar lwjgl3/build/libs/SpaceNav2024-1.0.0.jar
+```
 
-| Tecla | Acción |
-| --- | --- |
-| `W`, `A`, `S`, `D` | Mover la nave en ocho direcciones. El movimiento diagonal se normaliza. |
-| `I` mantenida | Disparar continuamente, con una cadencia de 0,25 s y proyectiles a 450 px/s. |
-| `O` | Activar dash en la dirección de movimiento: 0,15 s, velocidad multiplicada por 3 e invulnerabilidad durante el impulso. Enfriamiento de 3,0 s. |
-| `ENTER` | Iniciar o continuar la partida, confirmar iniciales o reiniciar tras el final. |
-| `ESC` | Volver al menú principal desde la partida o las pantallas finales. |
-| `A` a `Z` | Ingresar iniciales cuando el puntaje puede entrar al Top 3. |
-| `Retroceso` | Borrar la última inicial ingresada. |
+## Importar en IDEs
 
-La nave se mueve a 260 px/s. Al perder una vida reaparece en la posición inicial y obtiene 1,5 s de invulnerabilidad. El respawn limpia los proyectiles del jugador y de los aliens, y conserva aliens, meteoritos, puntaje y progreso del nivel. La partida comienza con tres vidas.
+### Eclipse
 
-## Niveles y puntuación
+1. Selecciona File > Import > Gradle > Existing Gradle Project.
+2. Indica la carpeta raíz del repositorio (donde se encuentran `settings.gradle` y `gradlew.bat`).
+3. Manten la opcion Gradle Wrapper como distribucion y asegurate de usar un JDK 11.
+4. Finaliza la importación, espera a que sincronicen los modulos `core` y `lwjgl3`, y ejecuta la tarea `lwjgl3:run` desde la pestaña Gradle Tasks.
 
-| Nivel | Cuota de aliens | HP por alien | Movimiento | Ataque alienígena |
-| --- | ---: | ---: | --- | --- |
-| 1 | 15 | 1 | Lineal, 90 px/s | Un proyectil dirigido, 220 px/s, cada 1,8 s |
-| 2 | 30 | 2 | Zigzag, 110 px/s | Dos proyectiles en V a 45 grados, 220 px/s, cada 1,8 s |
-| 3 | 45 | 3 | Zigzag, 110 px/s | Dos proyectiles en V a 45 grados, 220 px/s, cada 1,8 s |
+### NetBeans
 
-| Objetivo destruido | Puntaje |
-| --- | ---: |
-| Alien | 100 |
-| Meteorito pequeño | 25 |
-| Meteorito mediano | 50 |
-| Meteorito grande | 75 |
+1. Selecciona File > Open Project y abre la carpeta raiz del repositorio.
+2. Acepta la detección automática del proyecto Gradle y espera la sincronizacion.
+3. Verifica en las propiedades del proyecto que la plataforma Java seleccionada sea JDK 11.
+4. Ejecuta la tarea `lwjgl3:run` en las tareas Gradle del proyecto.
 
-Al completar el primer y segundo nivel aparece el estado Nivel superado. Una tecla o clic continúa al siguiente nivel. Completar la cuota del tercero lleva a Victoria; perder las tres vidas lleva a Game Over. Si el resultado califica para el Top 3, ingresamos tres iniciales de `A` a `Z` y pulsamos `ENTER` para guardarlas. La tabla se conserva localmente con LibGDX Preferences bajo `space_navigation_scores`.
+## Controles de Juego
 
-## Recursos y estructura
+* **W, A, S, D:** Mover la nave en ocho direcciones (velocidad de 390 px/s con vector diagonal normalizado).
+* **I (mantenida):** Disparo continuo automático con cadencia de 0.25 s y proyectiles a 450 px/s.
+* **O:** Activar Dash defensivo en la dirección de movimiento: multiplica la velocidad por 3 durante 0.15 s, otorga invulnerabilidad durante el impulso más 0.5 s de gracia post-dash, y tiene 3.0 s de enfriamiento.
+* **ENTER:** Confirmar selección en menús, iniciar partida, guardar iniciales en el Top 3 o reiniciar tras una derrota.
+* **ESC:** Pausar la partida (despliega el menú modal con opciones de audio) o volver al menú principal.
+* **Flechas / WASD:** Navegar por las opciones del menú de pausa y ajustar el volumen de música y efectos sonoros (con A/D o Izquierda/Derecha).
+* **A a Z:** Ingresar las 3 iniciales cuando la puntuación final clasifica al Top 3 local.
+* **Retroceso:** Borrar el último carácter ingresado en el registro de récord.
 
-`GameAssets` centraliza la carga y liberación de texturas, fuentes, música y efectos. Reactivamos los sprites ya incluidos en `assets/`: jugador, alienígenas, proyectiles, vidas, meteoritos y banners de Game Over y Victoria. La partida usa `background_music.MP3` y Game Over usa `gameover.mp3`; si algún recurso opcional falta, se mantienen alternativas geométricas o texto. No se modifican los archivos de `assets/` ni el código histórico de `puppy.code.prototype`. La fuente y licencia originales de los recursos no están identificadas en el repositorio.
+>**Secreto (Menú Debug / Código Konami):** Con el juego en pausa (ESC), ingresa la secuencia **Arriba, Arriba, Abajo, Abajo, Izquierda, Derecha, Izquierda, Derecha, I, O** para desbloquear el submenú DEBUG y alternar el Modo Dios (invulnerabilidad permanente).
 
-El módulo `core` separa aplicación, recursos, comportamientos, configuración, entidades, fábricas, entrada, pantallas, sistemas y mundo. `GameWorld` coordina las reglas; `WorldSnapshot` entrega datos de presentación; `MovementStrategy` y `AlienAttackStrategy` permiten variar comportamientos; `AlienBuilder` y `LevelDirector` componen aliens por nivel. `AbstractGameScreen` fija el ciclo de las pantallas.
+## Reglas, Sectores y Puntuación
 
-El diagrama de clases está en [UML_INICIAL.md](UML_INICIAL.md). La explicación de los requisitos GM-1 a GM-10 está en [REPORTE_PROYECTO.md](REPORTE_PROYECTO.md).
+La partida comienza con 3 vidas y consta de 3 sectores espaciales (niveles) cuya progresión se rige por cuotas de enemigos destruidos.
+
+### Progresión por Sectores
+
+* **Sector 1:**
+  * **Cuota:** 15 aliens.
+  * **Resistencia:** 1 HP por alien.
+  * **Movimiento:** Descenso lineal con velocidad variada (base 90 px/s).
+  * **Ataque enemigo:** Disparo lineal vertical hacia abajo (220 px/s).
+
+
+* **Sector 2:**
+  * **Cuota:** 30 aliens.
+  * **Resistencia:** 2 HP por alien.
+  * **Movimiento:** Zigzag (base 110 px/s), Centinelas estáticos y Bombarderos horizontales.
+  * **Ataque enemigo:** Disparo en V (45 grados), ataque alternado (recto/apuntado) y ráfagas de 6 tiros.
+
+
+* **Sector 3:**
+  * **Cuota:** 45 aliens.
+  * **Resistencia:** 3 HP por alien.
+  * **Movimiento:** Zigzag (base 110 px/s), Centinelas estáticos y alta frecuencia de Bombarderos.
+  * **Ataque enemigo:** Disparo en V (45 grados), abanico triple (Spread a 15 grados) y ráfagas continuas.
+
+### Puntuación y Obstáculos
+
+* **Alien (cualquier variante):** 1 / 2 / 3 HP (según sector) — **100 pts**.
+* **Meteorito Pequeño:** 1 HP — **25 pts**.
+* **Meteorito Mediano:** 2 HP — **50 pts**.
+* **Meteorito Grande:** 3 HP — **100 pts**.
+
+### Mecánicas de Partida
+
+* **Pérdida de vida y Respawn:** Si la nave recibe un impacto o choca contra un alien o meteorito sin estar invulnerable, pierde una vida, se activa un efecto de sacudida de cámara (Screen Shake) y reaparece en su posición inicial con 1.5 s de invulnerabilidad, limpiando los proyectiles activos en pantalla.
+* **Persistencia del Top 3:** Al terminar la partida (Victoria o Game Over), si el puntaje supera al tercer lugar registrado, el jugador puede ingresar 3 iniciales (A-Z). El ranking se guarda localmente mediante Preferences de LibGDX bajo el identificador `space_navigation_scores`.
+
+---
+
+## Estructura y Documentación
+
+* El paquete histórico `puppy.code.prototype` se conserva intacto para el contraste arquitectónico (**GM-2**).
+* Los recursos gráficos y sonoros están organizados en `assets/` (`player/`, `aliens/`, `obstacles/`, `ui/`, `audio/music/` y `audio/sfx/`) y son administrados por el Singleton `GameAssets`.
+* El diagrama de clases UML completo se encuentra en [UML.md](UML.md).
+* El desarrollo detallado de los requerimientos GM-1 a GM-10 se encuentra en [REPORTE_PROYECTO.md](REPORTE_PROYECTO.md).

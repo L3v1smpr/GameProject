@@ -7,39 +7,17 @@ import java.util.Collections;
 import java.util.List;
 
 /** Encapsula la persistencia local del Top 3 usando LibGDX Preferences. */
-public final class ScoreRepository {
+public final class ScoreRepository implements ScoreStore {
 
     private static final String PREFS_NAME = "space_navigation_scores";
     private final Preferences prefs;
-
-    public static final class HighScore implements Comparable<HighScore> {
-        private final String name;
-        private final int score;
-
-        public HighScore(String name, int score) {
-            this.name = name;
-            this.score = score;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public int getScore() {
-            return score;
-        }
-
-        @Override
-        public int compareTo(HighScore other) {
-            return Integer.compare(other.score, this.score);
-        }
-    }
 
     public ScoreRepository() {
         this.prefs = Gdx.app.getPreferences(PREFS_NAME);
     }
 
     /** Obtiene la lista ordenada del Top 3 de puntajes. */
+    @Override
     public List<HighScore> getTopScores() {
         List<HighScore> scores = new ArrayList<>();
         for (int i = 0; i < 3; i++) {
@@ -52,6 +30,7 @@ public final class ScoreRepository {
     }
 
     /** Verifica si el puntaje supera al tercer resultado guardado. */
+    @Override
     public boolean isEligibleForTop3(int score) {
         if (score < 0) {
             return false;
@@ -65,6 +44,7 @@ public final class ScoreRepository {
      *
      * @return true si el puntaje quedó guardado
      */
+    @Override
     public boolean addScore(String name, int score) {
         if (!isEligibleForTop3(score)) {
             return false;

@@ -1,6 +1,6 @@
 package puppy.code.entities;
 
-import com.badlogic.gdx.math.Vector2;
+
 import puppy.code.config.GameConfig;
 
 /** Proyectil del jugador; las colisiones y su retiro del mundo se coordinan fuera de la entidad. */
