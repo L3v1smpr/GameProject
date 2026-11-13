@@ -6,7 +6,9 @@ import java.util.List;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import puppy.code.behaviors.AlienAttackStrategy;
+import puppy.code.behaviors.HorizontalMovementStrategy;
 import puppy.code.behaviors.MovementStrategy;
+import puppy.code.behaviors.SpreadAttackStrategy;
 import puppy.code.config.GameConfig;
 
 /** Alien configurable que delega movimiento y ataque en estrategias separadas. */
@@ -15,11 +17,13 @@ public final class Alien extends GameEntity {
     private static final float FIRING_FRAME_DURATION_SECONDS = 0.20f;
 
     private int hitPoints;
-    private final MovementStrategy movement;
-    private final AlienAttackStrategy attackStrategy;
+    private final int maxHitPoints;
+    private MovementStrategy movement;
+    private AlienAttackStrategy attackStrategy;
     private float age;
     private float fireCooldownRemaining;
     private float firingTimer;
+    private boolean phaseChanged;
 
     public Alien(
             float x,
@@ -33,20 +37,52 @@ public final class Alien extends GameEntity {
         if (hitPoints <= 0) {
             throw new IllegalArgumentException("La vida del alien debe ser positiva.");
         }
+        validateMovementStrategy(movement);
+        validateAttackStrategy(attackStrategy);
+
+        this.hitPoints = hitPoints;
+        this.maxHitPoints = hitPoints;
+        this.movement = movement;
+        this.attackStrategy = attackStrategy;
+        // Tiempo de espera inicial aleatorio para que el primer tiro ocurra poco después de entrar
+        this.fireCooldownRemaining = MathUtils.random(0.35f, 0.70f);
+    }
+
+    private static void validateMovementStrategy(MovementStrategy movement) {
         if (movement == null) {
             throw new IllegalArgumentException("La estrategia de movimiento no puede ser null.");
         }
         if (!Float.isFinite(movement.speed()) || movement.speed() < 0f) {
             throw new IllegalArgumentException("La velocidad del alien no puede ser negativa.");
         }
+    }
+
+    private static void validateAttackStrategy(AlienAttackStrategy attackStrategy) {
         if (attackStrategy == null) {
             throw new IllegalArgumentException("La estrategia de ataque no puede ser null.");
         }
-        this.hitPoints = hitPoints;
+    }
+
+    public MovementStrategy getMovementStrategy() {
+        return movement;
+    }
+
+    public void setMovementStrategy(MovementStrategy movement) {
+        validateMovementStrategy(movement);
         this.movement = movement;
+    }
+
+    public AlienAttackStrategy getAttackStrategy() {
+        return attackStrategy;
+    }
+
+    public void setAttackStrategy(AlienAttackStrategy attackStrategy) {
+        validateAttackStrategy(attackStrategy);
         this.attackStrategy = attackStrategy;
-        // Tiempo de espera inicial aleatorio para que el primer tiro ocurra poco después de entrar
-        this.fireCooldownRemaining = MathUtils.random(0.35f, 0.70f);
+        // Ajusta el cooldown restante para evitar esperas heredadas de la estrategia anterior
+        this.fireCooldownRemaining = Math.min(
+                this.fireCooldownRemaining,
+                attackStrategy.nextCooldownSeconds());
     }
 
     public int getHitPoints() {
@@ -60,9 +96,9 @@ public final class Alien extends GameEntity {
     public boolean isStatic() {
         return movement.speed() == 0f;
     }
-    
+
     public boolean isBomber() {
-        return movement instanceof puppy.code.behaviors.HorizontalMovementStrategy;
+        return movement instanceof HorizontalMovementStrategy;
     }
 
     @Override
@@ -76,6 +112,14 @@ public final class Alien extends GameEntity {
             hitPoints = 0;
             deactivate();
             return true;
+        }
+
+        // Cambio de estrategia en tiempo de ejecución al llegar a la mitad de vida
+        if (!phaseChanged && maxHitPoints > 1 && hitPoints <= maxHitPoints / 2) {
+            phaseChanged = true;
+            float boostedSpeed = Math.max(180f, movement.speed() * 1.25f);
+            setMovementStrategy(new HorizontalMovementStrategy(getY(), boostedSpeed, getWidth()));
+            setAttackStrategy(new SpreadAttackStrategy());
         }
         return false;
     }
