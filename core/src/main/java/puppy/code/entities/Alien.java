@@ -9,13 +9,14 @@ import puppy.code.behaviors.AlienAttackStrategy;
 import puppy.code.behaviors.AlienPhaseTransition;
 import puppy.code.behaviors.MovementStrategy;
 
-/** Alien configurable que encapsula y delega movimiento, ataque y transición de fase. */
+/** Alien configurable que encapsula su identidad y delega movimiento, ataque y transición de fase. */
 public final class Alien extends GameEntity {
 
     private static final float FIRING_FRAME_DURATION_SECONDS = 0.20f;
 
     private int hitPoints;
     private final int maxHitPoints;
+    private final AlienType type;
     private MovementStrategy movement;
     private AlienAttackStrategy attackStrategy;
     private final AlienPhaseTransition phaseTransition;
@@ -32,7 +33,7 @@ public final class Alien extends GameEntity {
             int hitPoints,
             MovementStrategy movement,
             AlienAttackStrategy attackStrategy) {
-        this(x, y, width, height, hitPoints, movement, attackStrategy, null);
+        this(x, y, width, height, hitPoints, AlienType.STANDARD, movement, attackStrategy, null);
     }
 
     public Alien(
@@ -44,12 +45,29 @@ public final class Alien extends GameEntity {
             MovementStrategy movement,
             AlienAttackStrategy attackStrategy,
             AlienPhaseTransition phaseTransition) {
+        this(x, y, width, height, hitPoints, AlienType.STANDARD, movement, attackStrategy, phaseTransition);
+    }
+
+    public Alien(
+            float x,
+            float y,
+            float width,
+            float height,
+            int hitPoints,
+            AlienType type,
+            MovementStrategy movement,
+            AlienAttackStrategy attackStrategy,
+            AlienPhaseTransition phaseTransition) {
         super(x, y, width, height);
         if (hitPoints <= 0) {
             throw new IllegalArgumentException("La vida del alien debe ser positiva.");
         }
+        if (type == null) {
+            throw new IllegalArgumentException("El tipo de alien no puede ser null.");
+        }
         this.hitPoints = hitPoints;
         this.maxHitPoints = hitPoints;
+        this.type = type;
         this.phaseTransition = phaseTransition;
         setMovementStrategy(movement);
         setAttackStrategy(attackStrategy);
@@ -82,8 +100,18 @@ public final class Alien extends GameEntity {
         if (phaseTransition == null) {
             return;
         }
-        setMovementStrategy(phaseTransition.nextMovement(getY(), movement.speed(), getWidth()));
-        setAttackStrategy(phaseTransition.nextAttack());
+        MovementStrategy nextMove = phaseTransition.nextMovement(getY(), movement.speed(), getWidth());
+        if (nextMove != null) {
+            setMovementStrategy(nextMove);
+        }
+        AlienAttackStrategy nextAtk = phaseTransition.nextAttack();
+        if (nextAtk != null) {
+            setAttackStrategy(nextAtk);
+        }
+    }
+
+    public AlienType getType() {
+        return type;
     }
 
     public int getHitPoints() {
@@ -95,11 +123,11 @@ public final class Alien extends GameEntity {
     }
 
     public boolean isStatic() {
-        return movement.speed() == 0f;
+        return type == AlienType.STATIC;
     }
 
     public boolean isBomber() {
-        return movement.isBomber();
+        return type == AlienType.BOMBER;
     }
 
     @Override
