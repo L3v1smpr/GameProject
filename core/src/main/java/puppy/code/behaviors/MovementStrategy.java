@@ -14,6 +14,11 @@ public interface MovementStrategy {
     /** Velocidad de la estrategia, expresada en unidades por segundo. */
     float speed();
 
+    /** Indica si este desplazamiento corresponde a un comportamiento de bombardero. */
+    default boolean isBomber() {
+        return false;
+    }
+
     /**
      * Calcula la siguiente posición.
      *

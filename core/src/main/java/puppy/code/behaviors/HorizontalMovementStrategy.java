@@ -35,6 +35,11 @@ public final class HorizontalMovementStrategy implements MovementStrategy {
     }
 
     @Override
+    public boolean isBomber() {
+        return true;
+    }
+
+    @Override
     public Vector2 nextPosition(float x, float y, float age, float delta) {
         float nextY = y;
         if (y > cruiseY) {

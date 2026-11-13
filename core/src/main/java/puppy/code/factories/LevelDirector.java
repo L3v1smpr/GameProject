@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import com.badlogic.gdx.math.MathUtils;
 import puppy.code.behaviors.AlienAttackStrategy;
+import puppy.code.behaviors.AlienPhaseTransition;
 import puppy.code.behaviors.AlternatingAttackStrategy;
 import puppy.code.behaviors.BurstAttackStrategy;
 import puppy.code.behaviors.HorizontalMovementStrategy;
@@ -76,6 +77,17 @@ public final class LevelDirector implements AlienFactory {
                     .hitPoints(hitPoints)
                     .movement(movement)
                     .attack(attack)
+                    .phaseTransition(new AlienPhaseTransition() {
+                        @Override
+                        public MovementStrategy nextMovement(float currentY, float currentSpeed, float alienWidth) {
+                            return new HorizontalMovementStrategy(currentY, Math.max(180f, currentSpeed * 1.25f), alienWidth);
+                        }
+
+                        @Override
+                        public AlienAttackStrategy nextAttack() {
+                            return new SpreadAttackStrategy();
+                        }
+                    })
                     .build());
         }
         return Collections.unmodifiableList(wave);

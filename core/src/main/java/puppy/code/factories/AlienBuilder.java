@@ -1,7 +1,8 @@
 package puppy.code.factories;
 
-import puppy.code.behaviors.MovementStrategy;
 import puppy.code.behaviors.AlienAttackStrategy;
+import puppy.code.behaviors.AlienPhaseTransition;
+import puppy.code.behaviors.MovementStrategy;
 import puppy.code.config.GameConfig;
 import puppy.code.entities.Alien;
 
@@ -18,6 +19,7 @@ public final class AlienBuilder {
     private int hitPoints;
     private MovementStrategy movement;
     private AlienAttackStrategy attackStrategy;
+    private AlienPhaseTransition phaseTransition;
 
     public AlienBuilder position(float x, float y) {
         this.x = x;
@@ -47,6 +49,11 @@ public final class AlienBuilder {
         return this;
     }
 
+    public AlienBuilder phaseTransition(AlienPhaseTransition phaseTransition) {
+        this.phaseTransition = phaseTransition;
+        return this;
+    }
+
     public Alien build() {
         if (!positionDefined) {
             throw new IllegalStateException("Falta definir la posición del alien.");
@@ -63,6 +70,6 @@ public final class AlienBuilder {
         if (attackStrategy == null) {
             throw new IllegalStateException("Falta definir la estrategia de ataque del alien.");
         }
-        return new Alien(x, y, width, height, hitPoints, movement, attackStrategy);
+        return new Alien(x, y, width, height, hitPoints, movement, attackStrategy, phaseTransition);
     }
 }

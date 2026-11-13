@@ -132,7 +132,7 @@ public final class GameWorld {
                 continue;
             }
             alien.update(delta, GameConfig.WORLD_WIDTH);
-            List<AlienProjectile> shots = alien.fireDue(delta, ship);
+            List<AlienProjectile> shots = alien.fireDue(delta, ship, GameConfig.WORLD_HEIGHT);
             if (!shots.isEmpty()) {
                 alienProjectiles.addAll(shots);
                 notifyAudio(WorldAudioListener::onAlienShoot);
