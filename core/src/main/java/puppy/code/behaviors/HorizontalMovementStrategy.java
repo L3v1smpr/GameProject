@@ -4,6 +4,9 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import puppy.code.config.GameConfig;
 
+/**
+ * Estrategia de patrullaje horizontal con rebote en los márgenes laterales (patrón Strategy).
+ */
 public final class HorizontalMovementStrategy implements MovementStrategy {
 
     private final float cruiseY;

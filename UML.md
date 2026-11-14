@@ -14,13 +14,15 @@ classDiagram
 
     namespace lwjgl3 {
         class Lwjgl3Launcher {
-            +main(args) void
-            -createApplication() Lwjgl3Application
-            -getDefaultConfiguration() Lwjgl3ApplicationConfiguration
+            +main(args: String[]) void$
+            -createApplication() Lwjgl3Application$
+            -getDefaultConfiguration() Lwjgl3ApplicationConfiguration$
         }
         class StartupHelper {
-            +startNewJvmIfRequired() boolean
-            +startNewJvmIfRequired(redirectOutput: boolean) boolean
+            -JVM_RESTARTED_ARG: String$
+            -StartupHelper()
+            +startNewJvmIfRequired() boolean$
+            +startNewJvmIfRequired(redirectOutput: boolean) boolean$
         }
     }
 
@@ -57,7 +59,7 @@ classDiagram
     namespace assets {
         class GameAssets {
             <<Singleton>>
-            -instance: GameAssets
+            -instance: GameAssets$
             -textures: Map~String, Texture~
             -sounds: Map~String, Sound~
             -music: Map~String, Music~
@@ -73,7 +75,11 @@ classDiagram
             -musicVolume: float
             -soundVolume: float
             -GameAssets()
-            +getInstance() GameAssets
+            +getInstance() GameAssets$
+            -loadAll() void
+            -loadTexture(path: String) void
+            -loadSound(path: String) void
+            -loadMusic(path: String) void
             +getPlayerFrame(row: int, column: int) TextureRegion
             +getAlienStaticRegion() TextureRegion
             +getAlienStaticRegion(firing: boolean) TextureRegion
@@ -100,16 +106,35 @@ classDiagram
     namespace config {
         class GameConfig {
             <<constants>>
-            +WORLD_WIDTH: float
-            +WORLD_HEIGHT: float
-            +SHIP_SPEED: float
-            +DASH_DURATION_SECONDS: float
-            +DASH_COOLDOWN_SECONDS: float
-            +INITIAL_LIVES: int
-            +LEVEL_ONE_ALIEN_QUOTA: int
-            +LEVEL_TWO_ALIEN_QUOTA: int
-            +LEVEL_THREE_ALIEN_QUOTA: int
-            +ALIEN_SCORE: int
+            +WORLD_WIDTH: float$
+            +WORLD_HEIGHT: float$
+            +SHIP_WIDTH: float$
+            +SHIP_HEIGHT: float$
+            +SHIP_HITBOX_WIDTH: float$
+            +SHIP_HITBOX_HEIGHT: float$
+            +SHIP_SPEED: float$
+            +PLAYER_PROJECTILE_SPEED: float$
+            +PLAYER_FIRE_COOLDOWN_SECONDS: float$
+            +DASH_SPEED_MULTIPLIER: float$
+            +DASH_DURATION_SECONDS: float$
+            +DASH_COOLDOWN_SECONDS: float$
+            +DASH_INVULNERABILITY_POST_SECONDS: float$
+            +INITIAL_LIVES: int$
+            +RESPAWN_INVULNERABILITY_SECONDS: float$
+            +FIRST_LEVEL: int$
+            +SECOND_LEVEL: int$
+            +LAST_LEVEL: int$
+            +LEVEL_ONE_ALIEN_QUOTA: int$
+            +LEVEL_TWO_ALIEN_QUOTA: int$
+            +LEVEL_THREE_ALIEN_QUOTA: int$
+            +ALIEN_SCORE: int$
+            +ALIEN_WIDTH: float$
+            +ALIEN_HEIGHT: float$
+            +BOMBER_ALIEN_WIDTH: float$
+            +BOMBER_ALIEN_HEIGHT: float$
+            +LINEAR_ALIEN_SPEED: float$
+            +ZIGZAG_ALIEN_SPEED: float$
+            +ALIEN_PROJECTILE_SPEED: float$
             -GameConfig()
         }
     }
@@ -122,7 +147,12 @@ classDiagram
             +fireJustPressed() boolean
             +dashJustPressed() boolean
         }
-        class KeyboardPlayerInput
+        class KeyboardPlayerInput {
+            +movementDirection() Vector2
+            +firePressed() boolean
+            +fireJustPressed() boolean
+            +dashJustPressed() boolean
+        }
         class NavigationInput {
             <<interface>>
             +confirmJustPressed() boolean
@@ -133,13 +163,24 @@ classDiagram
             +leftJustPressed() boolean
             +rightJustPressed() boolean
         }
-        class KeyboardNavigationInput
+        class KeyboardNavigationInput {
+            +confirmJustPressed() boolean
+            +backJustPressed() boolean
+            +anyActionJustPressed() boolean
+            +upJustPressed() boolean
+            +downJustPressed() boolean
+            +leftJustPressed() boolean
+            +rightJustPressed() boolean
+        }
         class InitialsInput {
             <<interface>>
             +letterJustPressed() char
             +deleteJustPressed() boolean
         }
-        class KeyboardInitialsInput
+        class KeyboardInitialsInput {
+            +letterJustPressed() char
+            +deleteJustPressed() boolean
+        }
     }
 
     namespace screens {
@@ -150,19 +191,24 @@ classDiagram
             #viewport: Viewport
             #starfield: Starfield
             -backgroundY: float
-            +render(delta: float) final
-            +resize(width: int, height: int) final
+            #AbstractGameScreen(assets: GameAssets)
+            +render(delta: float) void
+            +resize(width: int, height: int) void
             #clearScreen() void
             #renderBackground(delta: float) void
-            #handleInput(delta: float) void
-            #update(delta: float) void
-            #draw(delta: float) void
+            #handleInput(delta: float) void*
+            #update(delta: float) void*
+            #draw(delta: float) void*
         }
         class MenuScreen {
             -navigator: ScreenNavigator
             -navigationInput: NavigationInput
             -scoreRepository: ScoreStore
             -startRequested: boolean
+            +MenuScreen(assets: GameAssets, navigator: ScreenNavigator, navigationInput: NavigationInput, scoreRepository: ScoreStore)
+            #handleInput(delta: float) void
+            #update(delta: float) void
+            #draw(delta: float) void
         }
         class GameScreen {
             -navigator: ScreenNavigator
@@ -192,8 +238,12 @@ classDiagram
             -fireRings: List~FireRing~
             -playerRings: List~PlayerRing~
             -debrisParticles: List~DebrisParticle~
+            +GameScreen(assets: GameAssets, navigator: ScreenNavigator, world: GameWorld, playerInput: PlayerInput, navigationInput: NavigationInput)
             +show() void
             +hide() void
+            #handleInput(delta: float) void
+            #update(delta: float) void
+            #draw(delta: float) void
             +onPlayerShoot() void
             +onPlayerDash() void
             +onPlayerHurt(centerX: float, centerY: float) void
@@ -214,10 +264,14 @@ classDiagram
             -eligibleForTop3: boolean
             -initials: StringBuilder
             -scoreSaved: boolean
+            +GameOverScreen(assets: GameAssets, navigator: ScreenNavigator, input: NavigationInput, initialsInput: InitialsInput, scoreRepository: ScoreStore, finalScore: int, levelReached: int)
             +show() void
             +hide() void
             #clearScreen() void
             #renderBackground(delta: float) void
+            #handleInput(delta: float) void
+            #update(delta: float) void
+            #draw(delta: float) void
         }
         class VictoryScreen {
             -navigator: ScreenNavigator
@@ -228,20 +282,26 @@ classDiagram
             -eligibleForTop3: boolean
             -initials: StringBuilder
             -scoreSaved: boolean
+            +VictoryScreen(assets: GameAssets, navigator: ScreenNavigator, input: NavigationInput, initialsInput: InitialsInput, scoreRepository: ScoreStore, finalScore: int)
             +show() void
             +hide() void
+            #handleInput(delta: float) void
+            #update(delta: float) void
+            #draw(delta: float) void
         }
         class Starfield {
             -stars: List~Star~
+            +Starfield(count: int)
             +updateAndRender(delta: float, shapes: ShapeRenderer, camera: OrthographicCamera) void
         }
         class Star {
             <<nested class>>
-            -x: float
-            -y: float
-            -speed: float
-            -size: float
-            -color: Color
+            ~x: float
+            ~y: float
+            ~speed: float
+            ~size: float
+            ~color: Color
+            ~Star(randomInitialY: boolean)
         }
         class AfterImage {
             -x: float
@@ -252,6 +312,7 @@ classDiagram
             -maxLifeTime: float
             -lifeTime: float
             -alpha: float
+            +AfterImage(x: float, y: float, width: float, height: float, region: TextureRegion, lifeTime: float)
             +update(delta: float) boolean
             +getX() float
             +getY() float
@@ -266,6 +327,7 @@ classDiagram
             -y: float
             -radius: float
             -timer: float
+            ~PlayerRing(x: float, y: float)
             +update(delta: float) boolean
             +getX() float
             +getY() float
@@ -278,6 +340,7 @@ classDiagram
             -y: float
             -radius: float
             -timer: float
+            ~FireRing(x: float, y: float)
             +update(delta: float) boolean
             +getX() float
             +getY() float
@@ -294,6 +357,7 @@ classDiagram
             -shade: float
             -timer: float
             -duration: float
+            ~DebrisParticle(x: float, y: float, isMajor: boolean)
             +update(delta: float) boolean
             +getX() float
             +getY() float
@@ -448,6 +512,8 @@ classDiagram
             +isActive() boolean
             +deactivate() void
             +isHurt() boolean
+            #triggerHurt() void
+            #updateHurtTimer(delta: float) void
             +takeDamage() boolean
             +bounds() Rectangle
             #setPosition(x: float, y: float) void
@@ -460,6 +526,7 @@ classDiagram
             -dashDurationTimer: float
             -dashDirection: Vector2
             -godMode: boolean
+            +Ship(x: float, y: float)
             +bounds() Rectangle
             +update(delta: float, movementDirection: Vector2, worldWidth: float, worldHeight: float) void
             +triggerDash(inputDirection: Vector2) void
@@ -470,26 +537,43 @@ classDiagram
             +isGodMode() boolean
             +setGodMode(godMode: boolean) void
         }
+        class AlienType {
+            <<enum>>
+            STANDARD
+            STATIC
+            BOMBER
+        }
         class Alien {
+            -FIRING_FRAME_DURATION_SECONDS: float$
             -hitPoints: int
+            -maxHitPoints: int
+            -type: AlienType
             -movement: MovementStrategy
             -attackStrategy: AlienAttackStrategy
+            -phaseTransition: AlienPhaseTransition
             -age: float
             -fireCooldownRemaining: float
             -firingTimer: float
-            +takeDamage() boolean
-            +update(delta: float, worldWidth: float) void
-            +fireDue(delta: float, target: Ship) List~AlienProjectile~
+            -phaseChanged: boolean
+            +Alien(x: float, y: float, width: float, height: float, hitPoints: int, type: AlienType, movement: MovementStrategy, attackStrategy: AlienAttackStrategy, phaseTransition: AlienPhaseTransition)
+            -setMovementStrategy(movement: MovementStrategy) void
+            -setAttackStrategy(attackStrategy: AlienAttackStrategy) void
+            -applyPhaseTransition() void
+            +getType() AlienType
             +getHitPoints() int
             +isFiring() boolean
             +isStatic() boolean
             +isBomber() boolean
+            +takeDamage() boolean
+            +update(delta: float, worldWidth: float) void
+            +fireDue(delta: float, target: Ship, worldHeight: float) List~AlienProjectile~
             +hasLeftWorld() boolean
         }
         class Meteorite {
             -size: MeteoriteSize
             -descentSpeed: float
             -hitPoints: int
+            +Meteorite(x: float, y: float, size: MeteoriteSize, descentSpeed: float)
             +random(worldWidth: float, worldHeight: float) Meteorite$
             +takeDamage() boolean
             +update(delta: float) void
@@ -517,12 +601,14 @@ classDiagram
         }
         class PlayerProjectile {
             -speed: float
+            +PlayerProjectile(x: float, y: float)
             +update(delta: float) void
             +getSpeed() float
         }
         class AlienProjectile {
             -direction: Vector2
             -speed: float
+            +AlienProjectile(x: float, y: float, direction: Vector2)
             +update(delta: float) void
             +getSpeed() float
             +getRotation() float
@@ -537,15 +623,24 @@ classDiagram
         }
         class LinearMovementStrategy {
             -speed: float
+            +LinearMovementStrategy(speed: float)
+            +speed() float
+            +nextPosition(x: float, y: float, age: float, delta: float) Vector2
         }
         class ZigZagMovementStrategy {
             -speed: float
             -halfPeriodSeconds: float
+            +ZigZagMovementStrategy(speed: float, halfPeriodSeconds: float)
+            +speed() float
+            +nextPosition(x: float, y: float, age: float, delta: float) Vector2
         }
         class StaticMovementStrategy {
             -targetY: float
             -descentSpeed: float
             -hasTarget: boolean
+            +StaticMovementStrategy(targetY: float, descentSpeed: float)
+            +speed() float
+            +nextPosition(x: float, y: float, age: float, delta: float) Vector2
         }
         class HorizontalMovementStrategy {
             -cruiseY: float
@@ -553,6 +648,9 @@ classDiagram
             -descentSpeed: float
             -alienWidth: float
             -directionX: float
+            +HorizontalMovementStrategy(cruiseY: float, speed: float, alienWidth: float)
+            +speed() float
+            +nextPosition(x: float, y: float, age: float, delta: float) Vector2
         }
         class AlienAttackStrategy {
             <<interface>>
@@ -566,12 +664,24 @@ classDiagram
             +projectileFrom(alien: Alien, direction: Vector2) AlienProjectile$
             +projectileFrom(alien: Alien, direction: Vector2, offsetX: float, offsetY: float) AlienProjectile$
         }
-        class VAttackStrategy
-        class SpreadAttackStrategy
-        class AlternatingAttackStrategy
+        class VAttackStrategy {
+            +createVolley(alien: Alien, target: Ship) List~AlienProjectile~
+        }
+        class SpreadAttackStrategy {
+            +createVolley(alien: Alien, target: Ship) List~AlienProjectile~
+        }
+        class AlternatingAttackStrategy {
+            +createVolley(alien: Alien, target: Ship) List~AlienProjectile~
+        }
         class BurstAttackStrategy {
             -shotsFiredInBurst: int
+            +createVolley(alien: Alien, target: Ship) List~AlienProjectile~
             +nextCooldownSeconds() float
+        }
+        class AlienPhaseTransition {
+            <<interface>>
+            +nextMovement(currentY: float, currentSpeed: float, alienWidth: float) MovementStrategy
+            +nextAttack() AlienAttackStrategy
         }
     }
 
@@ -588,10 +698,17 @@ classDiagram
             -vAttack: AlienAttackStrategy
             -spreadAttack: AlienAttackStrategy
             -alternatingAttack: AlienAttackStrategy
+            +LevelDirector()
             +createWave(level: int) List~Alien~
             +createWave(level: int, count: int) List~Alien~
             +createStaticAlien(level: int, x: float, targetY: float) Alien
             +createBomberAlien(level: int, x: float, cruiseY: float) Alien
+            -createStandardTransition() AlienPhaseTransition
+            -createStaticTransition(initialAttack: AlienAttackStrategy) AlienPhaseTransition
+            -createBomberTransition() AlienPhaseTransition
+            -createVariedMovement(level: int) MovementStrategy
+            -attackFor(level: int) AlienAttackStrategy
+            -hitPointsFor(level: int) int
         }
         class AlienBuilder {
             <<Builder>>
@@ -601,13 +718,17 @@ classDiagram
             -width: float
             -height: float
             -hitPoints: int
+            -type: AlienType
             -movement: MovementStrategy
             -attackStrategy: AlienAttackStrategy
+            -phaseTransition: AlienPhaseTransition
             +position(x: float, y: float) AlienBuilder
             +size(width: float, height: float) AlienBuilder
+            +type(type: AlienType) AlienBuilder
             +movement(movement: MovementStrategy) AlienBuilder
             +hitPoints(hitPoints: int) AlienBuilder
             +attack(attackStrategy: AlienAttackStrategy) AlienBuilder
+            +phaseTransition(phaseTransition: AlienPhaseTransition) AlienBuilder
             +build() Alien
         }
     }
@@ -632,11 +753,13 @@ classDiagram
             +addScore(name: String, score: int) boolean
         }
         class ScoreRepository {
+            -PREFS_NAME: String$
             -prefs: Preferences
             +ScoreRepository()
             +getTopScores() List~HighScore~
             +isEligibleForTop3(score: int) boolean
             +addScore(name: String, score: int) boolean
+            -normalizeName(name: String) String
         }
         class HighScore {
             -name: String
@@ -658,6 +781,9 @@ classDiagram
         class Lwjgl3Application {
             <<LibGDX>>
         }
+        class Lwjgl3ApplicationConfiguration {
+            <<LibGDX>>
+        }
         class SpriteBatch {
             <<LibGDX>>
         }
@@ -668,6 +794,9 @@ classDiagram
             <<LibGDX>>
         }
         class BitmapFont {
+            <<LibGDX>>
+        }
+        class GlyphLayout {
             <<LibGDX>>
         }
         class Texture {
@@ -691,6 +820,9 @@ classDiagram
         class Viewport {
             <<LibGDX>>
         }
+        class FitViewport {
+            <<LibGDX>>
+        }
         class Rectangle {
             <<LibGDX>>
         }
@@ -707,6 +839,7 @@ classDiagram
     AbstractGameScreen <|-- GameScreen
     AbstractGameScreen <|-- GameOverScreen
     AbstractGameScreen <|-- VictoryScreen
+    Viewport <|-- FitViewport
     WorldAudioListener <|.. GameScreen
     Collidable <|.. GameEntity
     GameEntity <|-- Ship
@@ -733,6 +866,7 @@ classDiagram
     %% ---------- Arranque y aplicacion ----------
     Lwjgl3Launcher ..> StartupHelper : usa
     Lwjgl3Launcher ..> Lwjgl3Application : crea
+    Lwjgl3Launcher ..> Lwjgl3ApplicationConfiguration : configura
     Lwjgl3Launcher ..> SpaceNavigation : crea
     SpaceNavigation --> GameAssets : obtiene una vez
     SpaceNavigation --> GameWorld : conserva la partida
@@ -764,8 +898,10 @@ classDiagram
     AbstractGameScreen --> GameAssets
     AbstractGameScreen *-- Starfield
     Starfield *-- Star
-    AbstractGameScreen --> OrthographicCamera
-    AbstractGameScreen --> Viewport
+    Star --> Color
+    AbstractGameScreen *-- OrthographicCamera
+    AbstractGameScreen *-- Viewport
+    AbstractGameScreen ..> FitViewport : instancia
     MenuScreen --> ScreenNavigator
     MenuScreen --> NavigationInput
     MenuScreen --> ScoreStore
@@ -774,7 +910,9 @@ classDiagram
     GameScreen --> WorldSnapshot : presenta
     GameScreen --> PlayerInput
     GameScreen --> NavigationInput
+    GameScreen *-- GlyphLayout
     GameScreen *-- AfterImage
+    AfterImage --> TextureRegion
     GameScreen *-- FireRing
     GameScreen *-- PlayerRing
     GameScreen *-- DebrisParticle
@@ -817,26 +955,34 @@ classDiagram
 
     %% ---------- Entidades ----------
     Collidable ..> Rectangle
-    Ship ..> Vector2
-    AlienProjectile --> Vector2
+    Ship *-- Vector2
+    AlienProjectile *-- Vector2
     Meteorite --> MeteoriteSize
+    Alien --> AlienType
     Alien --> MovementStrategy
     Alien --> AlienAttackStrategy
+    Alien --> AlienPhaseTransition
     Alien ..> AlienProjectile : dispara
     Alien ..> Ship : apunta a
 
     %% ---------- Estrategias, fabrica y builder ----------
     MovementStrategy ..> Vector2
     AlienAttackStrategy ..> AlienProjectile
+    AlienPhaseTransition ..> MovementStrategy : provee en Fase 2
+    AlienPhaseTransition ..> AlienAttackStrategy : provee en Fase 2
     VAttackStrategy ..> LinearAttackStrategy : usa utilidades
     SpreadAttackStrategy ..> LinearAttackStrategy : usa utilidades
     AlternatingAttackStrategy ..> LinearAttackStrategy : usa utilidades
     BurstAttackStrategy ..> LinearAttackStrategy : usa utilidades
     LevelDirector ..> AlienBuilder : configura y usa
+    LevelDirector ..> AlienType : asigna
     LevelDirector ..> MovementStrategy : selecciona
     LevelDirector ..> AlienAttackStrategy : selecciona
+    LevelDirector ..> AlienPhaseTransition : crea y configura
+    AlienBuilder --> AlienType
     AlienBuilder --> MovementStrategy
     AlienBuilder --> AlienAttackStrategy
+    AlienBuilder --> AlienPhaseTransition
     AlienBuilder ..> Alien : construye
 
     %% ---------- Entradas y puntajes ----------
@@ -846,20 +992,17 @@ classDiagram
     ScoreStore ..> HighScore
 
     %% ---------- Notas de patrones ----------
-    note for GameAssets "GM-6 Singleton: instancia unica, constructor privado y getInstance estatico y sincronizado"
-    note for MovementStrategy "GM-7 Strategy: 4 variantes de movimiento. Alien las recibe sin conocer la clase concreta"
-    note for AlienAttackStrategy "GM-7 Strategy: 5 variantes de ataque."
-    note for AbstractGameScreen "GM-8 Template Method: render es final y ejecuta clearScreen, renderBackground, handleInput, update y draw"
-    note for AlienBuilder "GM-9 Builder: valida posicion, estrategias, velocidad y vida en build. LevelDirector es el Director"
-    note for GameConfig "Constantes usadas por entidades, mundo, fabricas, sistemas y pantallas."
-    note for GameWorld "Controller: coordina simulacion, vidas, puntaje, cuotas y fases"
+    note for GameAssets "GM-6 Singleton: instancia estatica unica (-instance$), constructor privado y +getInstance()$"
+    note for MovementStrategy "GM-7 Strategy: 4 variantes de movimiento intercambiables en tiempo de ejecucion"
+    note for AlienAttackStrategy "GM-7 Strategy: 5 variantes de ataque intercambiables en tiempo de ejecucion"
+    note for AlienPhaseTransition "Transicion de fase dinamica al 50% de HP sin mutar la identidad (AlienType)"
+    note for AbstractGameScreen "GM-8 Template Method: render es final y ejecuta clearScreen, renderBackground, handleInput*, update* y draw*"
+    note for AlienBuilder "GM-9 Builder: valida posicion, tipo, estrategias, velocidad y vida en build(). LevelDirector es el Director"
+    note for GameConfig "Constantes estaticas inmutables usadas por entidades, mundo, fabricas, sistemas y pantallas"
+    note for GameWorld "Controller (GRASP): coordina simulacion, vidas, puntaje, cuotas y fases"
 ```
 
-
-
 ## Vistas por secciones
-
-
 
 ### UML del proyecto: Space Navigation - Lectura Simple
 
@@ -876,9 +1019,9 @@ classDiagram
     }
     class ScreenAdapter {
         <<LibGDX>>
-        +render(delta)
-        +resize(width, height)
-        +dispose()
+        +render(delta: float) void
+        +resize(width: int, height: int) void
+        +dispose() void
     }
     class SpaceNavigation {
         -assets: GameAssets
@@ -909,16 +1052,19 @@ classDiagram
     }
     class GameAssets {
         <<Singleton>>
-        -instance: GameAssets
-        -textures: Map
-        -sounds: Map
-        -music: Map
+        -instance: GameAssets$
+        -textures: Map~String, Texture~
+        -sounds: Map~String, Sound~
+        -music: Map~String, Music~
         -playerFrames: TextureRegion[][]
+        -alienStaticFrames: TextureRegion[][]
+        -alienSentryFrames: TextureRegion[][]
+        -alienBomberFrames: TextureRegion[][]
         -batch: SpriteBatch
         -shapes: ShapeRenderer
         -font: BitmapFont
         -GameAssets()
-        +getInstance() GameAssets
+        +getInstance() GameAssets$
         +getPlayerFrame(row: int, column: int) TextureRegion
         +dispose() void
     }
@@ -928,22 +1074,34 @@ classDiagram
         #camera: OrthographicCamera
         #viewport: Viewport
         #starfield: Starfield
-        +render(delta: float) final
-        +resize(width: int, height: int) final
+        +render(delta: float) void
+        +resize(width: int, height: int) void
         #clearScreen() void
         #renderBackground(delta: float) void
-        #handleInput(delta: float) abstract
-        #update(delta: float) abstract
-        #draw(delta: float) abstract
+        #handleInput(delta: float) void*
+        #update(delta: float) void*
+        #draw(delta: float) void*
     }
     class MenuScreen
-    class GameScreen
+    class GameScreen {
+        -glyphLayout: GlyphLayout
+    }
     class GameOverScreen {
         #clearScreen() void
         #renderBackground(delta: float) void
     }
     class VictoryScreen
-    class Starfield
+    class Starfield {
+        -stars: List~Star~
+    }
+    class Star {
+        <<nested class>>
+        ~x: float
+        ~y: float
+        ~speed: float
+        ~size: float
+        ~color: Color
+    }
     class AfterImage
 
     class SpriteBatch {
@@ -953,6 +1111,18 @@ classDiagram
         <<LibGDX>>
     }
     class BitmapFont {
+        <<LibGDX>>
+    }
+    class GlyphLayout {
+        <<LibGDX>>
+    }
+    class OrthographicCamera {
+        <<LibGDX>>
+    }
+    class Viewport {
+        <<LibGDX>>
+    }
+    class FitViewport {
         <<LibGDX>>
     }
     class Texture {
@@ -975,19 +1145,25 @@ classDiagram
     AbstractGameScreen <|-- GameScreen
     AbstractGameScreen <|-- GameOverScreen
     AbstractGameScreen <|-- VictoryScreen
+    Viewport <|-- FitViewport
     SpaceNavigation --> GameAssets : obtiene una vez e inyecta
     SpaceNavigation ..> ScreenNavigator
     SpaceNavigation --> GameWorld : crea partida
     GameScreen --> GameWorld : actualiza y consulta
     GameScreen --> WorldSnapshot : presenta
+    GameScreen *-- GlyphLayout
     GameAssets *-- SpriteBatch
     GameAssets *-- ShapeRenderer
     GameAssets *-- BitmapFont
-    GameAssets ..> Texture
-    GameAssets ..> TextureRegion
-    GameAssets ..> Music
-    GameAssets ..> Sound
+    GameAssets o-- Texture
+    GameAssets o-- TextureRegion
+    GameAssets o-- Music
+    GameAssets o-- Sound
+    AbstractGameScreen *-- OrthographicCamera
+    AbstractGameScreen *-- Viewport
+    AbstractGameScreen ..> FitViewport : instancia
     AbstractGameScreen *-- Starfield
+    Starfield *-- Star
     GameScreen *-- AfterImage
 ```
 
@@ -1065,6 +1241,8 @@ classDiagram
         -height: float
         -active: boolean
         -hurtTimer: float
+        #triggerHurt() void
+        #updateHurtTimer(delta: float) void
         +takeDamage() boolean
         +bounds() Rectangle
     }
@@ -1077,6 +1255,7 @@ classDiagram
         -invulnerabilityTimer: float
         -dashCooldownTimer: float
         -dashDurationTimer: float
+        -dashDirection: Vector2
         -godMode: boolean
         +bounds() Rectangle
         +update(delta: float, movementDirection: Vector2, worldWidth: float, worldHeight: float) void
@@ -1085,18 +1264,35 @@ classDiagram
         +canDash() boolean
         +getDashCooldownProgress() float
     }
+    class AlienType {
+        <<enum>>
+        STANDARD
+        STATIC
+        BOMBER
+    }
     class Alien {
+        -hitPoints: int
+        -maxHitPoints: int
+        -type: AlienType
         -movement: MovementStrategy
         -attackStrategy: AlienAttackStrategy
-        -hitPoints: int
+        -phaseTransition: AlienPhaseTransition
+        -phaseChanged: boolean
+        -setMovementStrategy(movement: MovementStrategy) void
+        -setAttackStrategy(attackStrategy: AlienAttackStrategy) void
+        -applyPhaseTransition() void
+        +getType() AlienType
+        +isStatic() boolean
+        +isBomber() boolean
         +takeDamage() boolean
         +update(delta: float, worldWidth: float) void
-        +fireDue(delta: float, target: Ship) List~AlienProjectile~
+        +fireDue(delta: float, target: Ship, worldHeight: float) List~AlienProjectile~
     }
     class Meteorite {
         -size: MeteoriteSize
         -descentSpeed: float
         -hitPoints: int
+        +random(worldWidth: float, worldHeight: float) Meteorite$
         +takeDamage() boolean
         +update(delta: float) void
     }
@@ -1160,6 +1356,7 @@ classDiagram
     GameEntity <|-- Meteorite
     GameEntity <|-- PlayerProjectile
     GameEntity <|-- AlienProjectile
+    Alien --> AlienType
     Meteorite --> MeteoriteSize
     GameWorld *-- Ship
     GameWorld o-- Alien
@@ -1214,6 +1411,7 @@ classDiagram
         +addScore(name: String, score: int) boolean
     }
     class ScoreRepository {
+        -PREFS_NAME: String$
         -prefs: Preferences
         +getTopScores() List~HighScore~
         +isEligibleForTop3(score: int) boolean
@@ -1237,14 +1435,14 @@ classDiagram
     }
     class GameConfig {
         <<constants>>
-        +WORLD_WIDTH: float
-        +WORLD_HEIGHT: float
-        +SHIP_SPEED: float
-        +DASH_DURATION_SECONDS: float
-        +DASH_COOLDOWN_SECONDS: float
-        +LEVEL_ONE_ALIEN_QUOTA: int
-        +LEVEL_TWO_ALIEN_QUOTA: int
-        +LEVEL_THREE_ALIEN_QUOTA: int
+        +WORLD_WIDTH: float$
+        +WORLD_HEIGHT: float$
+        +SHIP_SPEED: float$
+        +DASH_DURATION_SECONDS: float$
+        +DASH_COOLDOWN_SECONDS: float$
+        +LEVEL_ONE_ALIEN_QUOTA: int$
+        +LEVEL_TWO_ALIEN_QUOTA: int$
+        +LEVEL_THREE_ALIEN_QUOTA: int$
         -GameConfig()
     }
     class GameWorld
@@ -1277,36 +1475,52 @@ classDiagram
 **Problema:** las pantallas comparten texturas, audio y objetos de dibujo; varias instancias podrian duplicar recursos o liberar recursos que todavia se usan.
 
 **Contexto:** `SpaceNavigation` crea la aplicacion y conecta las dependencias.
-**Solucion:** `GameAssets` mantiene una instancia, tiene constructor privado y libera sus recursos en `dispose()`. El punto de composicion obtiene esa instancia y la entrega a las pantallas.
+**Solucion:** `GameAssets` mantiene una instancia estática única (`-instance$`), tiene constructor privado (`-GameAssets()`) y expone el acceso estático sincronizado `+getInstance()$`, liberando sus recursos en `dispose()`.
 
 ```mermaid
 classDiagram
-    class SpaceNavigation
+    class SpaceNavigation {
+        -assets: GameAssets
+        +create() void
+        +dispose() void
+    }
     class GameAssets {
         <<Singleton>>
-        -instance: GameAssets
+        -instance: GameAssets$
         -GameAssets()
-        +getInstance() GameAssets
+        +getInstance() GameAssets$
         +getPlayerFrame(row: int, column: int) TextureRegion
         +dispose() void
     }
-    SpaceNavigation --> GameAssets : obtiene una instancia
+    SpaceNavigation --> GameAssets : obtiene instancia unica
 ```
 
 ## GM-7 Strategy
 
-**Problema:** las trayectorias y descargas varian por tipo de alien y sector.
+**Problema:** las trayectorias y descargas varian por tipo de alien, sector y fase de combate en tiempo de ejecucion.
 
-**Contexto:** `Alien` participa en el mundo sin necesitar conocer cada algoritmo de movimiento o ataque.
-**Solucion:** recibe los contratos `MovementStrategy` y `AlienAttackStrategy`; `LevelDirector` selecciona las variantes al construir la oleada.
+**Contexto:** `Alien` participa en el mundo manteniendo su identidad inmutable (`AlienType`) sin acoplarse a cada algoritmo concreto de movimiento o ataque.
+**Solucion:** `Alien` delega su comportamiento en los contratos `MovementStrategy` y `AlienAttackStrategy` y los reemplaza dinámicamente en tiempo de ejecución al bajar al 50% de vida mediante `AlienPhaseTransition`.
 
 ```mermaid
 classDiagram
     class Alien {
+        -type: AlienType
         -movement: MovementStrategy
         -attackStrategy: AlienAttackStrategy
+        -phaseTransition: AlienPhaseTransition
+        -phaseChanged: boolean
+        -setMovementStrategy(movement: MovementStrategy) void
+        -setAttackStrategy(attackStrategy: AlienAttackStrategy) void
+        -applyPhaseTransition() void
+        +takeDamage() boolean
         +update(delta: float, worldWidth: float) void
-        +fireDue(delta: float, target: Ship) List~AlienProjectile~
+        +fireDue(delta: float, target: Ship, worldHeight: float) List~AlienProjectile~
+    }
+    class AlienPhaseTransition {
+        <<interface>>
+        +nextMovement(currentY: float, currentSpeed: float, alienWidth: float) MovementStrategy
+        +nextAttack() AlienAttackStrategy
     }
     class MovementStrategy {
         <<interface>>
@@ -1334,6 +1548,9 @@ classDiagram
 
     Alien --> MovementStrategy
     Alien --> AlienAttackStrategy
+    Alien --> AlienPhaseTransition
+    AlienPhaseTransition ..> MovementStrategy : cambia en Fase 2
+    AlienPhaseTransition ..> AlienAttackStrategy : cambia en Fase 2
     MovementStrategy <|.. LinearMovementStrategy
     MovementStrategy <|.. ZigZagMovementStrategy
     MovementStrategy <|.. StaticMovementStrategy
@@ -1345,6 +1562,7 @@ classDiagram
     AlienAttackStrategy <|.. BurstAttackStrategy
     LevelDirector ..> MovementStrategy : selecciona
     LevelDirector ..> AlienAttackStrategy : selecciona
+    LevelDirector ..> AlienPhaseTransition : configura
 ```
 
 ## GM-8 Template Method
@@ -1352,7 +1570,7 @@ classDiagram
 **Problema:** las pantallas necesitan mantener el mismo orden de limpieza, entrada, actualizacion y dibujo.
 
 **Contexto:** menu, partida, Game Over y Victoria comparten el ciclo, pero cada una presenta y actualiza contenido distinto.
-**Solucion:** `AbstractGameScreen.render(delta)` fija el algoritmo como `final` y delega los pasos variables en metodos protegidos y hooks.
+**Solucion:** `AbstractGameScreen.render(delta)` fija el algoritmo como `final` y delega los pasos variables en métodos abstractos protegidos (`*`) y hooks.
 
 ```mermaid
 classDiagram
@@ -1361,13 +1579,13 @@ classDiagram
     }
     class AbstractGameScreen {
         <<abstract>>
-        +render(delta: float) final
-        +resize(width: int, height: int) final
+        +render(delta: float) void
+        +resize(width: int, height: int) void
         #clearScreen() void
         #renderBackground(delta: float) void
-        #handleInput(delta: float) abstract
-        #update(delta: float) abstract
-        #draw(delta: float) abstract
+        #handleInput(delta: float) void*
+        #update(delta: float) void*
+        #draw(delta: float) void*
     }
     class MenuScreen
     class GameScreen
@@ -1386,10 +1604,10 @@ classDiagram
 
 ## GM-9 Builder
 
-**Problema:** un alien requiere varios valores que deben formar una configuracion valida.
+**Problema:** un alien requiere combinar identidad visual, posicion, tamano, vida, estrategias iniciales y reglas de transicion de fase que deben formar una configuracion valida.
 
-**Contexto:** los sectores y arquetipos combinan posicion, tamano, vida, movimiento y ataque.
-**Solucion:** `AlienBuilder` permite definir esos valores por pasos y los valida en `build()`. `LevelDirector` decide las combinaciones para cada oleada y arquetipo.
+**Contexto:** los sectores y arquetipos (`STANDARD`, `STATIC`, `BOMBER`) combinan distintos valores y comportamientos.
+**Solucion:** `AlienBuilder` permite definir esos valores por pasos encadenados y los valida en `build()`. `LevelDirector` actúa como Director definiendo las recetas de cada oleada y arquetipo.
 
 ```mermaid
 classDiagram
@@ -1414,27 +1632,39 @@ classDiagram
         -width: float
         -height: float
         -hitPoints: int
+        -type: AlienType
         -movement: MovementStrategy
         -attackStrategy: AlienAttackStrategy
+        -phaseTransition: AlienPhaseTransition
         +position(x: float, y: float) AlienBuilder
         +size(width: float, height: float) AlienBuilder
+        +type(type: AlienType) AlienBuilder
         +movement(strategy: MovementStrategy) AlienBuilder
         +hitPoints(hitPoints: int) AlienBuilder
         +attack(attackStrategy: AlienAttackStrategy) AlienBuilder
+        +phaseTransition(phaseTransition: AlienPhaseTransition) AlienBuilder
         +build() Alien
     }
     class Alien
+    class AlienType {
+        <<enum>>
+        STANDARD
+        STATIC
+        BOMBER
+    }
 
     AlienFactory <|.. LevelDirector
     LevelDirector ..> AlienBuilder : configura y usa
+    AlienBuilder --> AlienType
     AlienBuilder ..> Alien : crea
 ```
 
 ## Notas de lectura
 
-* Los atributos de las instancias se muestran como privados cuando forman parte del estado encapsulado. Las constantes publicas de `GameConfig` se muestran aparte.
-* `GameAssets` carga recursos con mapas propios de `Texture`, `Music` y `Sound`; no usa `AssetManager`.
+* Los miembros estáticos (`static`) llevan el sufijo `$` de Mermaid (que el motor renderiza subrayado según el estándar UML), y los métodos abstractos llevan el sufijo `*` (renderizado en cursiva).
+* Los atributos de las instancias se muestran como privados (`-`) cuando forman parte del estado encapsulado, protegidos (`#`) en las superclases abstractas o con visibilidad de paquete (`~`) en clases auxiliares internas como `Star`.
+* `GameAssets` carga recursos con mapas propios de `Texture` (con filtrado lineal `TextureFilter.Linear`), `Music` y `Sound`; no usa `AssetManager`.
 * `ScoreRepository` implementa `ScoreStore` y guarda en LibGDX `Preferences`.
-* Los datos que se dibujan durante la partida llegan a las pantallas mediante `WorldSnapshot`; las colecciones expuestas son de solo lectura.
+* Los datos que se dibujan durante la partida llegan a las pantallas mediante `WorldSnapshot`; las colecciones expuestas son de solo lectura (`Collections.unmodifiableList`).
 * `puppy.code.prototype` queda como referencia del codigo base y no como parte del flujo activo.
 * `Lwjgl3Launcher` y `StartupHelper` pertenecen al módulo `lwjgl3`; no forman parte de la ruta `core/src/main/java/puppy/code` revisada.

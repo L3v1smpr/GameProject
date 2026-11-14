@@ -1,9 +1,11 @@
 package puppy.code.factories;
 
-import puppy.code.behaviors.MovementStrategy;
 import puppy.code.behaviors.AlienAttackStrategy;
+import puppy.code.behaviors.AlienPhaseTransition;
+import puppy.code.behaviors.MovementStrategy;
 import puppy.code.config.GameConfig;
 import puppy.code.entities.Alien;
+import puppy.code.entities.AlienType;
 
 /**
  * Construye un {@link Alien} paso a paso y valida la configuración antes de crearlo (patrón Builder).
@@ -16,8 +18,10 @@ public final class AlienBuilder {
     private float width = GameConfig.ALIEN_WIDTH;
     private float height = GameConfig.ALIEN_HEIGHT;
     private int hitPoints;
+    private AlienType type = AlienType.STANDARD;
     private MovementStrategy movement;
     private AlienAttackStrategy attackStrategy;
+    private AlienPhaseTransition phaseTransition;
 
     public AlienBuilder position(float x, float y) {
         this.x = x;
@@ -29,6 +33,11 @@ public final class AlienBuilder {
     public AlienBuilder size(float width, float height) {
         this.width = width;
         this.height = height;
+        return this;
+    }
+
+    public AlienBuilder type(AlienType type) {
+        this.type = type;
         return this;
     }
 
@@ -47,9 +56,17 @@ public final class AlienBuilder {
         return this;
     }
 
+    public AlienBuilder phaseTransition(AlienPhaseTransition phaseTransition) {
+        this.phaseTransition = phaseTransition;
+        return this;
+    }
+
     public Alien build() {
         if (!positionDefined) {
             throw new IllegalStateException("Falta definir la posición del alien.");
+        }
+        if (type == null) {
+            throw new IllegalArgumentException("El tipo de alien no puede ser null.");
         }
         if (movement == null) {
             throw new IllegalStateException("Falta definir la estrategia de movimiento del alien.");
@@ -63,6 +80,6 @@ public final class AlienBuilder {
         if (attackStrategy == null) {
             throw new IllegalStateException("Falta definir la estrategia de ataque del alien.");
         }
-        return new Alien(x, y, width, height, hitPoints, movement, attackStrategy);
+        return new Alien(x, y, width, height, hitPoints, type, movement, attackStrategy, phaseTransition);
     }
 }

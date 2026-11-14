@@ -5,9 +5,8 @@ import com.badlogic.gdx.math.Vector2;
 /**
  * Estrategia (patrón Strategy) que decide cómo se desplaza un alien.
  *
- * <p>Las implementaciones no guardan estado: reciben la posición y el tiempo de vida del alien y
- * devuelven la siguiente posición. Así se pueden compartir entre aliens y el alien no necesita
- * conocer qué trayectoria sigue.
+ * <p>Desacopla la cinemática respecto de la entidad {@code Alien}, permitiendo
+ * intercambiar trayectorias en tiempo de ejecución sin conocer la clase concreta.
  */
 public interface MovementStrategy {
 

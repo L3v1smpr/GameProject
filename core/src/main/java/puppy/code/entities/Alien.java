@@ -6,20 +6,24 @@ import java.util.List;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import puppy.code.behaviors.AlienAttackStrategy;
+import puppy.code.behaviors.AlienPhaseTransition;
 import puppy.code.behaviors.MovementStrategy;
-import puppy.code.config.GameConfig;
 
-/** Alien configurable que delega movimiento y ataque en estrategias separadas. */
+/** Alien configurable que encapsula su identidad y delega movimiento, ataque y transición de fase. */
 public final class Alien extends GameEntity {
 
     private static final float FIRING_FRAME_DURATION_SECONDS = 0.20f;
 
     private int hitPoints;
-    private final MovementStrategy movement;
-    private final AlienAttackStrategy attackStrategy;
+    private final int maxHitPoints;
+    private final AlienType type;
+    private MovementStrategy movement;
+    private AlienAttackStrategy attackStrategy;
+    private final AlienPhaseTransition phaseTransition;
     private float age;
     private float fireCooldownRemaining;
     private float firingTimer;
+    private boolean phaseChanged;
 
     public Alien(
             float x,
@@ -29,24 +33,85 @@ public final class Alien extends GameEntity {
             int hitPoints,
             MovementStrategy movement,
             AlienAttackStrategy attackStrategy) {
+        this(x, y, width, height, hitPoints, AlienType.STANDARD, movement, attackStrategy, null);
+    }
+
+    public Alien(
+            float x,
+            float y,
+            float width,
+            float height,
+            int hitPoints,
+            MovementStrategy movement,
+            AlienAttackStrategy attackStrategy,
+            AlienPhaseTransition phaseTransition) {
+        this(x, y, width, height, hitPoints, AlienType.STANDARD, movement, attackStrategy, phaseTransition);
+    }
+
+    public Alien(
+            float x,
+            float y,
+            float width,
+            float height,
+            int hitPoints,
+            AlienType type,
+            MovementStrategy movement,
+            AlienAttackStrategy attackStrategy,
+            AlienPhaseTransition phaseTransition) {
         super(x, y, width, height);
         if (hitPoints <= 0) {
             throw new IllegalArgumentException("La vida del alien debe ser positiva.");
         }
+        if (type == null) {
+            throw new IllegalArgumentException("El tipo de alien no puede ser null.");
+        }
+        this.hitPoints = hitPoints;
+        this.maxHitPoints = hitPoints;
+        this.type = type;
+        this.phaseTransition = phaseTransition;
+        setMovementStrategy(movement);
+        setAttackStrategy(attackStrategy);
+        // Tiempo de espera inicial aleatorio para que el primer tiro ocurra poco después de entrar
+        this.fireCooldownRemaining = MathUtils.random(0.35f, 0.70f);
+    }
+
+    private void setMovementStrategy(MovementStrategy movement) {
         if (movement == null) {
             throw new IllegalArgumentException("La estrategia de movimiento no puede ser null.");
         }
         if (!Float.isFinite(movement.speed()) || movement.speed() < 0f) {
             throw new IllegalArgumentException("La velocidad del alien no puede ser negativa.");
         }
+        this.movement = movement;
+    }
+
+    private void setAttackStrategy(AlienAttackStrategy attackStrategy) {
         if (attackStrategy == null) {
             throw new IllegalArgumentException("La estrategia de ataque no puede ser null.");
         }
-        this.hitPoints = hitPoints;
-        this.movement = movement;
         this.attackStrategy = attackStrategy;
-        // Tiempo de espera inicial aleatorio para que el primer tiro ocurra poco después de entrar
-        this.fireCooldownRemaining = MathUtils.random(0.35f, 0.70f);
+        // Evita heredar esperas largas de la estrategia anterior
+        this.fireCooldownRemaining = Math.min(
+                this.fireCooldownRemaining,
+                attackStrategy.nextCooldownSeconds());
+    }
+
+    private void applyPhaseTransition() {
+        if (phaseTransition == null) {
+            return;
+        }
+        MovementStrategy nextMove = phaseTransition.nextMovement(getY(), movement.speed(), getWidth());
+        if (nextMove != null) {
+            setMovementStrategy(nextMove);
+        }
+        AlienAttackStrategy nextAtk = phaseTransition.nextAttack();
+        if (nextAtk != null) {
+            setAttackStrategy(nextAtk);
+        }
+    }
+
+    public AlienType getType() {
+        return type;
     }
 
     public int getHitPoints() {
@@ -58,11 +123,11 @@ public final class Alien extends GameEntity {
     }
 
     public boolean isStatic() {
-        return movement.speed() == 0f;
+        return type == AlienType.STATIC;
     }
-    
+
     public boolean isBomber() {
-        return movement instanceof puppy.code.behaviors.HorizontalMovementStrategy;
+        return type == AlienType.BOMBER;
     }
 
     @Override
@@ -76,6 +141,12 @@ public final class Alien extends GameEntity {
             hitPoints = 0;
             deactivate();
             return true;
+        }
+
+        // Cambio de estrategia en tiempo de ejecución al bajar a la mitad de vida
+        if (!phaseChanged && phaseTransition != null && maxHitPoints > 1 && hitPoints <= maxHitPoints / 2) {
+            phaseChanged = true;
+            applyPhaseTransition();
         }
         return false;
     }
@@ -97,16 +168,19 @@ public final class Alien extends GameEntity {
         setPosition(Math.max(0f, Math.min(next.x, maxX)), next.y);
     }
 
-    public List<AlienProjectile> fireDue(float delta, Ship target) {
+    public List<AlienProjectile> fireDue(float delta, Ship target, float worldHeight) {
         if (!Float.isFinite(delta) || delta < 0f) {
             throw new IllegalArgumentException("delta debe ser finito y no negativo.");
         }
         if (target == null) {
             throw new IllegalArgumentException("El objetivo del alien no puede ser null.");
         }
+        if (!Float.isFinite(worldHeight) || worldHeight <= 0f) {
+            throw new IllegalArgumentException("La altura del mundo debe ser positiva y finita.");
+        }
 
         // Mientras entra desde fuera de pantalla, precarga sus cañones sin acumular disparos múltiples
-        if (getY() > GameConfig.WORLD_HEIGHT - getHeight()) {
+        if (getY() > worldHeight - getHeight()) {
             fireCooldownRemaining = Math.max(0.15f, fireCooldownRemaining - delta);
             return Collections.emptyList();
         }

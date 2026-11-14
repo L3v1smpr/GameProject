@@ -155,7 +155,9 @@ public final class GameAssets {
 
     private void loadTexture(String path) {
         if (Gdx.files.internal(path).exists()) {
-            textures.put(path, new Texture(Gdx.files.internal(path)));
+            Texture texture = new Texture(Gdx.files.internal(path));
+            texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+            textures.put(path, texture);
         } else {
             Gdx.app.error("GameAssets", "No se encontro la textura en: " + path);
         }
