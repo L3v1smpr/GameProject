@@ -142,4 +142,4 @@ La partida comienza con 3 vidas y consta de 3 sectores espaciales (niveles) cuya
 * **Diagramas de Arquitectura UML:** El modelo de clases completo y sus vistas desglosadas por módulo y patrón de diseño se encuentran en [UML.md](UML.md).
 * **Reporte Técnico y Narrativa (GM-1 a GM-10) — Disponible en doble formato:**
   * **Lectura directa en GitHub (Markdown):** [REPORTE_PROYECTO.md](REPORTE_PROYECTO.md) — Permite visualizar el informe completo, las evidencias de código y los diagramas Mermaid renderizados directamente desde el navegador en el repositorio.
-  * **Vista formal descargable (Microsoft Word):** [REPORTE_PROYECTO.docx](REPORTE_PROYECTO.docx) — Documento formal maquetado con portada institucional, tablas comparativas y memoria técnica para su lectura y evaluación tanto dentro como fuera de GitHub.
+  * **Vista formal descargable (Microsoft Word):** [REPORTE_PROYECTO.docx](REPORTE_PROYECTO.docx) — Documento formal para su lectura y evaluación tanto dentro como fuera de GitHub.
